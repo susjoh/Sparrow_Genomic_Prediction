@@ -3,8 +3,8 @@ title: "Genomic Prediction of Sparrow Recombination"
 author: "Susan Johnston"
 date: "2024-09-10"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r echo = F, results="hide", message=F, warning=F}
@@ -46,12 +46,20 @@ recmeans <- subset(recmeans, id != "8N72234")
 
 ![](figs/sparrows_and_recombination.png)
 
-The positions of meiotic crossover events are measured by tracking the inheritance patterns of alleles between parents and offspring and determining the positions of changes in phase. Our dataset `recsumm` has estimates of crossover count (`co_count`) and intra-chromosomal allelic shuffling (`intra-shuff`) for `r nrow(recsumm)` `offspring` resulting from gametes transmitted from `r length(unique(recsumm$id))` unique `id`. Our data also includes the `total_coverage` which is the length of the genome informative for identifying crossover events. **In this document, I will solely focus on crossover count.**
+The positions of meiotic crossover events are measured by tracking the inheritance patterns of alleles between parents and offspring and determining the positions of changes in phase. Our dataset `recsumm` has estimates of crossover count (`co_count`) and intra-chromosomal allelic shuffling (`intra-shuff`) for `r nrow(recsumm)` `offspring` resulting from gametes transmitted from `r length(unique(recsumm$id))` unique `id`.It also includes the `total_coverage` which is the length of the genome informative for identifying crossover events. 
 
 ```{r}
 head(recsumm)
-
 ```
+
+There is also the dataset `recmeans` that summarises this information per individual:
+
+```{r}
+head(recsumm)
+```
+
+
+**In this document, I will solely focus on crossover count.**
 
 This is the distribution of crossover counts across all gametes (A) vs an individual's mean crossover count (B). As you can see, there is a clear sex difference in the trait distribution:
 
@@ -87,7 +95,7 @@ ggplot(recmeans, aes(y = sex, x = mean_co_count, fill = sex)) +
 
 Crossover count is an unusual phenotype as there is more intra-individual variation than inter-individual variation. This is because for each crossover event that happens during meiosis, we can assume that is ~50:50 chance that it segregates into the egg or sperm. If you have 40 crossovers, an average of 20 will end up in the gamete. But that still means there is decent variation around that mean. For example, for 1000 gametes coming from an individual with 40 crossovers in every meiosis, the distribution of crossovers in the gametes would be:
 
-```{r echo = F, fig.width=3, fig.height=4}
+```{r echo = F, fig.width=3, fig.height=3}
 vec <- NULL
 for(i in 1:1000) vec <- c(vec, sum(sample.int(2, 40, replace = T)-1))
 hist(vec, breaks = 20)
@@ -96,7 +104,7 @@ hist(vec, breaks = 20)
 
 As I stated above, this translates into more intra-individual variation than inter-individual variation. Let's look at the female sparrows with the most unique measures:
 
-```{r echo = F, message=FALSE, fig.height=4}
+```{r echo = F, message=FALSE, fig.height=3.5}
 
 x1 <- subset(recsumm, id %in% subset(recmeans, n > 25 & sex == "F")$id)
 
@@ -117,7 +125,7 @@ x1 %>% group_by(id) %>% summarise(var(co_count))
 
 We also observe that individuals with more measures will have means close to the population mean, which has implications for further analysis of fitness!
 
-```{r}
+```{r echo = F, fig.height=3.5, message=F}
 
 ggplot(recmeans, aes(mean_co_count, n, colour = sex)) +
   geom_point(alpha = 0.1) +
@@ -130,9 +138,9 @@ ggplot(recmeans, aes(mean_co_count, n, colour = sex)) +
   
 ```
 
-In females, once you have more than 3 measures, this effect starts to flatten out. In males it doesn't, perhaps they are more sensitive to this problem because they have fewer crossovers..?
+In females, once you have more than 3 measures, this effect starts to flatten out. In males it doesn't, perhaps they are more sensitive to this problem because they have fewer crossovers...?
 
-```{r}
+```{r echo = F, fig.height=3.5, message=F}
 
 ggplot(subset(recmeans, n > 2), aes(mean_co_count, n, colour = sex)) +
   geom_point(alpha = 0.1) +
@@ -186,7 +194,7 @@ asreml4pin(female.acc.ped.mean)
 
 And here is the mean rate per individual with >2 measures (value for `vm(id, ainv)`):
 
-```{r message=FALSE}
+```{r message=FALSE, echo = F}
 
 female.acc.ped.mean <- asreml(fixed = mean_co_count ~ mean_total_coverage + n,
                       random = ~ vm(id, ainv),
