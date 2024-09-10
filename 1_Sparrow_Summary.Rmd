@@ -1,0 +1,198 @@
+---
+title: "Genomic Prediction of Sparrow Recombination"
+author: "Susan Johnston"
+date: "2024-09-10"
+output: html_document
+---
+
+```{r echo = F, results="hide", message=F, warning=F}
+library(dplyr)
+library(ggplot2)
+library(asreml)
+library(ggridges)
+library(reshape2)
+
+source("r/makeGRM.R")
+source("r/ASReml4.EstEffects.R")
+
+recsumm <- read.table("data/20240910_Sparrow_Recomb_Data.txt", header = T)
+recsumm$id <- factor(recsumm$id)
+recsumm <- na.omit(recsumm)
+
+recmeans <- recsumm %>%
+  group_by(id, sex) %>%
+  summarise(mean_co_count = mean(co_count),
+            mean_intra_shuff = mean(intra_shuff),
+            mean_total_coverage = mean(total_coverage),
+            var_co_count = var(co_count),
+            var_intra_shuff = var(intra_shuff),
+            var_total_coverage = var(total_coverage),
+            n = n())
+
+
+pedigree <- read.table("data/20230317_Sparrow_Pedigree.txt", header = T)
+ainv <- ainverse(pedigree)
+
+# removing a weird male outlier...
+
+recsumm <- subset(recsumm, id != "8N72234")
+recmeans <- subset(recmeans, id != "8N72234")
+
+```
+
+### 1. Introduction - recombination in house sparrows.
+
+![](figs/sparrows_and_recombination.png)
+
+The positions of meiotic crossover events are measured by tracking the inheritance patterns of alleles between parents and offspring and determining the positions of changes in phase. Our dataset `recsumm` has estimates of crossover count (`co_count`) and intra-chromosomal allelic shuffling (`intra-shuff`) for `r nrow(recsumm)` `offspring` resulting from gametes transmitted from `r length(unique(recsumm$id))` unique `id`. Our data also includes the `total_coverage` which is the length of the genome informative for identifying crossover events. **In this document, I will solely focus on crossover count.**
+
+```{r}
+head(recsumm)
+
+```
+
+This is the distribution of crossover counts across all gametes (A) vs an individual's mean crossover count (B). As you can see, there is a clear sex difference in the trait distribution:
+
+```{r echo = F, message=FALSE, fig.width=3, fig.height=4}
+
+ggplot(recsumm, aes(y = sex, x = co_count, fill = sex)) +
+  geom_density_ridges(scale = 0.4, alpha = 0.6) +
+  geom_boxplot(width = 0.2, outlier.alpha = 0.2, position = position_nudge(y=-0.08), outlier.size = 1) +
+  #facet_wrap(~variable, scales = "free") +
+  theme_bw() +
+  theme(strip.background = element_blank(), strip.text = element_text(size = 14, hjust = 0)) +
+  scale_fill_brewer(palette = "Set1") +
+  theme(legend.position = "none") +
+  labs(y = "Sex", x = "Autosomal Crossover Count") +
+  coord_cartesian(xlim = c(0, 40)) +
+  ggtitle("A. All gametes")
+
+ggplot(recmeans, aes(y = sex, x = mean_co_count, fill = sex)) +
+  geom_density_ridges(scale = 0.4, alpha = 0.6) +
+  geom_boxplot(width = 0.2, outlier.alpha = 0.2, position = position_nudge(y=-0.08), outlier.size = 1) +
+  #facet_wrap(~variable, scales = "free") +
+  theme_bw() +
+  theme(strip.background = element_blank(), strip.text = element_text(size = 14, hjust = 0)) +
+  scale_fill_brewer(palette = "Set1") +
+  theme(legend.position = "none") +
+  labs(y = "Sex", x = "Autosomal Crossover Count")  +
+  coord_cartesian(xlim = c(0, 40)) +
+  ggtitle("B. Individual means")
+
+```
+
+### 2. Recombination has a high sampling variance, which leads to weird quirks.
+
+Crossover count is an unusual phenotype as there is more intra-individual variation than inter-individual variation. This is because for each crossover event that happens during meiosis, we can assume that is ~50:50 chance that it segregates into the egg or sperm. If you have 40 crossovers, an average of 20 will end up in the gamete. But that still means there is decent variation around that mean. For example, for 1000 gametes coming from an individual with 40 crossovers in every meiosis, the distribution of crossovers in the gametes would be:
+
+```{r echo = F, fig.width=3, fig.height=4}
+vec <- NULL
+for(i in 1:1000) vec <- c(vec, sum(sample.int(2, 40, replace = T)-1))
+hist(vec, breaks = 20)
+
+```
+
+As I stated above, this translates into more intra-individual variation than inter-individual variation. Let's look at the female sparrows with the most unique measures:
+
+```{r echo = F, message=FALSE, fig.height=4}
+
+x1 <- subset(recsumm, id %in% subset(recmeans, n > 25 & sex == "F")$id)
+
+ggplot(x1, aes(id, co_count)) +
+  geom_boxplot(alpha = 0) +
+  geom_jitter(width = 0.2, col = "#E41A1C") +
+  #geom_dotplot(binaxis = "y", stackdir = "center", dotsize = 0.4, col = "#E41A1C", fill = "#E41A1C") +
+  theme_bw() +
+  labs(y = "Autosomal Crossover Count")
+
+```
+
+The variance across individual means is `r var(subset(recmeans, id %in% x1$id)$mean_co_count)`, whereas the variance within individuals is:
+
+```{r echo = F}
+x1 %>% group_by(id) %>% summarise(var(co_count))
+```
+
+We also observe that individuals with more measures will have means close to the population mean, which has implications for further analysis of fitness!
+
+```{r}
+
+ggplot(recmeans, aes(mean_co_count, n, colour = sex)) +
+  geom_point(alpha = 0.1) +
+  stat_smooth() +
+  scale_color_brewer(palette = "Set1") +
+  facet_wrap(~sex, scales = "free_x") +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(x = "Individual Mean CO Count", y = "Number for Measures")
+  
+```
+
+In females, once you have more than 3 measures, this effect starts to flatten out. In males it doesn't, perhaps they are more sensitive to this problem because they have fewer crossovers..?
+
+```{r}
+
+ggplot(subset(recmeans, n > 2), aes(mean_co_count, n, colour = sex)) +
+  geom_point(alpha = 0.1) +
+  stat_smooth() +
+  scale_color_brewer(palette = "Set1") +
+  facet_wrap(~sex, scales = "free_x") +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(x = "Individual Mean CO Count", y = "Number for Measures")
+  
+```
+
+
+### 2. How heritable is crossover rate?
+
+Because there are differences in distribution between the sexes, let's just focus on **females** for the moment. Heritabilities are estimated using a pedigree-based relationship matrix (this gives very similar results to the GRM used in the McAuley et al 2024 MBE paper). I use `library(asreml)` for the following models.
+
+Below I consider two phenotypes:
+
+1. What is the heritability of the number of crossovers in a sampled gamete?
+2. What is the heritability of the mean number of crossovers across all gametes?
+
+Let's begin. Here, the heritability is estimated using the crossovers in all sampled gametes (value for `vm(id, ainv)`):
+
+```{r }
+
+recsumm_f <- subset(recsumm, sex == "F")
+
+female.acc.ped <- asreml(fixed = co_count ~ total_coverage,
+                      random = ~ vm(id, ainv) + ide(id),
+                      residual = ~idv(units),
+                      data = recsumm_f,
+                      trace = F)
+  
+asreml4pin(female.acc.ped)
+```
+
+And here is the mean rate per individual (value for `vm(id, ainv)`):
+
+```{r message=FALSE}
+recmeans_f <- subset(recmeans, sex == "F")
+
+female.acc.ped.mean <- asreml(fixed = mean_co_count ~ mean_total_coverage + n,
+                      random = ~ vm(id, ainv),
+                      residual = ~idv(units),
+                      data = recmeans_f,
+                      trace = F)
+  
+asreml4pin(female.acc.ped.mean)
+```
+
+And here is the mean rate per individual with >2 measures (value for `vm(id, ainv)`):
+
+```{r message=FALSE}
+
+female.acc.ped.mean <- asreml(fixed = mean_co_count ~ mean_total_coverage + n,
+                      random = ~ vm(id, ainv),
+                      residual = ~idv(units),
+                      data = subset(recmeans_f, n > 2),
+                      trace = F)
+  
+asreml4pin(female.acc.ped.mean)
+```
+
+As you can see, the heritability basically doubles when using the mean measures!
