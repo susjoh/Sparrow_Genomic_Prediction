@@ -2,7 +2,9 @@
 title: "Genomic Prediction of Sparrow Recombination"
 author: "Susan Johnston"
 date: "2024-09-10"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r echo = F, results="hide", message=F, warning=F}
