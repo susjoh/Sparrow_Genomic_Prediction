@@ -46,6 +46,10 @@ recmeans <- recfull %>%
             var_total_coverage = var(total_coverage),
             n = n())
 
+# Population struction PCA
+
+system("plink --bfile data/70K_200K_maf_geno_mind_v5 --cow --autosome --pca --out data/70K_200K_maf_geno_mind_v5")
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # 1. Basic demo model in BayesCpi               #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#

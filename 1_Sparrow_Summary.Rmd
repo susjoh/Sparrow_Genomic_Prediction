@@ -35,10 +35,12 @@ recmeans <- recsumm %>%
 pedigree <- read.table("data/20230317_Sparrow_Pedigree.txt", header = T)
 ainv <- ainverse(pedigree)
 
-# removing a weird male outlier...
+# removing a weird male outlier to make the plots better
 
 recsumm <- subset(recsumm, id != "8N72234")
 recmeans <- subset(recmeans, id != "8N72234")
+
+
 
 ```
 
@@ -91,7 +93,9 @@ ggplot(recmeans, aes(y = sex, x = mean_co_count, fill = sex)) +
 
 ```
 
-### 2. Recombination has a high sampling variance, which leads to weird quirks.
+### 2. Crossover count has a high sampling variance, which leads to weird quirks.
+
+![](figs/co_segregation.png)
 
 Crossover count is an unusual phenotype as there is more intra-individual variation than inter-individual variation. This is because for each crossover event that happens during meiosis, we can assume that is ~50:50 chance that it segregates into the egg or sperm. If you have 40 crossovers, an average of 20 will end up in the gamete. But that still means there is decent variation around that mean. For example, for 1000 gametes coming from an individual with 40 crossovers in every meiosis, the distribution of crossovers in the gametes would be:
 
@@ -206,3 +210,136 @@ asreml4pin(female.acc.ped.mean)
 ```
 
 As you can see, the heritability basically doubles when using the mean measures!
+
+### 3. Genomic prediction for crossover count
+
+Our motivation for using genomic prediction is as follows:
+
+![](figs/gp_justification.png)
+
+I ran a basic demo model of genomic prediction using the package `hibayes`. I used the `BayesCpi()` function which assumes a small proportion of SNPs (1-Pi) have non-zero effects, and share the same variance, but Pi is not fixed. (*NB. We know from the MBE paper that crossover count is likely to be polygenic so this might not be the best model!*). We ran three prediction models. One for the FULL dataset (i.e. individual gametes), one for the MEAN dataset (i.e. mean values per individual with `n` fit as a fixed effect) and one for the MEAN n>2 dataset (i.e. mean values for individuals that had 3 or more offspring).
+
+Here is an example of the model structure, please see `2_Sparrow_hibayes_run_SEJ.R` for more details.
+
+```{r eval = F}
+
+fitCpi_full <- ibrm(co_count ~ total_coverage,
+                    data = recfull,
+                    M = geno,
+                    M.id = geno.id,
+                    method = "BayesCpi",
+                    Pi = c(0.98, 0.02), niter = 20000, nburn = 16000, thin = 5,
+                    printfreq = 100, seed = 666666, verbose = TRUE)
+
+
+```
+
+I did some plots of the GEBVs vs. True Phenotypes in the "training" population (NB. the red points on the third plot are the individuals with 2 or fewer measures, so we have phenotypes, they are analagous to a "test" population here)
+
+```{r echo = F, message=F,warning=F, fig.height = 3, fig.width = 3}
+
+# Load hibayes results from 2_Sparrow_hibayes_run_SEJ.R
+
+load("results/2_F_fitCpi_results.RData")
+
+ggplot(recfull, aes(fitCpi_full_gebv, co_count)) +
+  geom_point(alpha = 0.2) +
+  stat_smooth() +
+  ggtitle("FULL")
+
+ggplot(recmeans, aes(fitCpi_mean_gebv, mean_co_count)) +
+  geom_point(alpha = 0.2) +
+  stat_smooth() +
+  ggtitle("MEANS")
+
+ggplot(recmeans, aes(fitCpi_mean_g2_gebv, mean_co_count, col = n > 2)) +
+  geom_point(alpha = 0.2) +
+  #stat_smooth() +
+  scale_colour_manual(values = c("red", "black"))+
+  ggtitle("MEANS n>2")
+
+```
+
+How do the FULL and MEANS GEBVs correlate? 
+
+```{r echo = F, message=F}
+full_gebvs_tab <- left_join(full_gebvs[[1]], full_gebvs[[2]])
+full_gebvs_tab <- left_join(full_gebvs_tab, full_gebvs[[3]])
+full_gebvs_tab <- left_join(full_gebvs_tab, recmeans[,1:9])
+full_gebvs_tab$n[which(is.na(full_gebvs_tab$n))] <- 0
+full_gebvs_tab$PopType <- ifelse(full_gebvs_tab$id %in% recmeans$id, "Training Population", "Test Population")
+
+ggplot(full_gebvs_tab, aes(fitCpi_full_gebv, fitCpi_mean_gebv)) +
+  geom_point(alpha = 0.2) +
+  stat_smooth() +
+  facet_wrap(~PopType)
+
+cor.test(full_gebvs_tab$fitCpi_full_gebv, full_gebvs_tab$fitCpi_mean_gebv)
+```
+
+### 4. Genomic Prediction may give a false signal of disruptive selection on recombination rate.
+
+As shown in the figure above, one issue we have in the sparrows is that we cannot estimate recombination rates in individuals that did not have offspring. *Note: in our dataset, we have reproductive success information that doesn't necessarily correlate tightly with the number of gametes here! We know that some individuals will have had more offspring, but we just sampled fewer of them for genetic analysis and therefore have fewer estimates of their recombination. However, in this exploration, we will just focus on the number of gametes `n` as this still illustrates the problem effectively.*
+
+
+Our analysis above calculated with GEBVs for all 12965 individuals in the genomic dataset. So the vast majority of these will have `n = 0`. Let's look at the relationship between GEBVs and n:
+
+```{r echo = F, message = F, fig.width=3, fig.height=3}
+ggplot(full_gebvs_tab, aes(fitCpi_full_gebv, `n`)) +
+  geom_point(alpha = 0.2) +
+  stat_smooth() +
+  ggtitle("FULL")
+
+ggplot(full_gebvs_tab, aes(fitCpi_mean_gebv, `n`)) +
+  geom_point(alpha = 0.2) +
+  stat_smooth() +
+  ggtitle("MEAN")
+```
+
+```{r echo = F, message = F, fig.height = 4}
+ggplot(full_gebvs_tab, aes(factor(`n`), fitCpi_full_gebv)) +
+  geom_jitter(alpha = 0.1, width = 0.2) +
+  geom_boxplot(alpha = 0.2, col = "darkred") +
+  stat_smooth() +
+  theme_bw() +
+  ggtitle("FULL")
+
+ggplot(full_gebvs_tab, aes(factor(`n`), fitCpi_mean_gebv)) +
+  geom_jitter(alpha = 0.1, width = 0.2) +
+  geom_boxplot(alpha = 0.2, col = "darkred") +
+  stat_smooth() +
+  theme_bw() +
+  ggtitle("MEANS")
+
+```
+
+Why is there a signal of disruptive selection? Are zeros less related to the population? unconnected in the pedigree? CLUES?
+
+### 5. Population Structure in the house sparrows
+
+I ran a PCA in plink, and there is definitely a bit of population structure, which is similar in the training and test population:
+
+(PLINK function: `plink --bfile data/70K_200K_maf_geno_mind_v5 --cow --autosome --pca --out data/70K_200K_maf_geno_mind_v5`)
+
+```{r echo = F, message = F, fig.width = 3, fig.height = 3}
+# system("plink --bfile data/70K_200K_maf_geno_mind_v5 --cow --autosome --pca --out data/70K_200K_maf_geno_mind_v5")
+
+sparrowpca <- read.table("data/70K_200K_maf_geno_mind_v5.eigenvec")
+names(sparrowpca) <- c("fam", "id", paste0("PC", 1:20))
+
+full_gebvs_tab <- left_join(full_gebvs_tab, sparrowpca[,2:8])
+
+ggplot(full_gebvs_tab, aes(PC1, PC2)) +
+  geom_point(alpha = 0.2) +
+  theme_bw()
+
+```
+
+```{r echo = F, message = F, fig.height = 3}
+
+ggplot(full_gebvs_tab, aes(PC1, PC2)) +
+  geom_point(alpha = 0.2) +
+  facet_wrap(~PopType) +
+  theme_bw()
+
+```
