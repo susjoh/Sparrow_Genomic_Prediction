@@ -343,3 +343,15 @@ ggplot(full_gebvs_tab, aes(PC1, PC2)) +
   theme_bw()
 
 ```
+
+Based on a 10-year old file where I have some information on locality for some birds, there is some island structure:
+
+```{r echo = F, message=F}
+islands <- read.csv("data/SNPtypedind_PhenotypicData.csv", header = T)
+islands$id <- islands$ringnr
+full_gebvs_tab <- left_join(full_gebvs_tab, subset(islands, select = c(id, first_locality, hatchyear)))
+
+
+ggplot(subset(full_gebvs_tab, !is.na(first_locality)), aes(PC1, PC2, col = factor(first_locality))) +
+  geom_point(alpha = 0.2)
+```

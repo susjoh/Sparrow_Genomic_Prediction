@@ -12,12 +12,9 @@
 library(hibayes)
 library(dplyr)
 library(ggplot2)
-library(pedtricks)
 
 load("results/2_F_fitCpi_results.RData")
 
-pedsumm <- pedtricks::ped_stats(pedigree)
-summary(pedsumm)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # 1. Plot GEBVs against known phenotypes        #
@@ -74,5 +71,28 @@ ggplot(full_gebvs_tab, aes(fitCpi_full_gebv, `n`)) +
 
 # Are zeros less related to the population? unconnected in the pedigree? CLUES?
 # What is the population structure like?
+
+# system("plink --bfile data/70K_200K_maf_geno_mind_v5 --cow --autosome --pca --out data/70K_200K_maf_geno_mind_v5")
+
+sparrowpca <- read.table("data/70K_200K_maf_geno_mind_v5.eigenvec")
+names(sparrowpca) <- c("fam", "id", paste0("PC", 1:20))
+
+
+full_gebvs_tab <- left_join(full_gebvs_tab, sparrowpca[,2:8])
+
+ggplot(full_gebvs_tab, aes(PC1, PC2, col = n>0)) +
+  geom_point(alpha = 0.2) +
+  facet_wrap(~n>0)
+
+# island effect?
+
+islands <- read.csv("data/SNPtypedind_PhenotypicData.csv", header = T)
+islands$id <- islands$ringnr
+full_gebvs_tab <- left_join(full_gebvs_tab, subset(islands, select = c(id, first_locality, hatchyear)))
+
+
+ggplot(subset(full_gebvs_tab, !is.na(first_locality)), aes(PC1, PC2, col = factor(first_locality))) +
+  geom_point(alpha = 0.2)
+
 
 
