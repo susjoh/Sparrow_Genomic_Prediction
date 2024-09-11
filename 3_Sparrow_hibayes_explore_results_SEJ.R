@@ -15,6 +15,8 @@ library(ggplot2)
 
 load("results/2_F_fitCpi_results.RData")
 
+islands <- read.table("data/AdultMorphology_20240201_fix.csv", sep = ";", header = T)
+islands$id <- islands$ringnr
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # 1. Plot GEBVs against known phenotypes        #
@@ -28,6 +30,7 @@ ggplot(recfull, aes(fitCpi_full_gebv, co_count)) +
 
 cor.test(recfull$fitCpi_full_gebv, recfull$co_count)
 
+
 # MEANS model
 
 ggplot(recmeans, aes(fitCpi_mean_gebv, mean_co_count, col = n)) +
@@ -36,14 +39,22 @@ ggplot(recmeans, aes(fitCpi_mean_gebv, mean_co_count, col = n)) +
 
 cor.test(recmeans$fitCpi_mean_gebv, recmeans$mean_co_count)
 
+plot(fitCpi_mean$MCMCsamples$h2[1,], type = "l")
+
+hist(fitCpi_mean$MCMCsamples$h2[1,], breaks = 20)
+
+
 # MEANS >2 samples
 
 ggplot(recmeans, aes(fitCpi_mean_g2_gebv, mean_co_count)) +
   geom_point(alpha = 0.2) +
   stat_smooth() +
-  facet_wrap(~n > 3)
+  facet_wrap(~n > 2)
 
 cor.test(recmeans$fitCpi_mean_g2_gebv, recmeans$mean_co_count)
+
+plot(fitCpi_mean_g2$MCMCsamples$h2[1,], type = "l")
+
 
 # FULL vs MEANS
 
@@ -86,12 +97,13 @@ ggplot(full_gebvs_tab, aes(PC1, PC2, col = n>0)) +
 
 # island effect?
 
-islands <- read.csv("data/SNPtypedind_PhenotypicData.csv", header = T)
-islands$id <- islands$ringnr
-full_gebvs_tab <- left_join(full_gebvs_tab, subset(islands, select = c(id, first_locality, hatchyear)))
 
+full_gebvs_tab <- left_join(full_gebvs_tab, subset(islands, select = c(id, first_locality)))
+full_gebvs_tab$island <- NA
+for(i in 1:nrow(full_gebvs_tab)) full_gebvs_tab$island[i] <- get_island_name(full_gebvs_tab$first_locality[i])
 
-ggplot(subset(full_gebvs_tab, !is.na(first_locality)), aes(PC1, PC2, col = factor(first_locality))) +
+ggplot(subset(full_gebvs_tab, !is.na(island)),
+       aes(PC1, PC2, col = island)) +
   geom_point(alpha = 0.2)
 
 
