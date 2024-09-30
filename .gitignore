@@ -4,3 +4,7 @@
 .Ruserdata
 data/
 results/
+
+# MacOS ignores
+*._*
+.DS_Store
