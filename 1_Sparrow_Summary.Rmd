@@ -57,7 +57,7 @@ head(recsumm)
 There is also the dataset `recmeans` that summarises this information per individual:
 
 ```{r}
-head(recsumm)
+head(recmeans)
 ```
 
 
