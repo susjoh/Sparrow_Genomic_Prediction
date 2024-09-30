@@ -131,7 +131,7 @@ We also observe that individuals with more measures will have means close to the
 
 ```{r echo = F, fig.height=3.5, message=F}
 
-ggplot(recmeans, aes(mean_co_count, n, colour = sex)) +
+ggplot(recmeans, aes(x = mean_co_count, y = n, colour = sex)) +
   geom_point(alpha = 0.1) +
   stat_smooth() +
   scale_color_brewer(palette = "Set1") +
@@ -139,6 +139,39 @@ ggplot(recmeans, aes(mean_co_count, n, colour = sex)) +
   theme_bw() +
   theme(legend.position = "none") +
   labs(x = "Individual Mean CO Count", y = "Number for Measures")
+
+```
+
+```{r echo = F, eval = FALSE, fig.height=3.5, message=F}
+# Absolute difference
+ggplot(recmeans, aes(x = n, y = abs(mean_co_count - mean(recsumm$co_count)), colour = sex)) +
+  geom_point(alpha = 0.1) +
+  stat_smooth() +
+  scale_color_brewer(palette = "Set1") +
+  facet_wrap(~sex, scales = "free_x") +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(y = "|Ind. mean - pop. mean|", x = "Number for Measures")
+
+# Squared difference
+ggplot(recmeans, aes(x = n, y = (mean_co_count - mean(recsumm$co_count))^2, colour = sex)) +
+  geom_point(alpha = 0.1) +
+  stat_smooth() +
+  scale_color_brewer(palette = "Set1") +
+  facet_wrap(~sex, scales = "free_x") +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(y = "(Ind. mean - pop. mean)^2", x = "Number for Measures")
+
+# Absolute difference, with boxplots
+ggplot(recmeans, aes(x = n, y = (mean_co_count - mean(recsumm$co_count))^2, colour = sex)) +
+  geom_boxplot(aes(group = n)) +
+  stat_smooth() +
+  scale_color_brewer(palette = "Set1") +
+  facet_wrap(~sex, scales = "free_x") +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(y = "|Ind. mean - pop. mean|", x = "Number for Measures")
   
 ```
 
