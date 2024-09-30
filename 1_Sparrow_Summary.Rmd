@@ -3,8 +3,8 @@ title: "Genomic Prediction of Sparrow Recombination"
 author: "Susan Johnston"
 date: "2024-09-10"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r echo = F, results="hide", message=F, warning=F}
@@ -40,7 +40,9 @@ ainv <- ainverse(pedigree)
 recsumm <- subset(recsumm, id != "8N72234")
 recmeans <- subset(recmeans, id != "8N72234")
 
-
+islands <- read.table("data/AdultMorphology_20240201_fix.csv", sep = ";", header = T)
+islands$id <- islands$ringnr
+source("r/get_island_name.R")
 
 ```
 
@@ -99,7 +101,7 @@ ggplot(recmeans, aes(y = sex, x = mean_co_count, fill = sex)) +
 
 Crossover count is an unusual phenotype as there is more intra-individual variation than inter-individual variation. This is because for each crossover event that happens during meiosis, we can assume that is ~50:50 chance that it segregates into the egg or sperm. If you have 40 crossovers, an average of 20 will end up in the gamete. But that still means there is decent variation around that mean. For example, for 1000 gametes coming from an individual with 40 crossovers in every meiosis, the distribution of crossovers in the gametes would be:
 
-```{r echo = F, fig.width=3, fig.height=3}
+```{r echo = F, fig.width=4, fig.height=4}
 vec <- NULL
 for(i in 1:1000) vec <- c(vec, sum(sample.int(2, 40, replace = T)-1))
 hist(vec, breaks = 20)
@@ -139,7 +141,6 @@ ggplot(recmeans, aes(x = mean_co_count, y = n, colour = sex)) +
   theme_bw() +
   theme(legend.position = "none") +
   labs(x = "Individual Mean CO Count", y = "Number for Measures")
-
 ```
 
 ```{r echo = F, eval = FALSE, fig.height=3.5, message=F}
@@ -172,7 +173,6 @@ ggplot(recmeans, aes(x = n, y = (mean_co_count - mean(recsumm$co_count))^2, colo
   theme_bw() +
   theme(legend.position = "none") +
   labs(y = "|Ind. mean - pop. mean|", x = "Number for Measures")
-  
 ```
 
 In females, once you have more than 3 measures, this effect starts to flatten out. In males it doesn't, perhaps they are more sensitive to this problem because they have fewer crossovers...?
@@ -187,7 +187,7 @@ ggplot(subset(recmeans, n > 2), aes(mean_co_count, n, colour = sex)) +
   theme_bw() +
   theme(legend.position = "none") +
   labs(x = "Individual Mean CO Count", y = "Number for Measures")
-  
+
 ```
 
 
@@ -207,11 +207,11 @@ Let's begin. Here, the heritability is estimated using the crossovers in all sam
 recsumm_f <- subset(recsumm, sex == "F")
 
 female.acc.ped <- asreml(fixed = co_count ~ total_coverage,
-                      random = ~ vm(id, ainv) + ide(id),
-                      residual = ~idv(units),
-                      data = recsumm_f,
-                      trace = F)
-  
+                         random = ~ vm(id, ainv) + ide(id),
+                         residual = ~idv(units),
+                         data = recsumm_f,
+                         trace = F)
+
 asreml4pin(female.acc.ped)
 ```
 
@@ -221,11 +221,11 @@ And here is the mean rate per individual (value for `vm(id, ainv)`):
 recmeans_f <- subset(recmeans, sex == "F")
 
 female.acc.ped.mean <- asreml(fixed = mean_co_count ~ mean_total_coverage + n,
-                      random = ~ vm(id, ainv),
-                      residual = ~idv(units),
-                      data = recmeans_f,
-                      trace = F)
-  
+                              random = ~ vm(id, ainv),
+                              residual = ~idv(units),
+                              data = recmeans_f,
+                              trace = F)
+
 asreml4pin(female.acc.ped.mean)
 ```
 
@@ -234,11 +234,11 @@ And here is the mean rate per individual with >2 measures (value for `vm(id, ain
 ```{r message=FALSE, echo = F}
 
 female.acc.ped.mean <- asreml(fixed = mean_co_count ~ mean_total_coverage + n,
-                      random = ~ vm(id, ainv),
-                      residual = ~idv(units),
-                      data = subset(recmeans_f, n > 2),
-                      trace = F)
-  
+                              random = ~ vm(id, ainv),
+                              residual = ~idv(units),
+                              data = subset(recmeans_f, n > 2),
+                              trace = F)
+
 asreml4pin(female.acc.ped.mean)
 ```
 
@@ -250,7 +250,12 @@ Our motivation for using genomic prediction is as follows:
 
 ![](figs/gp_justification.png)
 
-I ran a basic demo model of genomic prediction using the package `hibayes`. I used the `BayesCpi()` function which assumes a small proportion of SNPs (1-Pi) have non-zero effects, and share the same variance, but Pi is not fixed. (*NB. We know from the MBE paper that crossover count is likely to be polygenic so this might not be the best model!*). We ran three prediction models. One for the FULL dataset (i.e. individual gametes), one for the MEAN dataset (i.e. mean values per individual with `n` fit as a fixed effect) and one for the MEAN n>2 dataset (i.e. mean values for individuals that had 3 or more offspring).
+I ran a basic demo model of genomic prediction using the package `hibayes`. I used the `BayesCpi()` function which assumes a small proportion of SNPs (1-Pi) have non-zero effects, and share the same variance, but Pi is not fixed. (*NB. We know from the MBE paper that crossover count is likely to be polygenic so this might not be the best model!*). We ran four prediction models:
+
+1. FULL dataset (i.e. individual gametes)
+2. MEAN dataset (i.e. mean values per individual with `n` fit as a fixed effect)
+3. MEAN n>2 dataset (i.e. mean values for individuals that had 3 or more offspring), and
+4. SAMPLE 1 (i.e. only one gamete was sampled from each individual)
 
 Here is an example of the model structure, please see `2_Sparrow_hibayes_run_SEJ.R` for more details.
 
@@ -264,7 +269,6 @@ fitCpi_full <- ibrm(co_count ~ total_coverage,
                     Pi = c(0.98, 0.02), niter = 20000, nburn = 16000, thin = 5,
                     printfreq = 100, seed = 666666, verbose = TRUE)
 
-
 ```
 
 I did some plots of the GEBVs vs. True Phenotypes in the "training" population (NB. the red points on the third plot are the individuals with 2 or fewer measures, so we have phenotypes, they are analagous to a "test" population here)
@@ -273,7 +277,7 @@ I did some plots of the GEBVs vs. True Phenotypes in the "training" population (
 
 # Load hibayes results from 2_Sparrow_hibayes_run_SEJ.R
 
-load("results/2_F_fitCpi_results.RData")
+load("results/2_F_fitCpi_results.RData", verbose = T)
 
 ggplot(recfull, aes(fitCpi_full_gebv, co_count)) +
   geom_point(alpha = 0.2) +
@@ -291,6 +295,12 @@ ggplot(recmeans, aes(fitCpi_mean_g2_gebv, mean_co_count, col = n > 2)) +
   scale_colour_manual(values = c("red", "black"))+
   ggtitle("MEANS n>2")
 
+ggplot(recmeans, aes(fitCpi_samp1_gebv, mean_co_count, col = n > 2)) +
+  geom_point(alpha = 0.2) +
+  #stat_smooth() +
+  scale_colour_manual(values = c("red", "black"))+
+  ggtitle("SAMPLE 1")
+
 ```
 
 How do the FULL and MEANS GEBVs correlate? 
@@ -298,6 +308,8 @@ How do the FULL and MEANS GEBVs correlate?
 ```{r echo = F, message=F}
 full_gebvs_tab <- left_join(full_gebvs[[1]], full_gebvs[[2]])
 full_gebvs_tab <- left_join(full_gebvs_tab, full_gebvs[[3]])
+full_gebvs_tab <- left_join(full_gebvs_tab, full_gebvs[[4]])
+
 full_gebvs_tab <- left_join(full_gebvs_tab, recmeans[,1:9])
 full_gebvs_tab$n[which(is.na(full_gebvs_tab$n))] <- 0
 full_gebvs_tab$PopType <- ifelse(full_gebvs_tab$id %in% recmeans$id, "Training Population", "Test Population")
@@ -327,6 +339,11 @@ ggplot(full_gebvs_tab, aes(fitCpi_mean_gebv, `n`)) +
   geom_point(alpha = 0.2) +
   stat_smooth() +
   ggtitle("MEAN")
+
+ggplot(full_gebvs_tab, aes(fitCpi_samp1_gebv, `n`)) +
+  geom_point(alpha = 0.2) +
+  stat_smooth() +
+  ggtitle("SAMPLE 1")
 ```
 
 ```{r echo = F, message = F, fig.height = 4}
@@ -344,6 +361,13 @@ ggplot(full_gebvs_tab, aes(factor(`n`), fitCpi_mean_gebv)) +
   theme_bw() +
   ggtitle("MEANS")
 
+ggplot(full_gebvs_tab, aes(factor(`n`), fitCpi_samp1_gebv)) +
+  geom_jitter(alpha = 0.1, width = 0.2) +
+  geom_boxplot(alpha = 0.2, col = "darkred") +
+  stat_smooth() +
+  theme_bw() +
+  ggtitle("SAMPLE 1")
+
 ```
 
 Why is there a signal of disruptive selection? Are zeros less related to the population? unconnected in the pedigree? CLUES?
@@ -355,6 +379,7 @@ I ran a PCA in plink, and there is definitely a bit of population structure, whi
 (PLINK function: `plink --bfile data/70K_200K_maf_geno_mind_v5 --cow --autosome --pca --out data/70K_200K_maf_geno_mind_v5`)
 
 ```{r echo = F, message = F, fig.width = 3, fig.height = 3}
+
 # system("plink --bfile data/70K_200K_maf_geno_mind_v5 --cow --autosome --pca --out data/70K_200K_maf_geno_mind_v5")
 
 sparrowpca <- read.table("data/70K_200K_maf_geno_mind_v5.eigenvec")
@@ -377,14 +402,42 @@ ggplot(full_gebvs_tab, aes(PC1, PC2)) +
 
 ```
 
-Based on a 10-year old file where I have some information on locality for some birds, there is some island structure:
+Based on information on locality for some birds, there is some island structure:
 
 ```{r echo = F, message=F}
-islands <- read.csv("data/SNPtypedind_PhenotypicData.csv", header = T)
-islands$id <- islands$ringnr
-full_gebvs_tab <- left_join(full_gebvs_tab, subset(islands, select = c(id, first_locality, hatchyear)))
 
 
-ggplot(subset(full_gebvs_tab, !is.na(first_locality)), aes(PC1, PC2, col = factor(first_locality))) +
+
+full_gebvs_tab <- left_join(full_gebvs_tab, subset(islands, select = c(id, first_locality)))
+full_gebvs_tab$island <- NA
+for(i in 1:nrow(full_gebvs_tab)) full_gebvs_tab$island[i] <- get_island_name(full_gebvs_tab$first_locality[i])
+
+ggplot(subset(full_gebvs_tab, !is.na(island)),
+       aes(PC1, PC2, col = island)) +
   geom_point(alpha = 0.2)
+
+```
+
+What are the differences in GEBVs?
+
+```{r echo = F, message = F}
+
+ggplot(full_gebvs_tab, aes(island, fitCpi_full_gebv, col = island)) +
+  geom_jitter(alpha = 0.1, width = 0.2) +
+  geom_boxplot(alpha = 0.2, col = "black", notch = T) +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 270, hjust = 0, vjust = 0.4)) +
+  ggtitle("Both training and test")
+
+ggplot(subset(full_gebvs_tab, PopType == "Training Population"),
+       aes(island, fitCpi_full_gebv, col = island)) +
+  geom_jitter(alpha = 0.1, width = 0.2) +
+  geom_boxplot(alpha = 0.2, col = "black", notch = T) +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 270, hjust = 0, vjust = 0.4)) +
+  ggtitle("Training Only")
+
+
 ```
