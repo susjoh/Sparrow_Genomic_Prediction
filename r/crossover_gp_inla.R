@@ -17,6 +17,7 @@ library(data.table)
 library(tibble)
 library(stats)
 library(ggplot2)
+library(dplyr)
 library(INLA) # I used version INLA_23.04.24
 # INLA is not on CRAN, you can install it with:
 # install.packages(
@@ -26,12 +27,12 @@ library(INLA) # I used version INLA_23.04.24
 #   dep = TRUE)
 
 # Load custom functions
-source("r/crossover_gp_func.R")
+source("r/crossover_gp_inla_func.R")
 
 # Filepaths that might need to be changed
 recomb_data_path <- "data/20240910_Sparrow_Recomb_Data.txt"
 geno_data_path <- "data/70K_200K_maf_geno_mind_v5"
-plink_path <- "PLINK/plink_m" # path to plink program
+plink_path <- "PLINK/plink_linux" # path to plink program
 
 ############## Data Wrangling ##################
 
@@ -55,7 +56,7 @@ pheno_data_rand <- pheno_data_all %>%
             total_coverage = total_coverage[1],
             n = n())
 
-pheno_data <- pheno_data_all
+pheno_data <- pheno_data_mean
 
 # Make columns for sex-specific crossover rates
 pheno_data$co_count_m <- pheno_data$co_count_f <- pheno_data$co_count
@@ -70,9 +71,9 @@ pheno_data$co_count_f <- ifelse(pheno_data$sex == "M",
 pheno_data <- dplyr::filter(pheno_data, sex == "F")
 
 # Subset to be able to test models quickly
-n_obs_subset <- 700
-set.seed(1)
-pheno_data <- pheno_data[sort(sample(dim(pheno_data)[1], n_obs_subset)), ]
+# n_obs_subset <- 700
+# set.seed(1)
+# pheno_data <- pheno_data[sort(sample(dim(pheno_data)[1], n_obs_subset)), ]
 
 # Center/scale these effects (INLA can't handle the huge numbers)
 pheno_data$total_coverage_scaled <- scale(pheno_data$total_coverage)
@@ -88,6 +89,7 @@ pheno_data$ringnr <- pheno_data$id # just an alternate name
 # Numerical id columns needed for random effects in INLA
 pheno_data$id1 <- # For breeding values
   pheno_data$id2 <- # For ID effect
+  pheno_data$id3 <- # For meas. error
   ids_num # numerical ids
 
 # Test set
@@ -99,6 +101,38 @@ pheno_data$n_obs <- c(diff(ids_num_unique),
                       1 + length(ids_num) - tail(ids_num_unique, 1))[ids_num]
 
 ############## Modelling ##################
+
+pca_dir <- "data/pca_crossover_helgeland"
+
+plink_pca(analysis_inds = unique(pheno_data$ringnr), # Vector of inds.,
+          bfile = geno_data_path,
+          ncores = 4,
+          mem = 20 * 6000,
+          plink_path = plink_path,
+          dir = pca_dir)
+
+npc <- lapply(seq(from = 0.01, by = 0.01, to = 0.99),
+              function(i) {
+                find_num_pc(eigenval_file = paste0(pca_dir, "/pca.eigenval"),
+                            min_var_explained = i) %>% as.data.frame()
+              }) %>%
+  do.call(what = rbind, .)
+
+npc$exp_acc <- apply(
+  npc,
+  1,
+  function(row) {
+    get_exp_acc(p = row[3],
+                h2 = 0.2963445,
+                N = length(unique(pheno_data$id[!pheno_data$test])),
+                M = row[2])
+  })
+# Use best number of PCs according to expected accuracy formula
+num_pc <- npc[which.max(npc$exp_acc), "num_pc"]
+
+pc_matrix <- make_pc_matrix(
+  eigenvec_file = "data/pca_crossover_helgeland/pca.eigenvec",
+  analysis_inds = unique(pheno_data$ringnr))[, 1:num_pc]
 
 # Create GRM using PLINK
 make_grm(analysis_inds = unique(pheno_data$ringnr), # Vector of inds.
@@ -128,8 +162,19 @@ effects <- c(
      hyper = prior$hyperpar_var,
      constr = FALSE,
      Cmatrix = inverse_relatedness_matrix)",
-  # ID effect
-  "f(id2, model = \"iid\", hyper = prior$hyperpar_var)"
+  # Breeding values (BPCRR) version
+  # "f(id1, model = \"z\", Z = pc_matrix, hyper = prior$rr_effect_var)",
+  # ID effect (use when using repeated measurements)
+  # "f(id2,
+  #   model = \"iid\",
+  #   values = unique(pheno_data$id2),
+  #   hyper = prior$hyperpar_var)",
+  # Measurement error
+  "f(id3,
+    model = \"iid\",
+    values = unique(pheno_data$id3),
+    scale = pheno_data$n[match(unique(pheno_data$id), pheno_data$id)],
+    hyper = prior$hyperpar_var)"
 )
 
 # Model female-specific crossover rates
@@ -137,6 +182,8 @@ model <- run_gp(pheno_data = pheno_data,
                 inverse_relatedness_matrix = grm_obj$inv_grm,
                 effects_vec = effects,
                 # scale = sqrt(pheno_data$n),
+                pc_matrix = pc_matrix,
+                va_apriori = 6,
                 y = "co_count_f_test")
 
 ######################### Predictions ####################
@@ -146,4 +193,14 @@ model <- run_gp(pheno_data = pheno_data,
 pheno_data$pred_bv <-
   model$summary.random$id1$mean[order(model$summary.random$id1$ID)][ids_num]
 pheno_data$pred_pheno <- model$summary.fitted.values$mean
+
+ggplot(data = pheno_data[pheno_data$test, ],
+       aes(x = pred_bv, y = co_count_f, col = n > 2)) +
+  geom_point()
+
+ggplot(data = pheno_data[pheno_data$test & pheno_data$n <= 2, ],
+       aes(x = pred_bv, y = co_count_f)) +
+  geom_point()
+
+
 
