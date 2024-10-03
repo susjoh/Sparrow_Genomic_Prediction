@@ -4,6 +4,7 @@
 .Ruserdata
 data/
 results/
+GP Analysis/
 
 # MacOS ignores
 *._*
