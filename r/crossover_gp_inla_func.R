@@ -100,8 +100,7 @@ run_gp <- function(pheno_data,
                    effects_vec,
                    y,
                    pc_matrix = NULL,
-                   va_apriori = NULL,
-                   scale = NULL) {
+                   va_apriori = NULL) {
 
   pheno_data$y <- pheno_data[, y]
 
@@ -120,10 +119,8 @@ run_gp <- function(pheno_data,
        family = "gaussian",
        data = pheno_data,
        verbose  = TRUE,
-       scale = scale,
        # control.compute = list(config = TRUE),
        control.family = list(hyper = prior$hyperpar_var)) %>%
-    inla.rerun() %>%
     inla.rerun()
 }
 
@@ -135,14 +132,20 @@ inla_posterior_variances <- function(prec_marginal) {
 run_gp_pois <- function(pheno_data,
                         inverse_relatedness_matrix,
                         effects_vec,
-                        y) {
+                        y,
+                        E = 1,
+                        pc_matrix = NULL,
+                        va_apriori = NULL) {
 
-  pheno_data$y <- pheno_data[, ..y]
+  pheno_data$y <- pheno_data[, y]
 
   # Use PC-priors for random effect variances,
   # and default (wide Gaussian) for fixed effects
-  prior <- make_prior(pc_prec_upper_var = var(pheno_data$y, na.rm = TRUE),
-                      var_init = var(pheno_data$y, na.rm = TRUE),
+  prior <- make_prior(pc_matrix,
+                      va_apriori,
+                      pc_prec_upper_var =
+                        var(log(pheno_data$y), na.rm = TRUE) / 2,
+                      var_init = var(log(pheno_data$y), na.rm = TRUE) / 3,
                       tau = 0.05)
 
   inla_formula <- reformulate(effects_vec, response = "y")
@@ -150,10 +153,9 @@ run_gp_pois <- function(pheno_data,
   inla(inla_formula,
        data = pheno_data,
        verbose  = TRUE,
-       control.compute = list(config = TRUE),
-       control.predictor = list(link = 1),
-       family = "poisson") %>%
-    inla.rerun() %>%
+       # control.compute = list(config = TRUE),
+       family = "poisson",
+       E = E) %>%
     inla.rerun()
 }
 
@@ -235,4 +237,10 @@ get_exp_acc <- function(p,
 
   N * (h2 * p)^2 / (N * h2 * p + M)
 
+}
+
+inla_post_var <- function(prec_marg) {
+  inla.tmarginal(function(x) 1 / x, prec_marg) %>%
+  inla.zmarginal(., silent = TRUE) %>%
+  as.data.frame()
 }
