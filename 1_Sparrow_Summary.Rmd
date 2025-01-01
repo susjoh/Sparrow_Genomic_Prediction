@@ -244,6 +244,74 @@ asreml4pin(female.acc.ped.mean)
 
 As you can see, the heritability basically doubles when using the mean measures!
 
+Here is the same repeated for males...
+
+
+```{r }
+
+recsumm_m <- subset(recsumm, sex == "M")
+
+male.acc.ped <- asreml(fixed = co_count ~ total_coverage,
+                         random = ~ vm(id, ainv) + ide(id),
+                         residual = ~idv(units),
+                         data = recsumm_m,
+                         trace = F)
+
+asreml4pin(male.acc.ped)
+
+recmeans_m <- subset(recmeans, sex == "M")
+
+male.acc.ped.mean <- asreml(fixed = mean_co_count ~ mean_total_coverage + n,
+                              random = ~ vm(id, ainv),
+                              residual = ~idv(units),
+                              data = recmeans_m,
+                              trace = F)
+
+asreml4pin(male.acc.ped.mean)
+
+
+male.acc.ped.mean <- asreml(fixed = mean_co_count ~ mean_total_coverage + n,
+                              random = ~ vm(id, ainv),
+                              residual = ~idv(units),
+                              data = subset(recmeans_m, n > 2),
+                              trace = F)
+
+asreml4pin(male.acc.ped.mean)
+```
+
+What about the bivariate analysis?
+
+```{r}
+
+recsumm$co_count_m <- ifelse(recsumm$sex == "M", recsumm$co_count, NA)
+recsumm$co_count_f <- ifelse(recsumm$sex == "F", recsumm$co_count, NA)
+
+
+biv.acc.ped <- asreml(fixed = cbind(co_count_f, co_count_m) ~ trait + trait:total_coverage,
+                         random = ~ corgh(trait):vm(id, ainv) + idh(trait):ide(id),
+                         residual = ~ units:us(trait, init = NA),
+                         data = recsumm,
+                         workspace = "1000mb")
+summary(biv.acc.ped)
+
+
+recmeans$mean_co_count_m <- ifelse(recmeans$sex == "M", recmeans$mean_co_count, NA)
+recmeans$mean_co_count_f <- ifelse(recmeans$sex == "F", recmeans$mean_co_count, NA)
+
+
+biv.acc.ped.mean <- asreml(fixed = cbind(mean_co_count_f, mean_co_count_m) ~ trait + trait:mean_total_coverage + n,
+                         random = ~ corgh(trait):vm(id, ainv),
+                         residual = ~ units:us(trait, init = NA),
+                         data = recmeans,
+                         workspace = "1000mb")
+summary(biv.acc.ped.mean)
+
+
+
+```
+
+
+
 ### 3. Genomic prediction for crossover count
 
 Our motivation for using genomic prediction is as follows:
