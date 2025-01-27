@@ -445,7 +445,7 @@ sex_map <- tar_map(
   ),
   tar_target(
     ars_bv_pred_plot_pdf,
-    ggsave_path("figs/ars_bv_pred_plot.pdf",
+    ggsave_path(paste0("figs/ars_bv_pred_", sex_lc, ".pdf"),
                 plot = ars_bv_pred_plot,
                 width = 7,
                 height = 7,
@@ -469,7 +469,7 @@ sex_map <- tar_map(
   ),
   tar_target(
     surv_bv_pred_plot_pdf,
-    ggsave_path("figs/surv_bv_pred_plot.pdf",
+    ggsave_path(paste0("figs/surv_bv_pred_", sex_lc, ".pdf"),
                 plot = surv_bv_pred_plot,
                 width = 7,
                 height = 7,
