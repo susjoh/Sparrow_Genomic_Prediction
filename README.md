@@ -1,6 +1,6 @@
 ## Genomic Prediction of individual crossover rates in house sparrows.
 
-#### Kenneth Aase [1], John B. McAuley [2], Henrik Jensen [1], Susan E. Johnston [2].
+#### Kenneth Aase [1], John B. McAuley [2], Henrik Jensen [1], Stefanie Muff [1], Susan E. Johnston [2].
 
 #### [1] NTNU, Trondheim, Norway.
 
