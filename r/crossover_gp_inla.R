@@ -18,6 +18,8 @@ library(tibble)
 library(stats)
 library(ggplot2)
 library(dplyr)
+library(qs)
+library(magrittr)
 library(INLA) # I used version INLA_23.04.24
 # INLA is not on CRAN, you can install it with:
 # install.packages(
@@ -81,10 +83,10 @@ pheno_data_rand <- pheno_data_all %>%
             total_coverage = total_coverage[sample(n(), 1)],
             n = n())
 
-# No U (or upside-down U) shape
-ggplot(data = pheno_data_rand, aes (x = co_count, y = n)) +
-  geom_point() +
-  geom_smooth(method = "lm")
+# # No U (or upside-down U) shape
+# ggplot(data = pheno_data_rand, aes (x = co_count, y = n)) +
+#   geom_point() +
+#   geom_smooth(method = "lm")
 
 pheno_data_all$n <-
   pheno_data_mean$n[match(pheno_data_all$id, pheno_data_mean$id)]
@@ -139,13 +141,13 @@ pheno_data$id1 <- # For breeding values
   pheno_data$id3 <- # For meas. error
   ids_num # numerical ids
 
-# # Test set
-# test_inds_num <- sort(sample(max(ids_num), round(max(ids_num) * 0.3)))
-# pheno_data$test <- ifelse(ids_num %in% test_inds_num, TRUE, FALSE)
-# pheno_data$co_count_f_test <- pheno_data$co_count_f
-# pheno_data$co_count_f_test[pheno_data$test] <- NA
-# pheno_data$n_obs <- c(diff(ids_num_unique),
-#                       1 + length(ids_num) - tail(ids_num_unique, 1))[ids_num]
+# Test set
+test_inds_num <- sort(sample(max(ids_num), round(max(ids_num) * 0.3)))
+pheno_data$test <- ifelse(ids_num %in% test_inds_num, TRUE, FALSE)
+pheno_data$co_count_f_test <- pheno_data$co_count_f
+pheno_data$co_count_f_test[pheno_data$test] <- NA
+pheno_data$n_obs <- c(diff(ids_num_unique),
+                      1 + length(ids_num) - tail(ids_num_unique, 1))[ids_num]
 
 ############## Modelling ##################
 
@@ -235,30 +237,37 @@ effects <- c(
   #   hyper = prior$hyperpar_var)"
 )
 
-# Full model for female-specific crossover rates
-model <- run_gp(pheno_data = pheno_data,
-                inverse_relatedness_matrix = grm_obj$inv_grm,
-                effects_vec = effects,
-                pc_matrix = pc_matrix,
-                va_apriori = 6,
-                # y = "co_count_f_test"
-                y = "co_count_f"
+# Full genomic animal model for female-specific crossover rates
+# model <- run_gp(pheno_data = pheno_data,
+#                 inverse_relatedness_matrix = grm_obj$inv_grm,
+#                 effects_vec = effects,
+#                 pc_matrix = pc_matrix,
+#                 va_apriori = 6,
+#                 # y = "co_count_f_test"
+#                 y = "co_count_f"
+# )
+
+# qsave(model, file = "results/fullmodel")
+
+model <- qread(file = "results/fullmodel")
+
+# Alternatively: Same model with Poisson likelihood
+# - only a slight improvement in accuracy though, so don't bother.
+model_pois <- run_gp_pois(pheno_data = pheno_data,
+                     inverse_relatedness_matrix = grm_obj$inv_grm,
+                     effects_vec = effects,
+                     pc_matrix = pc_matrix,
+                     va_apriori = 6,
+                     y = "co_count_f",
+                     E = 1
 )
 
-# # Alternatively: Same model with Poisson likelihood
-# model <- run_gp_pois(pheno_data = pheno_data,
-#                      inverse_relatedness_matrix = grm_obj$inv_grm,
-#                      effects_vec = effects,
-#                      pc_matrix = pc_matrix,
-#                      va_apriori = 6,
-#                      y = "co_count_f",
-#                      E = 1
-# )
+
+qsave(model_pois, file = "results/fullmodel_pois")
 
 model_pred <- run_gp(pheno_data = pheno_data,
                      inverse_relatedness_matrix = grm_obj$inv_grm,
                      effects_vec = effects,
-                     pc_matrix = pc_matrix_test,
                      va_apriori = 6,
                      y = "co_count_f_test"
 )
@@ -266,19 +275,27 @@ model_pred <- run_gp(pheno_data = pheno_data,
 ######################### Variance components ###########
 
 # Transform precisions to variances
-var_comps <- lapply(model$marginals.hyperpar, inla_post_var) %>%
-  do.call(rbind, .)
+lapply(model$marginals.hyperpar, inla_post_var) %>%
+  do.call(rbind, .) ->
+  var_comps
 rownames(var_comps) %<>% gsub("Precision", "Variance", .) # Fix rownames
 # Posterior statistics for the variance components
 var_comps
+
+lambda <- sqrt(var_comps["Variance for id1", "mean"] /
+                 var(pheno_data$co_count_f))
 
 ######################### Predictions ####################
 
 # Predicted breeding values and phenotypes
 # (we use the posterior mean as a point estimate)
 pheno_data$pred_bv <-
+  model_pred$summary.random$id1$mean[order(model$summary.random$id1$ID)][ids_num]
+pheno_data$pred_pheno <- model_pred$summary.fitted.values$mean
+
+pheno_data$est_bv <-
   model$summary.random$id1$mean[order(model$summary.random$id1$ID)][ids_num]
-pheno_data$pred_pheno <- model$summary.fitted.values$mean
+pheno_data$est_pheno <- model$summary.fitted.values$mean
 
 ########### Leave-individual-out CV
 # INLA can do this without refitting the model
@@ -341,11 +358,47 @@ ggplot(data = pheno_data[pheno_data$test, ],
   geom_point() +
   stat_smooth(method = "lm")
 
+# BERKSON!?
 ggplot(data = pheno_data[pheno_data$test, ],
        aes(x = pred_pheno, y = co_count_f)) +
   geom_point() +
   stat_smooth(method = "lm") +
+  coord_equal() +
   geom_abline()
+
+# u and w independent?
+lm(pred_pheno ~ I(co_count_f - pred_pheno),
+   data = pheno_data[pheno_data$test, ]) %>%
+  summary()
+
+# but normality mainly holds
+ggplot(data = pheno_data[pheno_data$test, ],
+       aes(sample = co_count_f - pred_pheno)) +
+  geom_qq() +
+  geom_qq_line()
+ggplot(data = pheno_data[pheno_data$test, ], aes(x = co_count_f - pred_pheno)) +
+  geom_density()
+
+# Berkson bv?
+ggplot(data = pheno_data[pheno_data$test, ],
+       aes(x = pred_bv, y = est_bv)) + # 0.62 corr between est_bv and co_count_f
+  geom_point() +
+  stat_smooth(method = "lm") +
+  coord_equal() +
+  geom_abline()
+
+# Indep?
+lm(pred_bv ~ I(est_bv - pred_bv),
+   data = pheno_data[pheno_data$test, ]) %>%
+  summary()
+
+# normality?
+ggplot(data = pheno_data[pheno_data$test, ],
+       aes(sample = est_bv - pred_bv)) +
+  geom_qq() +
+  geom_qq_line()
+ggplot(data = pheno_data[pheno_data$test, ], aes(x = est_bv - pred_bv)) +
+  geom_density()
 
 ggplot(data = pheno_data[pheno_data$test, ],
        aes(x = pred_pheno, y = co_count_f - pred_pheno)) +
@@ -359,5 +412,3 @@ abline(0, 1)
 
 with(pheno_data, qqplot(cv_m[test & n > 2], pred_pheno[test & n <= 2]))
 abline(0, 1)
-
-
