@@ -2,13 +2,13 @@ library(magrittr)
 library(dplyr)
 library(ggplot2)
 
-foo <- function(i,
-                cor_x,
-                x_var = 1,
-                n_perf = 1354, # number phenogone females
-                n_noise = 20000,
-                effect_size = 0.01,
-                intercept = 0) {
+classical <- function(i,
+                      cor_x,
+                      x_var = 1,
+                      n_perf = 1354, # number phenogone females
+                      n_noise = 10000,
+                      effect_size = 0.01,
+                      intercept = 0) {
   # Generate true covariate
   x <- rnorm(n_perf + n_noise, sd = sqrt(x_var))
 
@@ -53,18 +53,73 @@ foo <- function(i,
   )
 }
 
+berkson <- function(i,
+                    cor_x,
+                    x_var = 1,
+                    n_perf = 1354, # number phenogone females
+                    n_noise = 10000,
+                    effect_size = 0.3,
+                    intercept = 0) {
+  # Generate measurements
+  w <- rnorm(n_perf + n_noise, sd = sqrt(x_var / (1 / cor_x^2 - 1)))
+  # True covariate
+  x <- w + rnorm(n_perf + n_noise, sd = sqrt(x_var))
+
+  # cor(x, w) # OK
+
+  # Generate response
+  y <- intercept +  x * effect_size + rnorm(n_perf + n_noise, sd = 1)
+
+  df <- data.frame(x, y, w)
+
+  # Model using true covariate
+  mod <- lm(y ~ x, data = df)
+
+  # Model using just data perfectly observed
+  mod_perf <- lm(y ~ x, data = df[1:n_perf, ])
+
+  # Model using just observation
+  mod_obs <- lm(y ~ w, data = df)
+
+  df$x_mixed <- df$w
+  df$x_mixed[1:n_perf] <- df$x[1:n_perf]
+
+  # Model using just observation
+  mod_mixed <- lm(y ~ x_mixed, data = df)
+
+  # Corrected estimate
+  data.frame(
+    i = i,
+    cor_x = cor_x,
+    effect_size = effect_size,
+    coef_perf = coef(mod_perf)[2],
+    coef_obs = coef(mod_obs)[2],
+    coef_mixed = coef(mod_mixed)[2],
+    sign_perf = summary(mod_perf)$coefficients["x", "Pr(>|t|)"],
+    sign_obs = summary(mod_obs)$coefficients["w", "Pr(>|t|)"],
+    sign_mixed = summary(mod_mixed)$coefficients["x_mixed", "Pr(>|t|)"]
+  )
+}
+
 combs <- expand.grid(i = 1:100,
                      cor_x = seq(0.1, 0.6, length = 6),
                      effect_size = c(0.01, 0.025, 0.05, 0.1,  0.3))
 
-res <- mapply(FUN = foo,
-              i = combs$i,
-              cor_x = combs$cor_x,
-              effect_size = combs$effect_size,
-              SIMPLIFY = FALSE) %>%
+res_class <- mapply(FUN = classical,
+                    i = combs$i,
+                    cor_x = combs$cor_x,
+                    effect_size = combs$effect_size,
+                    SIMPLIFY = FALSE) %>%
   do.call(what = rbind, .)
 
-res_avg <- res %>%
+res_berk <- mapply(FUN = berkson,
+                    i = combs$i,
+                    cor_x = combs$cor_x,
+                    effect_size = combs$effect_size,
+                    SIMPLIFY = FALSE) %>%
+  do.call(what = rbind, .)
+
+res_avg_class <- res_class %>%
   group_by(cor_x, effect_size) %>%
   summarise(coef_perf_mean = mean(coef_perf),
             coef_mixed_mean = mean(coef_mixed),
@@ -79,53 +134,66 @@ res_avg <- res %>%
             sign_prop_perf = mean(sign_perf < 0.05),
             n = n())
 
-summary(res)
+res_avg_berk <- res_berk %>%
+  group_by(cor_x, effect_size) %>%
+  summarise(coef_perf_mean = mean(coef_perf),
+            coef_mixed_mean = mean(coef_mixed),
+            coef_obs_mean = mean(coef_obs),
+            coef_perf_sd = sd(coef_perf),
+            coef_mixed_sd = sd(coef_mixed),
+            coef_obs_sd = sd(coef_obs),
+            sign_prop_mixed = mean(sign_mixed < 0.05),
+            sign_prop_obs = mean(sign_obs < 0.05),
+            sign_prop_perf = mean(sign_perf < 0.05),
+            n = n())
 
-ggplot(data = res[res$effect_size == 0.1, ],
+summary(res_class)
+
+ggplot(data = res_class[res_class$effect_size == 0.1, ],
        aes(group = cor_x, x = cor_x, y = coef_mixed)) +
   geom_boxplot()
 
-ggplot(data = res[res$effect_size == 0.1, ],
+ggplot(data = res_class[res_class$effect_size == 0.1, ],
        aes(group = cor_x, x = cor_x, y = coef_mixed_corrected)) +
   geom_boxplot()
 
-ggplot(data = res[res$effect_size == 0.1, ],
+ggplot(data = res_class[res_class$effect_size == 0.1, ],
        aes(group = cor_x, x = cor_x, y = coef_noise_corrected)) +
   geom_boxplot()
 
-ggplot(data = res[res$effect_size == 0.1, ],
+ggplot(data = res_class[res_class$effect_size == 0.1, ],
        aes( y = coef_perf)) +
   geom_boxplot()
 
-ggplot(data = res, aes(x = cor_x, group = cor_x, y = sign_mixed)) +
+ggplot(data = res_class, aes(x = cor_x, group = cor_x, y = sign_mixed)) +
   geom_boxplot() +
   facet_wrap(vars(effect_size)) +
   geom_smooth(method = "lm")
 
-ggplot(data = res_avg, aes(x = cor_x, y = sign_prop_mixed)) +
+ggplot(data = res_avg_class, aes(x = cor_x, y = sign_prop_mixed)) +
   geom_point() +
   facet_wrap(vars(effect_size)) +
   geom_smooth(method = "lm")
 
-ggplot(data = res_avg, aes(x = cor_x, y = sign_prop_perf)) +
+ggplot(data = res_avg_class, aes(x = cor_x, y = sign_prop_perf)) +
   geom_point() +
   facet_wrap(vars(effect_size)) +
   geom_smooth(method = "lm")
 
-ggplot(data = res_avg, aes()) +
+ggplot(data = res_avg_class, aes()) +
   facet_grid(cor_x ~ effect_size) +
   geom_text(aes(label = sign_prop_noise, x = 1, y = 1))
 
-ggplot(data = res_avg, aes()) +
+ggplot(data = res_avg_class, aes()) +
   facet_grid(cor_x ~ effect_size) +
   geom_text(aes(label = sign_prop_mixed, x = 1, y = 1))
 
-ggplot(data = res_avg, aes()) +
+ggplot(data = res_avg_class, aes()) +
   facet_grid(cor_x ~ effect_size) +
   geom_text(aes(label = sign_prop_perf, x = 1, y = 1))
 
 # Improvement
-ggplot(data = res_avg) +
+ggplot(data = res_avg_class) +
   facet_grid(rows = vars(cor_x),
              cols = vars(effect_size),
              switch = "both") +
@@ -134,6 +202,7 @@ ggplot(data = res_avg) +
                 xmax = 1,
                 ymax = 1,
                 fill = sign_prop_mixed - sign_prop_perf)) +
+  coord_equal() +
   scale_fill_gradient2(
     low = "blue",
     mid = "white",
@@ -153,4 +222,5 @@ ggplot(data = res_avg) +
         strip.text.y = element_text(size = 15),
         strip.text.x = element_text(size = 15),
         plot.title = element_text(size = 18)) +
-  labs(title = "Improvement in effect discovery rate \n when including noisy covariate measurements")
+  labs(title = "Improvement in effect discovery rate",
+       subtitle = "when including noisy covariate measurements")
