@@ -138,4 +138,21 @@ generated quantities {
   real beta_age = beta_age_std / sd_age - 2 * beta_age2_std * age_const2;
   real beta_age2 = beta_age2_std / sd_age2;
   real beta_f = beta_f_std / sd_f;
+
+
+  // Posterior predictions
+  int y_rep[N]; // Posterior predictive samples
+  vector[N] linpred; // Linear predictor
+  vector[N] rand_inter;
+  vector[N] bv_lat_full;
+  for (i in 1:N) {
+    bv_lat_full[i] = bv_lat[id_idx[i]];
+  }
+  for (i in 1:N) {
+    rand_inter[i] = ye[ye_idx[i]] + ll[ll_idx[i]] + id[id_idx[i]];
+  }
+  linpred = append_col(append_col(fixed_pred_mat, bv_lat_full), square(bv_lat_full)) * [alpha_std, beta_age_std, beta_age2_std, beta_f_std, beta_bv, beta_bv2]' + rand_inter;
+  for (i in 1:N) {
+    y_rep[i] = neg_binomial_2_log_rng(linpred[i], phi);
+  }
 }
