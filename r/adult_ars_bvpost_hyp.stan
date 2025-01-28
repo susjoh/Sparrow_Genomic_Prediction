@@ -73,35 +73,32 @@ transformed parameters {
   real<lower=0> phi = 1 / phi_inv;   // Overdispersion parameter
 
   real alpha_std = alpha_prior_mean + beta_prior_sd * z_alpha;
-  real beta_bv_std = beta_prior_sd * z_beta_bv;
-  real beta_bv2_std = (beta_prior_sd / quad_scale) * z_beta_bv2;
+  real beta_bv = beta_prior_sd * z_beta_bv;
+  real beta_bv2 = (beta_prior_sd / quad_scale) * z_beta_bv2;
   real beta_age_std = beta_prior_sd * z_beta_age;
   real beta_age2_std = (beta_prior_sd / quad_scale) * z_beta_age2;
   real beta_f_std = beta_prior_sd * z_beta_f;
 
-  // Full bv vector (non-centered parameterization berkson errored GP results)vector[N_id] bv_lat = bv_mean + bv_sd .* z_bv;
+  // Full bv vector (non-centered parameterization berkson errored GP results)
   vector[N_id] bv_lat = bv_mean + bv_sd .* z_bv;
-  vector[N] bv_lat_full;
-  real bv_lat_full_mean;
-  real bv_lat_full_sd;
-  for (i in 1:N) {
-    bv_lat_full[i] = bv_lat[id_idx[i]];
-  }
-  bv_lat_full_mean = mean(bv_lat_full);
-  bv_lat_full_sd = sd(bv_lat_full);
 }
 
 model {
 
   // Auxilliary variables
   // Vector of regression coefficients
-  vector[6] beta_vec = [alpha_std, beta_age_std, beta_age2_std, beta_f_std, beta_bv_std, beta_bv2_std]';
+  vector[6] beta_vec = [alpha_std, beta_age_std, beta_age2_std, beta_f_std, beta_bv, beta_bv2]';
   // Random intercepts
   vector[N] rand_inter;
-  // Standardized breeding values
-  vector[N] bv_std = (bv_lat_full - bv_lat_full_mean) / bv_lat_full_sd;
   // Predictor matrix
-  matrix[N, 6] x_mat = append_col(append_col(fixed_pred_mat, bv_std), square(bv_std));
+  matrix[N, 6] x_mat;
+
+  vector[N] bv_lat_full;
+  for (i in 1:N) {
+    bv_lat_full[i] = bv_lat[id_idx[i]];
+  }
+
+  x_mat = append_col(append_col(fixed_pred_mat, bv_lat_full), square(bv_lat_full));
 
   for (i in 1:N) {
     rand_inter[i] = ye[ye_idx[i]] + ll[ll_idx[i]] + id[id_idx[i]];
@@ -109,11 +106,6 @@ model {
 
   // Priors
   beta_prior_sd ~ gamma(hyperprior_shape, hyperprior_rate); // hyperprior
-  // phi_inv ~ exponential(phi_inv_rate);           // Prior for overdispersion
-  // sigma_ye ~ exponential(exp_rate);          // PC-prior for hatch year sd
-  // sigma_ll ~ exponential(exp_rate);          // PC-prior for last locality sd
-  // sigma_id ~ exponential(exp_rate);          // PC-prior for identity sd
-
   // Non-centered prior for latent bv to improve convergence
   z_bv ~ std_normal();
   z_ye ~ std_normal();
@@ -139,14 +131,10 @@ model {
 generated quantities {
   // Back-transform regression parameters to original scale
   real alpha = alpha_std
-  - beta_bv_std * bv_lat_full_mean / bv_lat_full_sd
-  + beta_bv2_std * square(bv_lat_full_mean / bv_lat_full_sd)
   - beta_age_std * age_const
   + beta_age2_std * age2_const
   - beta_f_std * f_const;
 
-  real beta_bv = beta_bv_std / bv_lat_full_sd - 2 * beta_bv2_std * bv_lat_full_mean / square(bv_lat_full_sd);
-  real beta_bv2 = beta_bv2_std / square(bv_lat_full_sd);
   real beta_age = beta_age_std / sd_age - 2 * beta_age2_std * age_const2;
   real beta_age2 = beta_age2_std / sd_age2;
   real beta_f = beta_f_std / sd_f;

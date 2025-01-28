@@ -584,9 +584,8 @@ get_ars_samps <- function(model) {
                                    "sigma_ll",
                                    "sigma_id",
                                    "phi",
-                                   "beta_prior_sd",
-                                   "bv_lat_full_mean",
-                                   "bv_lat_full_sd"))
+                                   "beta_prior_sd"
+                                   ))
 
   samp_params <- get_sampler_params(model, inc_warmup = FALSE)
   samps$energy <- unlist(lapply(samp_params, function(x) x[, "energy__"]))
@@ -613,9 +612,8 @@ get_surv_samps <- function(model) {
                                    "sigma_ll",
                                    "sigma_id",
                                    "sigma_res",
-                                   "beta_prior_sd",
-                                   "bv_lat_full_mean",
-                                   "bv_lat_full_sd"))
+                                   "beta_prior_sd"
+                                   ))
 
   samp_params <- get_sampler_params(model, inc_warmup = FALSE)
   samps$energy <- unlist(lapply(samp_params, function(x) x[, "energy__"]))
