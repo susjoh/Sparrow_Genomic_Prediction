@@ -573,8 +573,8 @@ get_ars_samps <- function(model) {
                           pars = c("alpha",
                                    "beta_bv",
                                    "beta_bv2",
-                                   "beta_age",
-                                   "beta_age2",
+                                   "beta_age_q1",
+                                   "beta_age_q2",
                                    "beta_f",
                                    "ye",
                                    "ll",
@@ -584,7 +584,7 @@ get_ars_samps <- function(model) {
                                    "sigma_ll",
                                    "sigma_id",
                                    "phi",
-                                   "beta_prior_sd"
+                                   "y_rep"
                                    ))
 
   samp_params <- get_sampler_params(model, inc_warmup = FALSE)
@@ -600,8 +600,8 @@ get_surv_samps <- function(model) {
                           pars = c("alpha",
                                    "beta_bv",
                                    "beta_bv2",
-                                   "beta_age",
-                                   "beta_age2",
+                                   "beta_age_q1",
+                                   "beta_age_q2",
                                    "beta_f",
                                    "ye",
                                    "ll",
@@ -612,7 +612,7 @@ get_surv_samps <- function(model) {
                                    "sigma_ll",
                                    "sigma_id",
                                    "sigma_res",
-                                   "beta_prior_sd"
+                                   "y_rep"
                                    ))
 
   samp_params <- get_sampler_params(model, inc_warmup = FALSE)
@@ -658,8 +658,8 @@ ars_bvpost_sim <- function(data) {
     alpha +
     beta_bv * bv_lat_full +
     beta_bv2 * (bv_lat_full)^2 +
-    beta_age * data$age +
-    beta_age2 * (data$age)^2 +
+    beta_age * poly(data$age, degree = 2)[, 1] +
+    beta_age2 * poly(data$age, degree = 2)[, 2] +
     beta_f * data$f
   eta2 <- ye_full +
     ll_full +
@@ -707,8 +707,8 @@ surv_bvpost_sim <- function(data) {
     alpha +
     beta_bv * bv_lat_full +
     beta_bv2 * (bv_lat_full)^2 +
-    beta_age * data$age +
-    beta_age2 * (data$age)^2 +
+    beta_age * poly(data$age, degree = 2)[, 1] +
+    beta_age2 * poly(data$age, degree = 2)[, 2] +
     beta_f * data$f
   eta2 <- ye_full +
     ll_full +
@@ -741,6 +741,9 @@ bv_preds_and_marg <- function(data,
   avg_age <- mean(data$age)
   avg_f <- mean(data$f)
 
+  age_poly <- poly(data$age, degree = 2)
+  avg_age_q <- predict(age_poly, newdata = mean(data$age))
+
   bv <- seq(min(c(data$bv_mean) - 2 * max(data$bv_sd)),
             max(c(data$bv_mean) + 2 * max(data$bv_sd)),
             length.out = n_plot)
@@ -752,8 +755,8 @@ bv_preds_and_marg <- function(data,
       y_pred_samples[i, j] <- samps$alpha[i] +
         samps$beta_bv[i] * bv[j] +
         samps$beta_bv2[i] * bv[j]^2 +
-        samps$beta_age[i] * avg_age +
-        samps$beta_age2[i] * avg_age^2 +
+        samps$beta_age_q1[i] * avg_age_q[, 1] +
+        samps$beta_age_q2[i] * avg_age_q[, 2] +
         samps$beta_f[i] * avg_f
     }
   }
