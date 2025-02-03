@@ -59,7 +59,6 @@ tar_option_set(
 
 # Run the R scripts in the R/ folder with your custom functions:
 tar_source(files = "r/crossover_gp_inla_func.R")
-tar_source(files = "r/gamma.parms.from.quantiles.R")
 
 # Filepaths that might need to be changed
 
@@ -222,7 +221,7 @@ sex_map <- tar_map(
            id_idx = data_adult_ars_bvpost$lrs$ringnr_num)
   ),
   tar_target(
-    stan_data_adult_ars_bvpost_hyp,
+    stan_data_adult_ars_bvpost,
     data_adult_ars_bvpost$lrs$sum_recruit %>%
       list(N = nrow(data_adult_ars_bvpost$lrs),
            N_ll = max(data_adult_ars_bvpost$lrs$ll_num),
@@ -242,8 +241,6 @@ sex_map <- tar_map(
            f = data_adult_ars_bvpost$lrs$fhat3,
            phi_inv_rate = pc_rate(mean(.)^2 / (var(.) - mean(.))),
            exp_rate = 40,
-           hyperprior_shape = 2,
-           hyperprior_rate = 40,
            bv_mean_std = mean(bv_std_vec),
            bv_sd_std = sd(bv_std_vec),
            alpha_prior_mean = log(mean(.)),
@@ -251,9 +248,9 @@ sex_map <- tar_map(
     deployment = "main"
   ),
   tar_target(
-    stan_adult_ars_bvpost_hyp_3e4,
-    stan(file = stan_file_adult_ars_bvpost_hyp,
-         data = stan_data_adult_ars_bvpost_hyp,
+    stan_adult_ars_bvpost_3e4,
+    stan(file = stan_file_adult_ars_bvpost,
+         data = stan_data_adult_ars_bvpost,
          iter = 3.6e4,
          warmup = 6e3,
          chains = 16,
@@ -274,12 +271,12 @@ sex_map <- tar_map(
                   "sigma_id",
                   "phi",
                   "y_rep"),
-         model_name = paste0("stan_adult_ars_bvpost_hyp_", sex_lc),
+         model_name = paste0("stan_adult_ars_bvpost_", sex_lc),
          thin = 1.2e2) # to keep final object reasonably small
   ),
   tar_rep(
     stan_data_adult_ars_bvpost_sim,
-    ars_bvpost_sim(stan_data_adult_ars_bvpost_hyp) %>%
+    ars_bvpost_sim(stan_data_adult_ars_bvpost) %>%
       list(N = nrow(data_adult_ars_bvpost$lrs),
            N_ll = max(data_adult_ars_bvpost$lrs$ll_num),
            N_ye = max(data_adult_ars_bvpost$lrs$y_num),
@@ -298,8 +295,6 @@ sex_map <- tar_map(
            f = data_adult_ars_bvpost$lrs$fhat3,
            phi_inv_rate = pc_rate(mean(.)^2 / (var(.) - mean(.))),
            exp_rate = 40,
-           hyperprior_shape = 2,
-           hyperprior_rate = 40,
            bv_mean_std = mean(bv_std_vec),
            bv_sd_std = sd(bv_std_vec),
            alpha_prior_mean = log(mean(.)),
@@ -309,7 +304,7 @@ sex_map <- tar_map(
   ),
   tar_target(
     stan_adult_ars_bvpost_sim_3e4,
-    stan(file = stan_file_adult_ars_bvpost_hyp,
+    stan(file = stan_file_adult_ars_bvpost,
          data = `[[`(stan_data_adult_ars_bvpost_sim, 1),
          iter = 3.6e4,
          warmup = 6e3,
@@ -331,13 +326,13 @@ sex_map <- tar_map(
                   "sigma_id",
                   "phi",
                   "y_rep"),
-         model_name = paste0("stan_adult_ars_bvpost_hyp_", sex_lc, "_sim"),
+         model_name = paste0("stan_adult_ars_bvpost_", sex_lc, "_sim"),
          thin = 1.2e2), # to keep final object reasonably small
     pattern = map(stan_data_adult_ars_bvpost_sim)
   ),
   tar_rep(
     stan_data_adult_surv_bvpost_sim,
-    surv_bvpost_sim(stan_data_adult_surv_bvpost_hyp) %>%
+    surv_bvpost_sim(stan_data_adult_surv_bvpost) %>%
       list(N = nrow(data_adult_ars_bvpost$lrs),
            N_ll = max(data_adult_ars_bvpost$lrs$ll_num),
            N_ye = max(data_adult_ars_bvpost$lrs$y_num),
@@ -355,8 +350,6 @@ sex_map <- tar_map(
            age_q2 = poly(data_adult_ars_bvpost$lrs$age, degree = 2)[, 2],
            f = data_adult_ars_bvpost$lrs$fhat3,
            exp_rate = 40,
-           hyperprior_shape = 2,
-           hyperprior_rate = 40,
            bv_mean_std = mean(bv_std_vec),
            bv_sd_std = sd(bv_std_vec),
            alpha_prior_mean = log(mean(.) / (1 - mean(.))),
@@ -366,7 +359,7 @@ sex_map <- tar_map(
   ),
   tar_target(
     stan_adult_surv_bvpost_sim_3e4,
-    stan(file = stan_file_adult_surv_bvpost_hyp,
+    stan(file = stan_file_adult_surv_bvpost,
          data = `[[`(stan_data_adult_surv_bvpost_sim, 1),
          iter = 3.6e4,
          warmup = 6e3,
@@ -389,12 +382,12 @@ sex_map <- tar_map(
                   "sigma_id",
                   "sigma_res",
                   "y_rep"),
-         model_name = paste0("stan_adult_surv_bvpost_hyp_", sex_lc, "_sim"),
+         model_name = paste0("stan_adult_surv_bvpost_", sex_lc, "_sim"),
          thin = 1.2e2), # to keep final object reasonably small
     pattern = map(stan_data_adult_surv_bvpost_sim)
   ),
   tar_target(
-    stan_data_adult_surv_bvpost_hyp,
+    stan_data_adult_surv_bvpost,
     data_adult_ars$lrs$survival %>%
       list(N = nrow(data_adult_ars_bvpost$lrs),
            N_ll = max(data_adult_ars_bvpost$lrs$ll_num),
@@ -413,8 +406,6 @@ sex_map <- tar_map(
            age_q2 = poly(data_adult_ars_bvpost$lrs$age, degree = 2)[, 2],
            f = data_adult_ars_bvpost$lrs$fhat3,
            exp_rate = 40,
-           hyperprior_shape = 2,
-           hyperprior_rate = 40,
            bv_mean_std = mean(bv_std_vec),
            bv_sd_std = sd(bv_std_vec),
            alpha_prior_mean = log(mean(.) / (1 - mean(.))),
@@ -422,9 +413,9 @@ sex_map <- tar_map(
     deployment = "main"
   ),
   tar_target(
-    stan_adult_surv_bvpost_hyp_3e4,
-    stan(file = stan_file_adult_surv_bvpost_hyp,
-         data = stan_data_adult_surv_bvpost_hyp,
+    stan_adult_surv_bvpost_3e4,
+    stan(file = stan_file_adult_surv_bvpost,
+         data = stan_data_adult_surv_bvpost,
          iter = 3.6e4,
          warmup = 6e3,
          chains = 16,
@@ -446,12 +437,12 @@ sex_map <- tar_map(
                   "sigma_id",
                   "sigma_res",
                   "y_rep"),
-         model_name = paste0("stan_adult_surv_bvpost_hyp_", sex_lc),
+         model_name = paste0("stan_adult_surv_bvpost_", sex_lc),
          thin = 1.2e2) # to keep final object reasonably small
   ),
   tar_target(
     ars_samps,
-    get_ars_samps(model = stan_adult_ars_bvpost_hyp_3e4)
+    get_ars_samps(model = stan_adult_ars_bvpost_3e4)
   ),
   tar_target(
     ars_samp_pairs_plot,
@@ -475,7 +466,7 @@ sex_map <- tar_map(
   ),
   tar_target(
     surv_samps,
-    get_surv_samps(model = stan_adult_surv_bvpost_hyp_3e4)
+    get_surv_samps(model = stan_adult_surv_bvpost_3e4)
   ),
   tar_target(
     surv_samp_pairs_plot,
@@ -501,13 +492,13 @@ sex_map <- tar_map(
   tar_target(
     ars_bv_preds_and_marg,
     bv_preds_and_marg(samps = ars_samps,
-                      data = stan_data_adult_ars_bvpost_hyp,
+                      data = stan_data_adult_ars_bvpost,
                       inv_link = exp)
   ),
   tar_target(
     surv_bv_preds_and_marg,
     bv_preds_and_marg(samps = surv_samps,
-                      data = stan_data_adult_surv_bvpost_hyp,
+                      data = stan_data_adult_surv_bvpost,
                       inv_link = function(x) 1 / (1 + exp(-x)))
   ),
   tar_target(
@@ -568,97 +559,97 @@ sex_map <- tar_map(
   ),
   tar_target(
     ars_ppc_mean,
-    ppc_stat(y = stan_data_adult_ars_bvpost_hyp$Y, yrep = ars_samps$y_rep),
+    ppc_stat(y = stan_data_adult_ars_bvpost$Y, yrep = ars_samps$y_rep),
     deployment = "main"
   ),
   tar_target(
     ars_ppc_sd,
-    ppc_stat(y = stan_data_adult_ars_bvpost_hyp$Y, yrep = ars_samps$y_rep, stat = "sd"),
+    ppc_stat(y = stan_data_adult_ars_bvpost$Y, yrep = ars_samps$y_rep, stat = "sd"),
     deployment = "main"
   ),
   tar_target(
     ars_ppc_zeros,
-    ppc_stat(y = stan_data_adult_ars_bvpost_hyp$Y, yrep = ars_samps$y_rep, stat = function(y) mean(y == 0)),
+    ppc_stat(y = stan_data_adult_ars_bvpost$Y, yrep = ars_samps$y_rep, stat = function(y) mean(y == 0)),
     deployment = "main"
   ),
   tar_target(
     ars_ppc_ones,
-    ppc_stat(y = stan_data_adult_ars_bvpost_hyp$Y, yrep = ars_samps$y_rep, stat = function(y) mean(y == 1)),
+    ppc_stat(y = stan_data_adult_ars_bvpost$Y, yrep = ars_samps$y_rep, stat = function(y) mean(y == 1)),
     deployment = "main"
   ),
   tar_target(
     ars_ppc_twos,
-    ppc_stat(y = stan_data_adult_ars_bvpost_hyp$Y, yrep = ars_samps$y_rep, stat = function(y) mean(y == 2)),
+    ppc_stat(y = stan_data_adult_ars_bvpost$Y, yrep = ars_samps$y_rep, stat = function(y) mean(y == 2)),
     deployment = "main"
   ),
   tar_target(
     ars_ppc_bar,
-    ppc_bars(y = stan_data_adult_ars_bvpost_hyp$Y, yrep = ars_samps$y_rep),
+    ppc_bars(y = stan_data_adult_ars_bvpost$Y, yrep = ars_samps$y_rep),
     deployment = "main"
   ),
   tar_target(
     surv_ppc_bar,
-    ppc_bars(y = stan_data_adult_surv_bvpost_hyp$Y, yrep = surv_samps$y_rep),
+    ppc_bars(y = stan_data_adult_surv_bvpost$Y, yrep = surv_samps$y_rep),
     deployment = "main"
   ),
   tar_target(
     surv_ppc_sd,
-    ppc_stat(y = stan_data_adult_surv_bvpost_hyp$Y, yrep = surv_samps$y_rep, stat = "sd"),
+    ppc_stat(y = stan_data_adult_surv_bvpost$Y, yrep = surv_samps$y_rep, stat = "sd"),
     deployment = "main"
   ),
   tar_target(
     surv_ppc_bar_ll,
-    ppc_bars_grouped(y = stan_data_adult_surv_bvpost_hyp$Y, yrep = surv_samps$y_rep, group = stan_data_adult_surv_bvpost_hyp$ll_idx),
+    ppc_bars_grouped(y = stan_data_adult_surv_bvpost$Y, yrep = surv_samps$y_rep, group = stan_data_adult_surv_bvpost$ll_idx),
     deployment = "main"
   ),
   tar_target(
     surv_ppc_sd_ll,
-    ppc_stat_grouped(y = stan_data_adult_surv_bvpost_hyp$Y, yrep = surv_samps$y_rep, stat = "sd", group = stan_data_adult_surv_bvpost_hyp$ll_idx),
+    ppc_stat_grouped(y = stan_data_adult_surv_bvpost$Y, yrep = surv_samps$y_rep, stat = "sd", group = stan_data_adult_surv_bvpost$ll_idx),
     deployment = "main"
   ),
   tar_target(
     surv_ppc_bar_ye,
-    ppc_bars_grouped(y = stan_data_adult_surv_bvpost_hyp$Y, yrep = surv_samps$y_rep, group = stan_data_adult_surv_bvpost_hyp$ye_idx),
+    ppc_bars_grouped(y = stan_data_adult_surv_bvpost$Y, yrep = surv_samps$y_rep, group = stan_data_adult_surv_bvpost$ye_idx),
     deployment = "main"
   ),
   tar_target(
     surv_ppc_sd_ye,
-    ppc_stat_grouped(y = stan_data_adult_surv_bvpost_hyp$Y, yrep = surv_samps$y_rep, stat = "sd", group = stan_data_adult_surv_bvpost_hyp$ye_idx),
+    ppc_stat_grouped(y = stan_data_adult_surv_bvpost$Y, yrep = surv_samps$y_rep, stat = "sd", group = stan_data_adult_surv_bvpost$ye_idx),
     deployment = "main"
   ),
   tar_target(
     ars_ppc_p_mean,
-    mean(colMeans(ars_samps$y_rep) > mean(stan_data_adult_ars_bvpost_hyp$Y)),
+    mean(colMeans(ars_samps$y_rep) > mean(stan_data_adult_ars_bvpost$Y)),
     deployment = "main"
   ),
   tar_target(
     ars_ppc_p_sd,
-    mean(apply(ars_samps$y_rep, 2, sd) > sd(stan_data_adult_ars_bvpost_hyp$Y)),
+    mean(apply(ars_samps$y_rep, 2, sd) > sd(stan_data_adult_ars_bvpost$Y)),
     deployment = "main"
   ),
   tar_target(
     ars_ppc_p_zeros,
-    mean(apply(ars_samps$y_rep, 2, function(y) mean(y == 0)) > mean(stan_data_adult_ars_bvpost_hyp$Y == 0)),
+    mean(apply(ars_samps$y_rep, 2, function(y) mean(y == 0)) > mean(stan_data_adult_ars_bvpost$Y == 0)),
     deployment = "main"
   ),
   tar_target(
     ars_ppc_p_ones,
-    mean(apply(ars_samps$y_rep, 2, function(y) mean(y == 1)) > mean(stan_data_adult_ars_bvpost_hyp$Y == 1)),
+    mean(apply(ars_samps$y_rep, 2, function(y) mean(y == 1)) > mean(stan_data_adult_ars_bvpost$Y == 1)),
     deployment = "main"
   ),
   tar_target(
     ars_ppc_p_twos,
-    mean(apply(ars_samps$y_rep, 2, function(y) mean(y == 2)) > mean(stan_data_adult_ars_bvpost_hyp$Y == 2)),
+    mean(apply(ars_samps$y_rep, 2, function(y) mean(y == 2)) > mean(stan_data_adult_ars_bvpost$Y == 2)),
     deployment = "main"
   ),
   tar_target(
     surv_ppc_p_mean,
-    mean(colMeans(surv_samps$y_rep) > mean(stan_data_adult_surv_bvpost_hyp$Y)),
+    mean(colMeans(surv_samps$y_rep) > mean(stan_data_adult_surv_bvpost$Y)),
     deployment = "main"
   ),
   tar_target(
     surv_ppc_p_sd,
-    mean(apply(surv_samps$y_rep, 2, sd) > sd(stan_data_adult_surv_bvpost_hyp$Y)),
+    mean(apply(surv_samps$y_rep, 2, sd) > sd(stan_data_adult_surv_bvpost$Y)),
     deployment = "main"
   )
 )
@@ -729,14 +720,14 @@ list(
     deployment = "main"
   ),
   tar_target(
-    stan_file_adult_ars_bvpost_hyp,
-    "r/adult_ars_bvpost_hyp.stan",
+    stan_file_adult_ars_bvpost,
+    "r/adult_ars_bvpost.stan",
     format = "file",
     deployment = "main"
   ),
   tar_target(
-    stan_file_adult_surv_bvpost_hyp,
-    "r/adult_surv_bvpost_hyp.stan",
+    stan_file_adult_surv_bvpost,
+    "r/adult_surv_bvpost.stan",
     format = "file",
     deployment = "main"
   ),
