@@ -41,6 +41,7 @@ tar_option_set(
                "dplyr",
                "qs",
                "magrittr",
+               "tools",
                "INLA",
                "rstan",
                "bayesplot"), # Packages that your targets need for their tasks.
@@ -512,8 +513,10 @@ sex_map <- tar_map(
   tar_target(
     ars_bv_pred_plot,
     plot_lines_posterior(df = ars_bv_preds_and_marg$df_pred,
-                         xlab = "Breeding value",
-                         ylab = "Predicted annual recruits",
+                         xlab = paste0("Breeding value for ",
+                                       sex,
+                                       " crossover count"),
+                         ylab = "Predicted annual recruits (both sexes)",
                          title = "")
   ),
   tar_target(
@@ -529,15 +532,19 @@ sex_map <- tar_map(
   tar_target(
     ars_bv_marg_plot,
     plot_lines_posterior(df = ars_bv_preds_and_marg$df_marg,
-                         xlab = "Breeding value",
-                         ylab = "Marginal effect on annual recruits",
+                         xlab = paste0("Breeding value for ",
+                                       sex,
+                                       " crossover count"),
+                         ylab = "Marginal effect on annual recruits (both sexes)",
                          title = "")
   ),
   tar_target(
     surv_bv_pred_plot,
     plot_lines_posterior(df = surv_bv_preds_and_marg$df_pred,
-                         xlab = "Breeding value",
-                         ylab = "Predicted annual survival",
+                         xlab = paste0("Breeding value for ",
+                                       sex,
+                                       " crossover count"),
+                         ylab = "Predicted annual survival (both sexes)",
                          title = "")
   ),
   tar_target(
@@ -553,8 +560,10 @@ sex_map <- tar_map(
   tar_target(
     surv_bv_marg_plot,
     plot_lines_posterior(df = surv_bv_preds_and_marg$df_marg,
-                         xlab = "Breeding value",
-                         ylab = "Marginal effect on annual survival",
+                         xlab = paste0("Breeding value for ",
+                                       sex,
+                                       " crossover count"),
+                         ylab = "Marginal effect on annual survival (both sexes)",
                          title = "")
   ),
   tar_target(
