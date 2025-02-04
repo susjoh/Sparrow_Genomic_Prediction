@@ -148,61 +148,11 @@ make_adult_ars_gp_data <- function(pheno_data,
   plyr::rbind.fill(pheno_data, lrs)
 }
 
-make_data_adult_ars <- function(gp_data,
-                                gp_model,
-                                lrs_data_path,
-                                sex_lc,
-                                inbreeding) {
-
-  lrs <- fread(file = lrs_data_path)
-  lrs <- lrs[lrs$last_locality %in%
-               c(20, 22, 23, 24, 26, 27, 28, 34, 35, 38, 331, 332)]
-  lrs <- lrs[lrs$ringnr %in% gp_data$id_red]
-
-  # add predicted phenotypes and breeding values from GP model to data
-  gp_data$pred_pheno <- gp_model$summary.fitted.values$mean
-  gp_data$pred_bv <- gp_model$summary.random$id1$mean[
-    order(gp_model$summary.random$id1$ID)][
-      match(gp_data$id, unique(gp_data$id))]
-
-  lrs$pred_bv <- gp_data$pred_bv[match(lrs$ringnr, gp_data$id_red)]
-  lrs$age <- lrs$year - lrs$hatch_year
-  # Remove inds with missing sex
-  lrs <- lrs[!is.na(lrs$sex), ]
-  lrs$ringnr_num <- match(lrs$ringnr, unique(lrs$ringnr))
-  lrs$ll_num <- match(lrs$last_locality, unique(lrs$last_locality))
-  lrs$y_num <- match(lrs$year, unique(lrs$year))
-  lrs$hy_num <- match(lrs$hatch_year, unique(lrs$hatch_year))
-
-  # Add inbreeding info
-  ibc <- fread(file = inbreeding)
-  gp_data$fhat3 <- ibc$Fhat3[match(gp_data$ringnr, ibc$IID)]
-  lrs$fhat3 <- gp_data$fhat3[match(lrs$ringnr, gp_data$id_red)]
-
-  # Number of crossover measurements
-  lrs$co_n <- gp_data$n[match(lrs$ringnr, gp_data$id_red)]
-  lrs$co_meas <- !is.na(lrs$co_n)
-  lrs <- lrs[order(lrs$co_meas), ]
-
-  # Add crossover count measurements, and phenotypic predictions, with repeats
-  ph_dat <- lapply(1:nrow(lrs),
-                   function(i) {
-                     lrs_row <- lrs[i, ]
-                     co_red <- gp_data[gp_data$id_red == lrs_row$ringnr, ]
-                     lrs_df <- lrs_row[rep(1, nrow(co_red)), ]
-                     cbind(lrs_df, co_red[, c(paste0("co_count_", sex_lc),
-                                              "pred_pheno")])
-                   }) %>%
-    do.call(what = "rbind", .)
-
-  lst(lrs, ph_dat)
-}
-
-make_data_adult_ars_bvpost <- function(gp_data,
-                                       gp_model,
-                                       lrs_data_path,
-                                       sex_lc,
-                                       inbreeding) {
+make_data_adult <- function(gp_data,
+                            gp_model,
+                            lrs_data_path,
+                            inbreeding,
+                            sex_num) {
 
   lrs <- fread(file = lrs_data_path)
   lrs <- lrs[lrs$last_locality %in%
@@ -216,11 +166,20 @@ make_data_adult_ars_bvpost <- function(gp_data,
   gp_data$bv_sd <- gp_model$summary.random$id1$sd[
     order(gp_model$summary.random$id1$ID)][gp_data$id1]
 
+  # Remove inds with missing sex
+  lrs %<>% dplyr::filter(!is.na(sex))
+  # Sex filtering
+  if (sex_num != "all") {
+    lrs %<>%
+      dplyr::filter(sex != 1.5) %>%
+      mutate(sex = round(sex)) %>%
+      filter(sex %in% sex_num)
+  }
+
   lrs$bv_mean <- gp_data$bv_mean[match(lrs$ringnr, gp_data$id_red)]
   lrs$bv_sd <- gp_data$bv_sd[match(lrs$ringnr, gp_data$id_red)]
   lrs$age <- lrs$year - lrs$hatch_year
-  # Remove inds with missing sex
-  lrs <- lrs[!is.na(lrs$sex), ]
+
   lrs$ringnr_num <- match(lrs$ringnr, unique(lrs$ringnr))
   lrs$ll_num <- match(lrs$last_locality, unique(lrs$last_locality))
   lrs$y_num <- match(lrs$year, unique(lrs$year))
@@ -234,20 +193,8 @@ make_data_adult_ars_bvpost <- function(gp_data,
   # Number of crossover measurements
   lrs$co_n <- gp_data$n[match(lrs$ringnr, gp_data$id_red)]
   lrs$co_meas <- !is.na(lrs$co_n)
-  lrs <- lrs[order(lrs$co_meas), ]
+  lrs[order(lrs$co_meas), ]
 
-  # Add crossover count measurements, and phenotypic predictions, with repeats
-  ph_dat <- lapply(1:nrow(lrs),
-                   function(i) {
-                     lrs_row <- lrs[i, ]
-                     co_red <- gp_data[gp_data$id_red == lrs_row$ringnr, ]
-                     lrs_df <- lrs_row[rep(1, nrow(co_red)), ]
-                     cbind(lrs_df, co_red[, c(paste0("co_count_", sex_lc),
-                                              "pred_pheno")])
-                   }) %>%
-    do.call(what = "rbind", .)
-
-  lst(lrs, ph_dat)
 }
 
 find_inbreeding <- function(bfile,
@@ -585,7 +532,7 @@ get_ars_samps <- function(model) {
                                    "sigma_id",
                                    "phi",
                                    "y_rep"
-                                   ))
+                          ))
 
   samp_params <- get_sampler_params(model, inc_warmup = FALSE)
   samps$energy <- unlist(lapply(samp_params, function(x) x[, "energy__"]))
@@ -613,7 +560,7 @@ get_surv_samps <- function(model) {
                                    "sigma_id",
                                    "sigma_res",
                                    "y_rep"
-                                   ))
+                          ))
 
   samp_params <- get_sampler_params(model, inc_warmup = FALSE)
   samps$energy <- unlist(lapply(samp_params, function(x) x[, "energy__"]))
@@ -622,7 +569,7 @@ get_surv_samps <- function(model) {
   samps
 }
 
-ars_bvpost_sim <- function(data) {
+make_ars_sim <- function(data) {
 
   alpha_std <- alpha <- -0.077466411
   beta_bv_std <- beta_bv <-  0.1
@@ -671,7 +618,7 @@ ars_bvpost_sim <- function(data) {
   rnbinom(n = data$N, mu = mu, size = phi)
 }
 
-surv_bvpost_sim <- function(data) {
+make_surv_sim <- function(data) {
 
   alpha_std <- alpha <- -0.077466411
   beta_bv_std <- beta_bv <-  0.1
@@ -725,7 +672,7 @@ surv_bvpost_sim <- function(data) {
 samp_plot_df <- function(x, y, n_samp) {
   y %>%
     as.data.frame() %>%
-    mutate(sample = 1:n_samp) %>%
+    mutate(sample = seq_len(n_samp)) %>%
     tidyr::pivot_longer(-sample, names_to = "x_idx", values_to = "y_samp") %>%
     mutate(x = rep(x, n_samp),
            y_mean = rep(apply(y, 2, mean), n_samp),
@@ -816,4 +763,73 @@ ggsave_path <- function(filename,
                         ...) {
   ggsave(filename, ...)
   filename
+}
+
+make_stan_data_adult <- function(data) {
+
+  bv_std_vec <- sapply(X = seq_len(1e3),
+                       FUN = function(i, N, means, sds) rnorm(N, means, sds),
+                       N = nrow(data),
+                       means = data$bv_mean,
+                       sds = data$bv_sd)
+  list(N = nrow(data),
+       sex = data$sex,
+       N_ll = max(data$ll_num),
+       N_ye = max(data$y_num),
+       N_id = max(data$ringnr_num),
+       ye_idx = data$y_num,
+       ll_idx = data$ll_num,
+       id_idx = data$ringnr_num,
+       bv_mean = unique(data$bv_mean[order(data$ringnr_num)]),
+       bv_sd = unique(data$bv_sd[order(data$ringnr_num)]),
+       sum_recruit = data$sum_recruit,
+       sum_recruit_log_mean = log(mean(data$sum_recruit)),
+       survival = data$survival,
+       survival_logit_mean = log(1 / (1 / mean(data$survival) - 1)),
+       age = data$age,
+       age_q1 = poly(data$age, degree = 2)[, 1],
+       age_q2 = poly(data$age, degree = 2)[, 2],
+       f = data$fhat3,
+       bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
+       bv_sd_std = mean(apply(bv_std_vec, 2, sd)))
+}
+
+do_ars_ppc <- function(data, samps, co_n, co_meas) {
+
+  y <- data$sum_recruit
+  yrep <- samps$y_rep
+
+  lst(mean = ppc_stat(y, yrep),
+      sd = ppc_stat(y, yrep, stat = "sd"),
+      zeros = ppc_stat(y, yrep, stat = function(y) mean (y == 0)),
+      ones = ppc_stat(y, yrep, stat = function(y) mean (y == 1)),
+      twos = ppc_stat(y, yrep, stat = function(y) mean (y == 2)),
+      bar = ppc_bars(y, yrep),
+      p_mean = mean(colMeans(yrep) > mean(y)),
+      p_mean = mean(apply(yrep, 2, sd) > sd(y)),
+      p_zeros = mean((apply(yrep, 2, function(y) mean(y == 0))) > mean(y == 0)),
+      p_ones = mean((apply(yrep, 2, function(y) mean(y == 1))) > mean(y == 1)),
+      p_ones = mean((apply(yrep, 2, function(y) mean(y == 2))) > mean(y == 2)))
+}
+
+do_surv_ppc <- function(data, samps, co_n, co_meas) {
+
+  y <- data$survival
+  yrep <- samps$y_rep
+  sex_bin <- factor(data$sex >= 1.5)
+
+  lst(bar = ppc_bars(y, yrep),
+      bar_ll = ppc_bars_grouped(y, yrep, group = data$ll_idx),
+      bar_ye = ppc_bars_grouped(y, yrep, group = data$ye_idx),
+      bar_sex = ppc_bars_grouped(y, yrep, group = sex_bin),
+      bar_co_meas = ppc_bars_grouped(y, yrep, group = co_meas),
+      bar_co_n = ppc_bars_grouped(y, yrep, group = co_n),
+      sd = ppc_stat(y, yrep, stat = "sd"),
+      sd_ll = ppc_stat_grouped(y, yrep, group = data$ll_idx, stat = "sd"),
+      sd_ye = ppc_stat_grouped(y, yrep, group = data$ye_idx, stat = "sd"),
+      sd_sex = ppc_stat_grouped(y, yrep, group = sex_bin, stat = "sd"),
+      sd_co_meas = ppc_stat_grouped(y, yrep, group = co_meas, stat = "sd"),
+      sd_co_n = ppc_stat_grouped(y, yrep, group = co_n, stat = "sd"),
+      p_mean = mean(colMeans(yrep) > mean(y)),
+      p_sd = mean(apply(yrep, 2, sd) > sd(y)))
 }

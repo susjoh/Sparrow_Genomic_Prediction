@@ -17,8 +17,6 @@ data {
   real<lower=0> exp_rate;            // Rate in exponential priors
   real<lower=0> phi_inv_rate;
   // Parameters for the priors on coefficients:
-  real<lower=0> hyperprior_shape;
-  real<lower=0> hyperprior_rate;
   real alpha_prior_mean;
   real<lower=0> beta_prior_sd;
 }

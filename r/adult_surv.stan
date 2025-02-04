@@ -16,8 +16,6 @@ data {
   int<lower=0,upper=1> Y[N];             // Response variable (yearly survival)
   real<lower=0> exp_rate;                // Rate in exponential priors
   // Parameters for the priors on coefficients:
-  real<lower=0> hyperprior_shape;
-  real<lower=0> hyperprior_rate;
   real alpha_prior_mean;
   real<lower=0> beta_prior_sd;
 }

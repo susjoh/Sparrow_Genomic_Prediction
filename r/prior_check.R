@@ -1,5 +1,4 @@
-
-ars_bvpost <- function(i, data, alpha_mean, beta_sd, sigma_rate, phi_inv_rate, bv_mean_std, bv_sd_std) {
+ars <- function(i, data, alpha_mean, beta_sd, sigma_rate, phi_inv_rate) {
 
   alpha_std  <- rnorm(1, mean = alpha_mean, sd = beta_sd)
   beta_bv_std <- rnorm(1, mean = 0, sd = beta_sd)
@@ -27,7 +26,7 @@ ars_bvpost <- function(i, data, alpha_mean, beta_sd, sigma_rate, phi_inv_rate, b
   ye_full = ye[data$ye_idx]
   ll_full = ll[data$ll_idx]
   id_full = id[data$id_idx]
-  bv_lat_full = (bv_lat[data$id_idx] - bv_mean_std) / bv_sd_std
+  bv_lat_full = (bv_lat[data$id_idx] - data$bv_mean_std) / data$bv_sd_std
 
   eta1 <- alpha_std +
     beta_bv_std * bv_lat_full +
@@ -46,10 +45,6 @@ ars_bvpost <- function(i, data, alpha_mean, beta_sd, sigma_rate, phi_inv_rate, b
 
   c(summary(y),
     sd_y = sd(y),
-    mean_blf = mean(bv_lat_full),
-    sd_blf = sd(bv_lat_full),
-    mean_blf2 = mean(bv_lat_full^2),
-    sd_blf2 = sd(bv_lat_full^2),
     prop = var(eta1) / var(eta),
     alpha_std = alpha_std,
     beta_bv_std = beta_bv_std,
@@ -65,26 +60,21 @@ ars_bvpost <- function(i, data, alpha_mean, beta_sd, sigma_rate, phi_inv_rate, b
   )
 }
 
-data <- tar_read(stan_data_adult_ars_bvpost_hyp_f)
-
-bv_mean_std = sapply(1:1e3, function(i) mean(rnorm(data$N, data$bv_mean, data$bv_sd)[data$id_idx])) %>% mean()
-bv_sd_std = sapply(1:1e3, function(i) sd(rnorm(data$N, data$bv_mean, data$bv_sd)[data$id_idx])) %>% mean()
+data <- tar_read(stan_data_adult_f)
 
 res <- lapply(1:2e3,
-              ars_bvpost,
+              ars,
               data = data,
-              alpha_mean = log(mean(data$Y)),
-              bv_mean_std = bv_mean_std,
-              bv_sd_std = bv_sd_std,
+              alpha_mean = data$sum_recruit_log_mean,
               sigma_rate = 10,
               beta_sd = 0.05, #sqrt(2 / 10^2),
-              phi_inv_rate = mean(data$Y)^2 / (var(data$Y) - mean(data$Y))) %>%
-  do.call(rbind, .)
-summary(res)
+              phi_inv_rate = mean(data$sum_recruit)^2 /
+                (var(data$sum_recruit) - mean(data$sum_recruit))) %>%
+  do.call(rbind, .);summary(res)
 plot(density(res[, "Mean"]))
 plot(density(res[, "Max."]))
 
-surv_bvpost <- function(i, data, alpha_mean, beta_sd, sigma_rate, bv_mean_std, bv_sd_std) {
+surv <- function(i, data, alpha_mean, beta_sd, sigma_rate) {
 
   alpha_std  <- rnorm(1, mean = alpha_mean, sd = beta_sd)
   beta_bv_std <- rnorm(1, mean = 0, sd = beta_sd)
@@ -108,7 +98,7 @@ surv_bvpost <- function(i, data, alpha_mean, beta_sd, sigma_rate, bv_mean_std, b
   ye_full = ye[data$ye_idx]
   ll_full = ll[data$ll_idx]
   id_full = id[data$id_idx]
-  bv_lat_full = (bv_lat[data$id_idx] - bv_mean_std) / bv_sd_std
+  bv_lat_full = (bv_lat[data$id_idx] - data$bv_mean_std) / data$bv_sd_std
 
   age_q <- poly(data$age, degree = 2)
 
@@ -129,21 +119,18 @@ surv_bvpost <- function(i, data, alpha_mean, beta_sd, sigma_rate, bv_mean_std, b
   y <- rbinom(n = data$N, p = p, size = 1)
 
   c(summary(y),
-    sd_y = sd(y)
-  )
+    # summary(p),
+    sd_y = sd(y),
+    prop = var(eta1) / var(eta))
 }
 
-data <- tar_read(stan_data_adult_surv_bvpost_hyp_f)
-bv_mean_std = sapply(1:1e3, function(i) mean(rnorm(data$N, data$bv_mean, data$bv_sd)[data$id_idx])) %>% mean()
-bv_sd_std = sapply(1:1e3, function(i) sd(rnorm(data$N, data$bv_mean, data$bv_sd)[data$id_idx])) %>% mean()
+data <- tar_read(stan_data_adult_f)
+
 res <- lapply(1:2e3,
-              surv_bvpost,
+              surv,
               data = data,
-              alpha_mean = log(mean(data$Y) / (1 - mean(data$Y))),
-              bv_mean_std = bv_mean_std,
-              bv_sd_std = bv_sd_std,
-              sigma_rate = 10,
-              beta_sd = 0.05#sqrt(2 / 10^2),
+              alpha_mean = data$survival_logit_mean,
+              sigma_rate = 40,
+              beta_sd = sqrt(2 / 40^2)
               ) %>%
-  do.call(rbind, .)
-summary(res)
+  do.call(rbind, .);summary(res)
