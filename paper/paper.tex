@@ -1,0 +1,77 @@
+\documentclass[dvipsnames]{article}
+\input{paper/preamble}
+\begin{document}
+
+%%%% Comment in/out different .tex files to compile/include them or not
+
+%TC:ignore
+\maketitle
+\newpage
+
+\section*{Introduction}
+
+\section*{Methods}
+
+\subsection*{Data}
+
+…
+
+\subsection*{Genomic Prediction}
+
+Given measurements of the crossover count $y_{ij}$ of individual $i$ (estimated from offspring $j$) we model
+\begin{equation*}
+    y_{ij} = \alpha + \beta_\text{coverage} \cdot \text{coverage}_{ij} + g_i + \text{hy}_i + \text{hi}_i + \text{id}_i + \varepsilon_{ij}
+\end{equation*}
+
+Although the crossover count $y_{ij}$ is a count we treat it as a continuous Gaussian
+
+priors on random effects: $PC(var = \hat{\sigma}^2_y / 2, 0.05)$ 
+
+Fitting the GP model results in marginal posterior distributions for each breeding value. All of which approximately normal (can show by looking at QQ plots), so we can write
+\begin{equation*}
+    g_i \sim N(\mu_i, \sigma_i^2)
+\end{equation*}
+
+\subsection*{Fitness analyses}
+
+We investigate the impact of the breeding values for sex-specific breeding values on fitness components.
+
+% Sentences Susan asked for:
+The Bayesian genomic prediction model gives us a full posterior for each individual breeding value $g_i$. 
+In the fitness models, we can therefore incorporate the measurement error in these breeding value by sampling breeding values from these posterior distributions. 
+Rather than treating the breeding values as having fixed, known values, we sample each breeding value $g_i$ in each MCMC iteration, and regress on these samples (and their square) in the logistic regression. 
+(This is equivalent to assuming a Berkson measurement error model for the breeding values.)
+
+\subsubsection*{Annual survival}
+
+For individual $i$ in year $j$ we model the survival as a logistic GLMM, written here as a Bayesian hierarchical model:
+\begin{align*}
+    &g_i \sim N(\mu_i, \sigma_i^2) \\
+    &\eta_{ij} = \alpha + \beta_g \cdot g_i + beta_{g^2} \cdot g_i^2 + \beta_\text{age} \cdot \text{age} + \beta_{\text{age}^2} \cdot \text{age}^2 + \beta_f \cdot f + \text{isl}_i + \text{year}_? + \text{id}_i + \varepsilon_{ij}\\
+    &P(\text{survival}_{ij} = 1) = \text{logit}^{-1}(\eta_{ij})
+\end{align*}
+
+
+\subsubsection*{Annual reproductive success}
+
+...
+
+\section*{Results}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.91\linewidth]{figs/surv_bv_pred_f.pdf}
+    \caption{...}
+    \label{fig-surv_bv_f}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.91\linewidth]{figs/surv_bv_pred_m.pdf}
+    \caption{...}
+    \label{fig-surv_bv_m}
+\end{figure}
+
+\section*{Discussion}
+
+\end{document}
