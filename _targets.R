@@ -140,34 +140,34 @@ sex_map <- tar_map(
     load_grm(dir = gsub(x = co_grm_files[1],  "/grm.rel.bin",  ""),
              pheno_data = co_data)
   ),
-  tar_target(
-    co_gam, # genomic animal model for sex-specific crossover rate
-    run_gp(pheno_data = co_data,
-           inverse_relatedness_matrix = co_grm_obj$inv_grm,
-           effects_vec = inla_effects_gp_vector_grm_all,
-           y = paste0("co_count_", sex_lc))
-  ),
-  tar_target(
-    co_10fcv, # genomic animal model for sex-specific crossover rate
-    run_gp(pheno_data = co_data_cv,
-           inverse_relatedness_matrix = co_grm_obj$inv_grm,
-           effects_vec = inla_effects_gp_vector_grm_all,
-           y = paste0("co_count_", sex_lc, "_test")),
-    pattern = map(co_data_cv)
-  ),
-  tar_target(
-    co_10fcv_bvacc, # genomic animal model for sex-specific crossover rate
-    get_10fcv_acc(data = co_data_cv,
-                  model = co_10fcv,
-                  y_str = paste0("co_count_", sex_lc)),
-    pattern = map(co_data_cv, co_10fcv),
-    iteration = "vector"
-  ),
-  tar_target(
-    co_gam_cv, # genomic animal model for sex-specific crossover rate
-    inla_cv(model = co_gam,
-            pheno_data = co_data)
-  ),
+  # tar_target(
+  #   co_gam, # genomic animal model for sex-specific crossover rate
+  #   run_gp(pheno_data = co_data,
+  #          inverse_relatedness_matrix = co_grm_obj$inv_grm,
+  #          effects_vec = inla_effects_gp_vector_grm_all,
+  #          y = paste0("co_count_", sex_lc))
+  # ),
+  # tar_target(
+  #   co_10fcv, # genomic animal model for sex-specific crossover rate
+  #   run_gp(pheno_data = co_data_cv,
+  #          inverse_relatedness_matrix = co_grm_obj$inv_grm,
+  #          effects_vec = inla_effects_gp_vector_grm_all,
+  #          y = paste0("co_count_", sex_lc, "_test")),
+  #   pattern = map(co_data_cv)
+  # ),
+  # tar_target(
+  #   co_10fcv_bvacc, # genomic animal model for sex-specific crossover rate
+  #   get_10fcv_acc(data = co_data_cv,
+  #                 model = co_10fcv,
+  #                 y_str = paste0("co_count_", sex_lc)),
+  #   pattern = map(co_data_cv, co_10fcv),
+  #   iteration = "vector"
+  # ),
+  # tar_target(
+  #   co_gam_cv, # genomic animal model for sex-specific crossover rate
+  #   inla_cv(model = co_gam,
+  #           pheno_data = co_data)
+  # ),
   tar_target(
     co_data_adult_ars,
     make_adult_ars_gp_data(pheno_data = co_data,
@@ -224,38 +224,49 @@ sex_map <- tar_map(
     make_stan_data_adult(data_adult_ss),
     deployment = "main"
   ),
+  # tar_target(
+  #   stan_adult_ars_3e4,
+  #   stan(file = stan_file_adult_ars_zinf,
+  #        data = c(stan_data_adult,
+  #            list(Y = stan_data_adult$sum_recruit,
+  #                 phi_inv_rate = mean(stan_data_adult$sum_recruit)^2 /
+  #                   (var(stan_data_adult$sum_recruit) -
+  #                      mean(stan_data_adult$sum_recruit)),
+  #                 alpha_prior_mean = stan_data_adult$sum_recruit_log_mean,
+  #                 beta_prior_sd = 0.05,
+  #                 exp_rate = 40,
+  #                 alpha_zi_prior_mean = 0,
+  #                 beta_zi_prior_sd = 0.5,
+  #                 exp_rate_zi = sqrt(1 / 0.5^2))),
+  #        iter = 3.6e4,
+  #        warmup = 6e3,
+  #        chains = 16,
+  #        cores = 16,
+  #        control = list(adapt_delta = 0.9),
+  #        model_name = paste0("stan_adult_ars_", sex_lc),
+  #        thin = 1.2e2) # to keep final object reasonably small
+  # ),
   tar_target(
-    stan_adult_ars_3e4,
-    stan(file = stan_file_adult_ars,
-         data = c(stan_data_adult,
-             list(Y = stan_data_adult$sum_recruit,
-                  phi_inv_rate = mean(stan_data_adult$sum_recruit)^2 /
-                    (var(stan_data_adult$sum_recruit) -
-                       mean(stan_data_adult$sum_recruit)),
-                  alpha_prior_mean = stan_data_adult$sum_recruit_log_mean,
-                  beta_prior_sd = 0.05,
-                  exp_rate = 40)),
+    stan_adult_ars_3e4_ss,
+    stan(file = stan_file_adult_ars_zinf,
+         data = c(stan_data_adult_ss,
+                  list(Y = stan_data_adult_ss$sum_recruit,
+                       phi_inv_rate = mean(stan_data_adult_ss$sum_recruit)^2 /
+                         (var(stan_data_adult_ss$sum_recruit) -
+                            mean(stan_data_adult_ss$sum_recruit)),
+                       alpha_prior_mean = stan_data_adult_ss$sum_recruit_log_mean,
+                       beta_prior_sd = 0.05,
+                       exp_rate = 40, # sqrt(1 / 0.05^2)
+                       alpha_zi_prior_mean = 0,
+                       beta_zi_prior_sd = 0.5,
+                       exp_rate_zi = sqrt(1 / 0.5^2))),
          iter = 3.6e4,
          warmup = 6e3,
          chains = 16,
          cores = 16,
+         pars = ars_pars,
          control = list(adapt_delta = 0.9),
-         pars = c("alpha",
-                  "beta_bv",
-                  "beta_bv2",
-                  "beta_age_q1",
-                  "beta_age_q2",
-                  "beta_f",
-                  "ye",
-                  "ll",
-                  "id",
-                  "bv_lat",
-                  "sigma_ll",
-                  "sigma_ye",
-                  "sigma_id",
-                  "phi",
-                  "y_rep"),
-         model_name = paste0("stan_adult_ars_", sex_lc),
+         model_name = paste0("stan_adult_ars_ss_", sex_lc),
          thin = 1.2e2) # to keep final object reasonably small
   ),
   tar_target(
@@ -263,101 +274,40 @@ sex_map <- tar_map(
     lapply(1:3, function(i) make_ars_sim(stan_data_adult)),
     deployment = "main"
   ),
-  tar_target(
-    stan_adult_ars_sim_3e4,
-    stan(file = stan_file_adult_ars,
-         data = c(stan_data_adult,
-                  list(Y = ars_sim,
-                       phi_inv_rate = mean(ars_sim)^2 /
-                         (var(ars_sim) - mean(ars_sim)),
-                       alpha_prior_mean = log(mean(ars_sim)),
-                       beta_prior_sd = 0.05,
-                       exp_rate = 40)),
-         iter = 3.6e4,
-         warmup = 6e3,
-         chains = 16,
-         cores = 16,
-         control = list(adapt_delta = 0.9),
-         pars = c("alpha",
-                  "beta_bv",
-                  "beta_bv2",
-                  "beta_age_q1",
-                  "beta_age_q2",
-                  "beta_f",
-                  "ye",
-                  "ll",
-                  "id",
-                  "bv_lat",
-                  "sigma_ll",
-                  "sigma_ye",
-                  "sigma_id",
-                  "phi",
-                  "y_rep"),
-         model_name = paste0("stan_adult_ars_", sex_lc, "_sim"),
-         thin = 1.2e2), # to keep final object reasonably small
-    pattern = map(ars_sim)
-  ),
-  tar_target(
-    stan_adult_surv_3e4,
-    stan(file = stan_file_adult_surv,
-         data = c(stan_data_adult,
-                  list(Y = stan_data_adult$survival,
-                       alpha_prior_mean = stan_data_adult$survival_logit_mean,
-                       beta_prior_sd = 0.05,
-                       exp_rate = 40)),
-         iter = 3.6e4,
-         warmup = 6e3,
-         chains = 16,
-         cores = 16,
-         control = list(adapt_delta = 0.9),
-         pars = c("alpha",
-                  "beta_bv",
-                  "beta_bv2",
-                  "beta_age_q1",
-                  "beta_age_q2",
-                  "beta_f",
-                  "ye",
-                  "ll",
-                  "id",
-                  "res",
-                  "bv_lat",
-                  "sigma_ll",
-                  "sigma_ye",
-                  "sigma_id",
-                  "sigma_res",
-                  "y_rep"),
-         model_name = paste0("stan_adult_surv_", sex_lc),
-         thin = 1.2e2) # to keep final object reasonably small
-  ),
+  # tar_target(
+  #   stan_adult_ars_sim_3e4,
+  #   stan(file = stan_file_adult_ars,
+  #        data = c(stan_data_adult,
+  #                 list(Y = ars_sim,
+  #                      phi_inv_rate = mean(ars_sim)^2 /
+  #                        (var(ars_sim) - mean(ars_sim)),
+  #                      alpha_prior_mean = log(mean(ars_sim)),
+  #                      beta_prior_sd = 0.05,
+  #                      exp_rate = 40)),
+  #        iter = 3.6e4,
+  #        warmup = 6e3,
+  #        chains = 16,
+  #        cores = 16,
+  #        control = list(adapt_delta = 0.9),
+  #        pars = ars_pars,
+  #        model_name = paste0("stan_adult_ars_", sex_lc, "_sim"),
+  #        thin = 1.2e2), # to keep final object reasonably small
+  #   pattern = map(ars_sim)
+  # ),
   tar_target(
     stan_adult_surv_3e4_ss,
     stan(file = stan_file_adult_surv,
          data = c(stan_data_adult_ss,
                   list(Y = stan_data_adult_ss$survival,
                        alpha_prior_mean = stan_data_adult_ss$survival_logit_mean,
-                       beta_prior_sd = 0.05,
-                       exp_rate = 40)),
+                       beta_prior_sd = 0.5,
+                       exp_rate = sqrt(1 / 0.5^2))),
          iter = 3.6e4,
          warmup = 6e3,
          chains = 16,
          cores = 16,
          control = list(adapt_delta = 0.9),
-         pars = c("alpha",
-                  "beta_bv",
-                  "beta_bv2",
-                  "beta_age_q1",
-                  "beta_age_q2",
-                  "beta_f",
-                  "ye",
-                  "ll",
-                  "id",
-                  "res",
-                  "bv_lat",
-                  "sigma_ll",
-                  "sigma_ye",
-                  "sigma_id",
-                  "sigma_res",
-                  "y_rep"),
+         pars = surv_pars,
          model_name = paste0("stan_adult_surv_", sex_lc),
          thin = 1.2e2) # to keep final object reasonably small
   ),
@@ -366,107 +316,53 @@ sex_map <- tar_map(
     lapply(1:3, function(i) make_surv_sim(stan_data_adult)),
     deployment = "main"
   ),
-  tar_target(
-    stan_adult_surv_sim_3e4,
-    stan(file = stan_file_adult_surv,
-         data = c(stan_data_adult,
-                  list(Y = surv_sim,
-                       alpha_prior_mean = log(1 / (1 / mean(surv_sim) - 1)),
-                       beta_prior_sd = 0.05,
-                       exp_rate = 40)),
-         iter = 3.6e4,
-         warmup = 6e3,
-         chains = 16,
-         cores = 16,
-         control = list(adapt_delta = 0.9),
-         pars = c("alpha",
-                  "beta_bv",
-                  "beta_bv2",
-                  "beta_age_q1",
-                  "beta_age_q2",
-                  "beta_f",
-                  "ye",
-                  "ll",
-                  "id",
-                  "res",
-                  "bv_lat",
-                  "sigma_ll",
-                  "sigma_ye",
-                  "sigma_id",
-                  "sigma_res",
-                  "y_rep"),
-         model_name = paste0("stan_adult_surv_", sex_lc, "_sim"),
-         thin = 1.2e2), # to keep final object reasonably small
-    pattern = map(surv_sim)
-  ),
+  # tar_target(
+  #   stan_adult_surv_sim_3e4,
+  #   stan(file = stan_file_adult_surv,
+  #        data = c(stan_data_adult,
+  #                 list(Y = surv_sim,
+  #                      alpha_prior_mean = log(1 / (1 / mean(surv_sim) - 1)),
+  #                      beta_prior_sd = 0.5,
+  #                      exp_rate = sqrt(1 / 0.5^2))),
+  #        iter = 3.6e4,
+  #        warmup = 6e3,
+  #        chains = 16,
+  #        cores = 16,
+  #        control = list(adapt_delta = 0.9),
+  #        pars = surv_pars,
+  #        model_name = paste0("stan_adult_surv_", sex_lc, "_sim"),
+  #        thin = 1.2e2), # to keep final object reasonably small
+  #   pattern = map(surv_sim)
+  # ),
   tar_target(
     ars_samps,
-    get_ars_samps(model = stan_adult_ars_3e4)
+    get_samps(model = stan_adult_ars_3e4_ss,
+              pars = ars_pars)
   ),
-  tar_target(
-    ars_samp_pairs_plot,
-    ggpairs(as.data.frame(ars_samps)[, c(
-      "energy",
-      "sigma_ll",
-      "sigma_ye",
-      "sigma_id",
-      "phi",
-      "alpha",
-      "beta_bv",
-      "beta_bv2",
-      "beta_age_q1",
-      "beta_age_q2",
-      "beta_f",
-      "ye.2",
-      "ll.2",
-      "id.3",
-      "bv_lat.245"
-    )])
-  ),
+  # tar_target(
+  #   ars_samp_pairs_plot,
+  #   ggpairs(as.data.frame(ars_samps)[, c("energy", ars_pars[c(1:6, 17:20)])])
+  # ),
   tar_target(
     surv_samps,
-    get_surv_samps(model = stan_adult_surv_3e4)
+    get_samps(model = stan_adult_surv_3e4_ss,
+              pars = surv_pars)
   ),
-  tar_target(
-    surv_samps_ss,
-    get_surv_samps(model = stan_adult_surv_3e4_ss)
-  ),
-  tar_target(
-    surv_samps_sim,
-    get_surv_samps(model = stan_adult_surv_sim_3e4),
-    pattern = map(stan_adult_surv_sim_3e4)
-  ),
-  tar_target(
-    surv_samp_pairs_plot,
-    ggpairs(as.data.frame(surv_samps)[, c(
-      "energy",
-      "sigma_ll",
-      "sigma_ye",
-      "sigma_id",
-      "sigma_res",
-      "alpha",
-      "beta_bv",
-      "beta_bv2",
-      "beta_age_q1",
-      "beta_age_q2",
-      "beta_f",
-      "ye.2",
-      "ll.2",
-      "id.3",
-      "bv_lat.245",
-      "res.2314"
-    )])
-  ),
+  # tar_target(
+  #   surv_samp_pairs_plot,
+  #   ggpairs(as.data.frame(surv_samps)[, c("energy", surv_pars[c(1:6, 18:21)])]),
+  #   pattern = map(surv_models)
+  # ),
   tar_target(
     ars_bv_preds_and_marg,
     bv_preds_and_marg(samps = ars_samps,
-                      data = stan_data_adult,
+                      data = stan_data_adult_ss,
                       inv_link = exp)
   ),
   tar_target(
     surv_bv_preds_and_marg,
     bv_preds_and_marg(samps = surv_samps,
-                      data = stan_data_adult,
+                      data = stan_data_adult_ss,
                       inv_link = function(x) 1 / (1 + exp(-x)))
   ),
   tar_target(
@@ -475,7 +371,9 @@ sex_map <- tar_map(
                          xlab = paste0("Breeding value for ",
                                        sex,
                                        " crossover count"),
-                         ylab = "Predicted annual recruits (both sexes)",
+                         ylab = paste0("Predicted ",
+                                       sex ,
+                                       " annual reproductive success"),
                          title = "")
   ),
   tar_target(
@@ -494,16 +392,18 @@ sex_map <- tar_map(
                          xlab = paste0("Breeding value for ",
                                        sex,
                                        " crossover count"),
-                         ylab = "Marginal effect on annual recruits (both sexes)",
+                         ylab = paste0("Marginal effect on ",
+                                       sex,
+                                       " annual reproductive success"),
                          title = "")
   ),
   tar_target(
     surv_bv_pred_plot,
-    plot_lines_posterior(df = surv_bv_preds_and_marg$df_pred,
+    plot_lines_posterior(df = getElement(surv_bv_preds_and_marg, "df_pred"),
                          xlab = paste0("Breeding value for ",
                                        sex,
                                        " crossover count"),
-                         ylab = "Predicted annual survival (both sexes)",
+                         ylab = paste0("Predicted ", sex," annual survival"),
                          title = "")
   ),
   tar_target(
@@ -518,33 +418,32 @@ sex_map <- tar_map(
   ),
   tar_target(
     surv_bv_marg_plot,
-    plot_lines_posterior(df = surv_bv_preds_and_marg$df_marg,
+    plot_lines_posterior(df = getElement(surv_bv_preds_and_marg, "df_marg"),
                          xlab = paste0("Breeding value for ",
                                        sex,
                                        " crossover count"),
-                         ylab = "Marginal effect on annual survival (both sexes)",
+                         ylab = paste0("Marginal effect on ",
+                                       sex,
+                                       " annual survival"),
                          title = "")
   ),
   tar_target(
     ars_ppc,
-    do_surv_ppc(data = stan_data_adult,
-                samps = ars_samps,
-                co_n = replace_na(data_adult$co_n, 0),
-                co_meas = data_adult$co_meas)
+    do_ars_ppc(y = stan_data_adult_ss$sum_recruit,
+               yrep = ars_samps$y_rep,
+               ll_i = stan_data_adult_ss$ll_idx,
+               ye_i = stan_data_adult_ss$ye_idx,
+               id_i = stan_data_adult_ss$id_idx)
   ),
   tar_target(
     surv_ppc,
-    do_surv_ppc(data = stan_data_adult,
-                samps = surv_samps,
-                co_n = replace_na(data_adult$co_n, 0),
-                co_meas = data_adult$co_meas)
-  ),
-  tar_target(
-    surv_ss_ppc,
-    do_surv_ppc(data = stan_data_adult_ss,
-                samps = surv_samps_ss,
-                co_n = replace_na(data_adult_ss$co_n, 0),
-                co_meas = data_adult_ss$co_meas)
+    do_surv_ppc(y = stan_data_adult_ss$survival,
+                yrep = surv_samps$y_rep,
+                # co_n = replace_na(data_adult_ss$co_n, 0),
+                # co_meas = data_adult_ss$co_meas,
+                ll_i = stan_data_adult_ss$ll_idx,
+                ye_i = stan_data_adult_ss$ye_idx,
+                id_i = stan_data_adult_ss$id_idx)
   )
 )
 
@@ -626,6 +525,12 @@ list(
     deployment = "main"
   ),
   tar_target(
+    stan_file_adult_ars_zinf,
+    "r/zinf_ars.stan",
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
     inbreeding,
     find_inbreeding(gsub(x = geno_data_paths[1], ".bed", ""),
                     ncores = 4,
@@ -633,5 +538,77 @@ list(
                     # Path to plink program:
                     plink_path = plink_path),
     format = "file"
+  ),
+  tar_target(
+    ars_pars,
+    c("alpha",
+      "beta_bv",
+      "beta_bv2",
+      "beta_age_q1",
+      "beta_age_q2",
+      "beta_f",
+      "alpha_std",
+      "beta_bv_std",
+      "beta_bv2_std",
+      "beta_age_q1_std",
+      "beta_age_q2_std",
+      "beta_f_std",
+      "ye",
+      "ll",
+      "id",
+      "bv_lat",
+      "sigma_ll",
+      "sigma_ye",
+      "sigma_id",
+      "alpha_zi",
+      "beta_zi_bv",
+      "beta_zi_bv2",
+      "beta_zi_age_q1",
+      "beta_zi_age_q2",
+      "beta_zi_f",
+      "alpha_zi_std",
+      "beta_zi_bv_std",
+      "beta_zi_bv2_std",
+      "beta_zi_age_q1_std",
+      "beta_zi_age_q2_std",
+      "beta_zi_f_std",
+      "ye_zi",
+      "ll_zi",
+      "id_zi",
+      # "res_zi",
+      "bv_lat",
+      "sigma_ll_zi",
+      "sigma_ye_zi",
+      "sigma_id_zi",
+      # "sigma_res_zi",
+      # "phi_inv",
+      # "phi",
+      "theta",
+      "y_rep")
+  ),
+  tar_target(
+    surv_pars,
+    c("alpha",
+      "beta_bv",
+      "beta_bv2",
+      "beta_age_q1",
+      "beta_age_q2",
+      "beta_f",
+      "alpha_std",
+      "beta_bv_std",
+      "beta_bv2_std",
+      "beta_age_q1_std",
+      "beta_age_q2_std",
+      "beta_f_std",
+      "ye",
+      "ll",
+      "id",
+      "res",
+      "bv_lat",
+      "sigma_ll",
+      "sigma_ye",
+      "sigma_id",
+      "sigma_res",
+      "y_rep")
   )
 )

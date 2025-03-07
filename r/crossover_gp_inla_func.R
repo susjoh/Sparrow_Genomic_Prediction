@@ -514,25 +514,9 @@ pc_rate <- function(U, a = 0.05) {
   -log(a) / U
 }
 
-get_ars_samps <- function(model) {
+get_samps <- function(model, pars) {
   # Extract posterior samples
-  samps <- rstan::extract(model,
-                          pars = c("alpha",
-                                   "beta_bv",
-                                   "beta_bv2",
-                                   "beta_age_q1",
-                                   "beta_age_q2",
-                                   "beta_f",
-                                   "ye",
-                                   "ll",
-                                   "id",
-                                   "bv_lat",
-                                   "sigma_ye",
-                                   "sigma_ll",
-                                   "sigma_id",
-                                   "phi",
-                                   "y_rep"
-                          ))
+  samps <- rstan::extract(model, pars = pars)
 
   samp_params <- get_sampler_params(model, inc_warmup = FALSE)
   samps$energy <- unlist(lapply(samp_params, function(x) x[, "energy__"]))
@@ -541,46 +525,17 @@ get_ars_samps <- function(model) {
   samps
 }
 
-get_surv_samps <- function(model) {
-  # Extract posterior samples
-  samps <- rstan::extract(model,
-                          pars = c("alpha",
-                                   "beta_bv",
-                                   "beta_bv2",
-                                   "beta_age_q1",
-                                   "beta_age_q2",
-                                   "beta_f",
-                                   "ye",
-                                   "ll",
-                                   "id",
-                                   "res",
-                                   "bv_lat",
-                                   "sigma_ye",
-                                   "sigma_ll",
-                                   "sigma_id",
-                                   "sigma_res",
-                                   "y_rep"
-                          ))
-
-  samp_params <- get_sampler_params(model, inc_warmup = FALSE)
-  samps$energy <- unlist(lapply(samp_params, function(x) x[, "energy__"]))
-  samps$divergent <- unlist(lapply(samp_params, function(x) x[, "divergent__"]))
-
-  samps
-}
-
-make_ars_sim <- function(data) {
-
-  alpha_std <- alpha <- -0.077466411
-  beta_bv_std <- beta_bv <-  0.1
-  beta_bv2_std <- beta_bv2 <- -0.5
-  beta_age_std <- beta_age <- 0.182861276
-  beta_age2_std <- beta_age2 <- -0.044908613
-  beta_f_std <- beta_f <- -0.111374375
-
-  sigma_ye <- 0.367186607
-  sigma_ll <- 0.411729306
-  sigma_id <- 0.599423570
+make_ars_sim <- function(data,
+                         alpha = -0.08,
+                         beta_bv = 0.1,
+                         beta_bv2 = -0.05,
+                         beta_age = 0.2,
+                         beta_age2 = -0.04,
+                         beta_f = -0.1,
+                         sigma_ye = 0.4,
+                         sigma_ll = 0.4,
+                         sigma_id = 0.6,
+                         phi = 1.7) {
 
   ye <- rnorm(n = data$N_ye, 0, sigma_ye)
   ll <- rnorm(n = data$N_ll, 0, sigma_ll)
@@ -588,49 +543,37 @@ make_ars_sim <- function(data) {
 
   bv_lat <- rnorm(n = data$N_id, mean = data$bv_mean, sd = data$bv_sd)
 
-  phi <- 1.670098105
-
   ye_full = ye[data$ye_idx]
   ll_full = ll[data$ll_idx]
   id_full = id[data$id_idx]
   bv_lat_full = bv_lat[data$id_idx]
 
-  eta1 <-
-    # alpha_std +
-    # beta_bv_std * scale(bv_lat_full) +
-    # beta_bv2_std * scale(bv_lat_full)^2 +
-    # beta_age_std * scale(data$age) +
-    # beta_age2_std * scale(data$age)^2 +
-    # beta_f_std * scale(data$f)
+  eta <-
     alpha +
     beta_bv * bv_lat_full +
     beta_bv2 * (bv_lat_full)^2 +
-    beta_age * poly(data$age, degree = 2)[, 1] +
-    beta_age2 * poly(data$age, degree = 2)[, 2] +
-    beta_f * data$f
-  eta2 <- ye_full +
+    beta_age * data$age_q1 +
+    beta_age2 * data$age_q2 +
+    beta_f * data$f +
+    ye_full +
     ll_full +
     id_full
-
-  eta <- eta1 + eta2
 
   mu <- exp(eta)
   rnbinom(n = data$N, mu = mu, size = phi)
 }
 
-make_surv_sim <- function(data) {
-
-  alpha_std <- alpha <- -0.077466411
-  beta_bv_std <- beta_bv <-  0.1
-  beta_bv2_std <- beta_bv2 <- 0.5
-  beta_age_std <- beta_age <- 0.182861276
-  beta_age2_std <- beta_age2 <- -0.044908613
-  beta_f_std <- beta_f <- -0.111374375
-
-  sigma_ye <- 0.367186607
-  sigma_ll <- 0.411729306
-  sigma_id <- 0.599423570
-  sigma_res <- 0.4
+make_surv_sim <- function(data,
+                          alpha = -0.08,
+                          beta_bv = 0.1,
+                          beta_bv2 = -0.05,
+                          beta_age = 0.2,
+                          beta_age2 = -0.04,
+                          beta_f = -0.1,
+                          sigma_ye = 0.4,
+                          sigma_ll = 0.4,
+                          sigma_id = 0.6,
+                          sigma_res = 0.4) {
 
   ye <- rnorm(n = data$N_ye, 0, sigma_ye)
   ll <- rnorm(n = data$N_ll, 0, sigma_ll)
@@ -644,28 +587,19 @@ make_surv_sim <- function(data) {
   id_full = id[data$id_idx]
   bv_lat_full = bv_lat[data$id_idx]
 
-  eta1 <-
-    # alpha_std +
-    # beta_bv_std * scale(bv_lat_full) +
-    # beta_bv2_std * scale(bv_lat_full)^2 +
-    # beta_age_std * scale(data$age) +
-    # beta_age2_std * scale(data$age)^2 +
-    # beta_f_std * scale(data$f)
+  eta <-
     alpha +
     beta_bv * bv_lat_full +
     beta_bv2 * (bv_lat_full)^2 +
-    beta_age * poly(data$age, degree = 2)[, 1] +
-    beta_age2 * poly(data$age, degree = 2)[, 2] +
-    beta_f * data$f
-  eta2 <- ye_full +
+    beta_age * data$age_q1 +
+    beta_age2 * data$age_q2 +
+    beta_f * data$f +
+    ye_full +
     ll_full +
     id_full +
     res
 
-  eta <- eta1 + eta2
-
   p <- 1 / (1 + exp(-eta))
-  # print(summary(p))
   rbinom(n = data$N, p = p, size = 1)
 }
 
@@ -691,9 +625,7 @@ bv_preds_and_marg <- function(data,
   age_poly <- poly(data$age, degree = 2)
   avg_age_q <- predict(age_poly, newdata = mean(data$age))
 
-  bv <- seq(min(c(data$bv_mean) - 2 * max(data$bv_sd)),
-            max(c(data$bv_mean) + 2 * max(data$bv_sd)),
-            length.out = n_plot)
+  bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
 
   y_pred_samples <- array(NA, dim = c(n_samp, n_plot))
 
@@ -794,10 +726,7 @@ make_stan_data_adult <- function(data) {
        bv_sd_std = mean(apply(bv_std_vec, 2, sd)))
 }
 
-do_ars_ppc <- function(data, samps, co_n, co_meas) {
-
-  y <- data$sum_recruit
-  yrep <- samps$y_rep
+do_ars_ppc <- function(y, yrep, ll_i, ye_i, id_i) {
 
   lst(mean = ppc_stat(y, yrep),
       sd = ppc_stat(y, yrep, stat = "sd"),
@@ -805,31 +734,33 @@ do_ars_ppc <- function(data, samps, co_n, co_meas) {
       ones = ppc_stat(y, yrep, stat = function(y) mean (y == 1)),
       twos = ppc_stat(y, yrep, stat = function(y) mean (y == 2)),
       bar = ppc_bars(y, yrep),
+      zeros_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean (y == 0), group = ll_i),
+      zeros_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean (y == 0), group = ye_i),
+      ones_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean (y == 1), group = ll_i),
+      ones_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean (y == 1), group = ye_i),
+      sd_ll = ppc_stat_grouped(y, yrep, stat = "sd", group = ll_i),
+      sd_ye = ppc_stat_grouped(y, yrep, stat = "sd", group = ye_i),
       p_mean = mean(colMeans(yrep) > mean(y)),
-      p_mean = mean(apply(yrep, 2, sd) > sd(y)),
+      p_sd = mean(apply(yrep, 2, sd) > sd(y)),
       p_zeros = mean((apply(yrep, 2, function(y) mean(y == 0))) > mean(y == 0)),
       p_ones = mean((apply(yrep, 2, function(y) mean(y == 1))) > mean(y == 1)),
-      p_ones = mean((apply(yrep, 2, function(y) mean(y == 2))) > mean(y == 2)))
+      p_twos = mean((apply(yrep, 2, function(y) mean(y == 2))) > mean(y == 2)))
 }
 
-do_surv_ppc <- function(data, samps, co_n, co_meas) {
-
-  y <- data$survival
-  yrep <- samps$y_rep
-  sex_bin <- factor(data$sex >= 1.5)
+do_surv_ppc <- function(y, yrep, co_n, co_meas, ll_i, ye_i, id_i) {
 
   lst(bar = ppc_bars(y, yrep),
-      bar_ll = ppc_bars_grouped(y, yrep, group = data$ll_idx),
-      bar_ye = ppc_bars_grouped(y, yrep, group = data$ye_idx),
-      bar_sex = ppc_bars_grouped(y, yrep, group = sex_bin),
-      bar_co_meas = ppc_bars_grouped(y, yrep, group = co_meas),
-      bar_co_n = ppc_bars_grouped(y, yrep, group = co_n),
+      bar_ll = ppc_bars_grouped(y, yrep, group = ll_i),
+      bar_ye = ppc_bars_grouped(y, yrep, group = ye_i),
+      # bar_co_meas = ppc_bars_grouped(y, yrep, group = co_meas),
+      # bar_co_n = ppc_bars_grouped(y, yrep, group = co_n),
+      bar_longlife = ppc_bars_grouped(
+        y, yrep, group = factor(tapply(y, factor(id_i), length)[id_i] > 2)),
       sd = ppc_stat(y, yrep, stat = "sd"),
-      sd_ll = ppc_stat_grouped(y, yrep, group = data$ll_idx, stat = "sd"),
-      sd_ye = ppc_stat_grouped(y, yrep, group = data$ye_idx, stat = "sd"),
-      sd_sex = ppc_stat_grouped(y, yrep, group = sex_bin, stat = "sd"),
-      sd_co_meas = ppc_stat_grouped(y, yrep, group = co_meas, stat = "sd"),
-      sd_co_n = ppc_stat_grouped(y, yrep, group = co_n, stat = "sd"),
+      sd_ll = ppc_stat_grouped(y, yrep, group = ll_i, stat = "sd"),
+      sd_ye = ppc_stat_grouped(y, yrep, group = ye_i, stat = "sd"),
+      # sd_co_meas = ppc_stat_grouped(y, yrep, group = co_meas, stat = "sd"),
+      # sd_co_n = ppc_stat_grouped(y, yrep, group = co_n, stat = "sd"),
       p_mean = mean(colMeans(yrep) > mean(y)),
       p_sd = mean(apply(yrep, 2, sd) > sd(y)))
 }

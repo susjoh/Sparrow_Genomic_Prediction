@@ -76,7 +76,7 @@ transformed parameters {
   // Full bv vector (non-centered parameterization berkson errored GP results)
   real alpha_std = alpha_prior_mean + beta_prior_sd * z_alpha;
   real beta_bv_std = beta_prior_sd * z_beta_bv;
-  real beta_bv2_std = beta_prior_sd * z_beta_bv2;
+  real beta_bv2_std = beta_prior_sd * z_beta_bv2 / sqrt(2);
   real beta_age_q1_std = beta_prior_sd * z_beta_age_q1;
   real beta_age_q2_std = beta_prior_sd * z_beta_age_q2;
   real beta_f_std = beta_prior_sd * z_beta_f;

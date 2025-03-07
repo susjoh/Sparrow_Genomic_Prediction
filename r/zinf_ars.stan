@@ -14,11 +14,15 @@ data {
   real bv_mean_std;                  // Constant used to standardize the vector of breeding values
   real bv_sd_std;                    // Constant used to standardize the vector of breeding values
   int<lower=0> Y[N];                 // Response variable (yearly number of offspring)
-  real<lower=0> exp_rate;            // Rate in exponential priors
-  real<lower=0> phi_inv_rate;
+  // Rate in exponential priors
+  real<lower=0> exp_rate;
+  real<lower=0> exp_rate_zi;
+  // real<lower=0> phi_inv_rate;
   // Parameters for the priors on coefficients:
   real alpha_prior_mean;
   real<lower=0> beta_prior_sd;
+  real alpha_zi_prior_mean;
+  real<lower=0> beta_zi_prior_sd;
 }
 
 transformed data {
@@ -47,38 +51,78 @@ transformed data {
 }
 
 parameters {
-  vector[N_ye] z_ye;                 // Std.normal noise for year random effect
-  vector[N_ll] z_ll;                 // Std.normal noise for last locality random effect
-  vector[N_id] z_id;                 // Std.normal noise for identity random effect
-  vector[N_id] z_bv;                 // Std.norm noise in bv
-  real<lower=0,upper=1> phi_inv_raw;
+  // Std.normal noise for random effect levels
+  vector[N_ye] z_ye;
+  vector[N_ll] z_ll;
+  vector[N_id] z_id;
+  vector[N_ye] z_ye_zi;
+  vector[N_ll] z_ll_zi;
+  vector[N_id] z_id_zi;
+  // vector[N] z_res_zi;
+  // Std.norm noise in breeding value
+  vector[N_id] z_bv;
+  // Uniform noise for
+  // real<lower=0,upper=1> phi_inv_raw;
+  // Uniform noise for random effects standard deviations:
   real<lower=0,upper=1> sigma_ye_raw;
   real<lower=0,upper=1> sigma_ll_raw;
   real<lower=0,upper=1> sigma_id_raw;
+  real<lower=0,upper=1> sigma_ye_zi_raw;
+  real<lower=0,upper=1> sigma_ll_zi_raw;
+  real<lower=0,upper=1> sigma_id_zi_raw;
+  // real<lower=0,upper=1> sigma_res_zi_raw;
+  // Std.normal noise for count component coefficients:
   real z_alpha;
   real z_beta_bv;
   real z_beta_bv2;
   real z_beta_age_q1;
   real z_beta_age_q2;
   real z_beta_f;
+  // Std.normal noise for zero-inflation component coefficients:
+  real z_alpha_zi;
+  real z_beta_zi_bv;
+  real z_beta_zi_bv2;
+  real z_beta_zi_age_q1;
+  real z_beta_zi_age_q2;
+  real z_beta_zi_f;
 }
 
 transformed parameters {
+  //  Transform random effect standard deviations from uniform to exponential
   real<lower=0> sigma_ye = -log(sigma_ye_raw) / exp_rate;
   real<lower=0> sigma_ll = -log(sigma_ll_raw) / exp_rate;
   real<lower=0> sigma_id = -log(sigma_id_raw) / exp_rate;
-  vector[N_ye] ye = z_ye * sigma_ye; // Levels in year random effect
-  vector[N_ll] ll = z_ll * sigma_ll; // Levels in last locality random effect
-  vector[N_id] id = z_id * sigma_id; // Levels in identity random effect
-  real<lower=0> phi_inv = -log(phi_inv_raw) / phi_inv_rate; // 1 / (overdispersion parameter)
-  real<lower=0> phi = 1 / phi_inv;   // Overdispersion parameter
+  real<lower=0> sigma_ye_zi = -log(sigma_ye_zi_raw) / exp_rate;
+  real<lower=0> sigma_ll_zi = -log(sigma_ll_zi_raw) / exp_rate;
+  real<lower=0> sigma_id_zi = -log(sigma_id_zi_raw) / exp_rate;
+  // real<lower=0> sigma_res_zi = -log(sigma_res_zi_raw) / exp_rate;
+  // Levels in random effects:
+  vector[N_ye] ye = z_ye * sigma_ye;
+  vector[N_ll] ll = z_ll * sigma_ll;
+  vector[N_id] id = z_id * sigma_id;
+  vector[N_ye] ye_zi = z_ye_zi * sigma_ye_zi;
+  vector[N_ll] ll_zi = z_ll_zi * sigma_ll_zi;
+  vector[N_id] id_zi = z_id_zi * sigma_id_zi;
+  // vector[N] res_zi = z_res_zi * sigma_res_zi;
+  // 1 / (overdispersion parameter)
+  // real<lower=0> phi_inv = -log(phi_inv_raw) / phi_inv_rate;
+  // Overdispersion parameter
+  // real<lower=0> phi = 1 / phi_inv;
 
+  // Count component coefficients
   real alpha_std = alpha_prior_mean + beta_prior_sd * z_alpha;
   real beta_bv_std = beta_prior_sd * z_beta_bv;
   real beta_bv2_std = beta_prior_sd * z_beta_bv2 / sqrt(2);
   real beta_age_q1_std = beta_prior_sd * z_beta_age_q1;
   real beta_age_q2_std = beta_prior_sd * z_beta_age_q2;
   real beta_f_std = beta_prior_sd * z_beta_f;
+  // Standardized zero-inflation regression coefficients
+  real alpha_zi_std = alpha_zi_prior_mean + beta_zi_prior_sd * z_alpha_zi;
+  real beta_zi_bv_std = beta_zi_prior_sd * z_beta_zi_bv;
+  real beta_zi_bv2_std = beta_zi_prior_sd * z_beta_zi_bv2 / sqrt(2);
+  real beta_zi_age_q1_std = beta_zi_prior_sd * z_beta_zi_age_q1;
+  real beta_zi_age_q2_std = beta_zi_prior_sd * z_beta_zi_age_q2;
+  real beta_zi_f_std = beta_zi_prior_sd * z_beta_zi_f;
 
   // Full bv vector (non-centered parameterization berkson errored GP results)
   vector[N_id] bv_lat = bv_mean + bv_sd .* z_bv;
@@ -90,6 +134,9 @@ transformed parameters {
   vector[N] rand_inter;
   // Predictor matrix
   matrix[N, 6] x_mat;
+  // Zero-inflated linear predictor
+  vector[N] logit_theta;
+  vector[N] theta;
 
   vector[N] bv_lat_full;
   for (i in 1:N) {
@@ -101,21 +148,43 @@ transformed parameters {
   for (i in 1:N) {
     rand_inter[i] = ye[ye_idx[i]] + ll[ll_idx[i]] + id[id_idx[i]];
   }
+
+  // Zero-inflation linear predictor
+  for (i in 1:N) {
+    logit_theta[i] = alpha_zi_std
+    + beta_zi_bv_std * bv_lat_full[i]
+    + beta_zi_bv2_std * square(bv_lat_full[i])
+    + beta_zi_age_q1_std * age_q1_std[i]
+    + beta_zi_age_q2_std * age_q2_std[i]
+    + beta_zi_f_std * f_std[i]
+    + ye_zi[ye_idx[i]] + ll_zi[ll_idx[i]] + id_zi[id_idx[i]];# + res_zi[i];
+  }
+  theta = inv_logit(logit_theta);
 }
 
 model {
 
   // Priors
-  // Non-centered prior for latent bv to improve convergence
+  // Non-centered parameterizations to improve convergence
   z_bv ~ std_normal();
+
   z_ye ~ std_normal();
   z_ll ~ std_normal();
   z_id ~ std_normal();
 
-  phi_inv_raw ~ uniform(0, 1);
+  z_ye_zi ~ std_normal();
+  z_ll_zi ~ std_normal();
+  z_id_zi ~ std_normal();
+  // z_res_zi ~ std_normal();
+
+  // phi_inv_raw ~ uniform(0, 1);
   sigma_ye_raw ~ uniform(0, 1);
   sigma_ll_raw ~ uniform(0, 1);
   sigma_id_raw ~ uniform(0, 1);
+  sigma_ye_zi_raw ~ uniform(0, 1);
+  sigma_ll_zi_raw ~ uniform(0, 1);
+  sigma_id_zi_raw ~ uniform(0, 1);
+  // sigma_res_zi_raw ~ uniform(0, 1);
 
   z_alpha ~ std_normal();
   z_beta_bv ~ std_normal();
@@ -124,8 +193,24 @@ model {
   z_beta_age_q2 ~ std_normal();
   z_beta_f ~ std_normal();
 
+  z_alpha_zi ~ std_normal();
+  z_beta_zi_bv ~ std_normal();
+  z_beta_zi_bv2 ~ std_normal();
+  z_beta_zi_age_q1 ~ std_normal();
+  z_beta_zi_age_q2 ~ std_normal();
+  z_beta_zi_f ~ std_normal();
+
   // Likelihood
-  Y ~ neg_binomial_2_log_glm(x_mat, rand_inter, beta_vec, phi);
+  for (i in 1:N) {
+    if (Y[i] == 0) {
+      target += log_sum_exp(log(theta[i]),
+      log1m(theta[i])
+      + poisson_log_glm_lpmf(Y[i] | to_matrix(x_mat[i]), rand_inter[i], beta_vec));
+    } else {
+      target += log1m(theta[i])
+      + poisson_log_glm_lpmf(Y[i] | to_matrix(x_mat[i]), rand_inter[i], beta_vec);
+    }
+  }
 }
 
 generated quantities {
@@ -143,11 +228,30 @@ generated quantities {
   real beta_age_q2 = beta_age_q2_std / sd_age_q2;
   real beta_f = beta_f_std / sd_f;
 
+  real alpha_zi = alpha_zi_std
+  - beta_zi_bv_std * bv_std_const1
+  + beta_zi_bv2_std * bv_std_const2
+  - beta_zi_age_q1_std * age_q1_const
+  - beta_zi_age_q2_std * age_q2_const
+  - beta_zi_f_std * f_const;
+
+  real beta_zi_bv = beta_zi_bv_std / bv_sd_std - beta_zi_bv2_std * bv_std_const4;
+  real beta_zi_bv2 = beta_zi_bv2_std / bv_std_const3;
+  real beta_zi_age_q1 = beta_zi_age_q1_std / sd_age_q1;
+  real beta_zi_age_q2 = beta_zi_age_q2_std / sd_age_q2;
+  real beta_zi_f = beta_zi_f_std / sd_f;
+
+
   // Posterior predictions
   int y_rep[N]; // Posterior predictive samples
-  vector[N] linpred = x_mat * beta_vec + rand_inter; // Linear predictor
-
+  int<lower=0,upper=1> zinf[N];
+  vector[N] count_linpred = x_mat * beta_vec + rand_inter; // Linear predictor
   for (i in 1:N) {
-    y_rep[i] = neg_binomial_2_log_rng(linpred[i], phi);
+    zinf[i] = bernoulli_rng(theta[i]);
+    if (zinf[i] == 1) {
+      y_rep[i] = 0;
+    } else {
+      y_rep[i] = poisson_log_rng(count_linpred[i]);
+    }
   }
 }
