@@ -225,7 +225,7 @@ sex_map <- tar_map(
     deployment = "main"
   ),
   # tar_target(
-  #   stan_adult_ars_3e4,
+  #   stan_adult_ars,
   #   stan(file = stan_file_adult_ars_zinf,
   #        data = c(stan_data_adult,
   #            list(Y = stan_data_adult$sum_recruit,
@@ -247,27 +247,26 @@ sex_map <- tar_map(
   #        thin = 1.2e2) # to keep final object reasonably small
   # ),
   tar_target(
-    stan_adult_ars_3e4_ss,
+    stan_adult_ars_ss,
     stan(file = stan_file_adult_ars_zinf,
          data = c(stan_data_adult_ss,
                   list(Y = stan_data_adult_ss$sum_recruit,
-                       phi_inv_rate = mean(stan_data_adult_ss$sum_recruit)^2 /
-                         (var(stan_data_adult_ss$sum_recruit) -
-                            mean(stan_data_adult_ss$sum_recruit)),
-                       alpha_prior_mean = stan_data_adult_ss$sum_recruit_log_mean,
-                       beta_prior_sd = 0.05,
-                       exp_rate = 40, # sqrt(1 / 0.05^2)
-                       alpha_zi_prior_mean = 0,
+                       alpha_prior_mean = log(mean(c(stan_data_adult_ss$sum_recruit[stan_data_adult_ss$sum_recruit != 0],
+                                                     stan_data_adult_ss$sum_recruit))),
+                       beta_prior_sd = 0.1,
+                       exp_rate = 1 / 0.1,
+                       alpha_zi_prior_mean = log(mean(stan_data_adult_ss$sum_recruit == 0) /
+                                                   (1 - mean(stan_data_adult_ss$sum_recruit == 0))),
                        beta_zi_prior_sd = 0.5,
-                       exp_rate_zi = sqrt(1 / 0.5^2))),
-         iter = 3.6e4,
-         warmup = 6e3,
+                       exp_rate_zi = 1 / 0.5)),
+         iter = 4.8e4,
+         warmup = 8e3,
          chains = 16,
          cores = 16,
          pars = ars_pars,
          control = list(adapt_delta = 0.9),
          model_name = paste0("stan_adult_ars_ss_", sex_lc),
-         thin = 1.2e2) # to keep final object reasonably small
+         thin = 1.6e2) # to keep final object reasonably small
   ),
   tar_target(
     ars_sim,
@@ -275,7 +274,7 @@ sex_map <- tar_map(
     deployment = "main"
   ),
   # tar_target(
-  #   stan_adult_ars_sim_3e4,
+  #   stan_adult_ars_sim,
   #   stan(file = stan_file_adult_ars,
   #        data = c(stan_data_adult,
   #                 list(Y = ars_sim,
@@ -295,21 +294,21 @@ sex_map <- tar_map(
   #   pattern = map(ars_sim)
   # ),
   tar_target(
-    stan_adult_surv_3e4_ss,
+    stan_adult_surv_ss,
     stan(file = stan_file_adult_surv,
          data = c(stan_data_adult_ss,
                   list(Y = stan_data_adult_ss$survival,
                        alpha_prior_mean = stan_data_adult_ss$survival_logit_mean,
                        beta_prior_sd = 0.5,
                        exp_rate = sqrt(1 / 0.5^2))),
-         iter = 3.6e4,
-         warmup = 6e3,
+         iter = 4.8e4,
+         warmup = 8e3,
          chains = 16,
          cores = 16,
          control = list(adapt_delta = 0.9),
          pars = surv_pars,
-         model_name = paste0("stan_adult_surv_", sex_lc),
-         thin = 1.2e2) # to keep final object reasonably small
+         model_name = paste0("stan_adult_surv_ss", sex_lc),
+         thin = 1.6e2) # to keep final object reasonably small
   ),
   tar_target(
     surv_sim,
@@ -317,7 +316,7 @@ sex_map <- tar_map(
     deployment = "main"
   ),
   # tar_target(
-  #   stan_adult_surv_sim_3e4,
+  #   stan_adult_surv_sim,
   #   stan(file = stan_file_adult_surv,
   #        data = c(stan_data_adult,
   #                 list(Y = surv_sim,
@@ -336,7 +335,7 @@ sex_map <- tar_map(
   # ),
   tar_target(
     ars_samps,
-    get_samps(model = stan_adult_ars_3e4_ss,
+    get_samps(model = stan_adult_ars_ss,
               pars = ars_pars)
   ),
   # tar_target(
@@ -345,7 +344,7 @@ sex_map <- tar_map(
   # ),
   tar_target(
     surv_samps,
-    get_samps(model = stan_adult_surv_3e4_ss,
+    get_samps(model = stan_adult_surv_ss,
               pars = surv_pars)
   ),
   # tar_target(
