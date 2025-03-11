@@ -47,7 +47,7 @@ Rather than treating the breeding values as having fixed, known values, we sampl
 For individual $i$ in year $j$ we model the survival as a logistic GLMM, written here as a Bayesian hierarchical model:
 \begin{align*}
     &g_i \sim N(\mu_i, \sigma_i^2) \\
-    &\eta_{ij} = \alpha + \beta_g \cdot g_i + beta_{g^2} \cdot g_i^2 + \beta_\text{age} \cdot \text{age} + \beta_{\text{age}^2} \cdot \text{age}^2 + \beta_f \cdot f + \text{isl}_i + \text{year}_? + \text{id}_i + \varepsilon_{ij}\\
+    &\eta_{ij} = \alpha + \beta_g \cdot g_i + beta_{g^2} \cdot g_i^2 + \beta_\text{age} \cdot \text{age} + \beta_{\text{age}^2} \cdot \text{age}^2 + \beta_f \cdot f + \text{isl}_i + \text{year}_j + \text{id}_i + \varepsilon_{ij}\\
     &P(\text{survival}_{ij} = 1) = \text{logit}^{-1}(\eta_{ij})
 \end{align*}
 
@@ -73,5 +73,10 @@ For individual $i$ in year $j$ we model the survival as a logistic GLMM, written
 \end{figure}
 
 \section*{Discussion}
+
+\clearpage
+\bibliographystyle{mee.bst}
+\bibliography{mylib.bib}
+\clearpage
 
 \end{document}
