@@ -253,8 +253,8 @@ sex_map <- tar_map(
                   list(Y = stan_data_adult_ss$sum_recruit,
                        alpha_prior_mean = log(mean(c(stan_data_adult_ss$sum_recruit[stan_data_adult_ss$sum_recruit != 0],
                                                      stan_data_adult_ss$sum_recruit))),
-                       beta_prior_sd = 0.1,
-                       exp_rate = 1 / 0.1,
+                       beta_prior_sd = 0.2,
+                       exp_rate = 1 / 0.2,
                        alpha_zi_prior_mean = log(mean(stan_data_adult_ss$sum_recruit == 0) /
                                                    (1 - mean(stan_data_adult_ss$sum_recruit == 0))),
                        beta_zi_prior_sd = 0.5,
@@ -354,15 +354,13 @@ sex_map <- tar_map(
   # ),
   tar_target(
     ars_bv_preds_and_marg,
-    bv_preds_and_marg(samps = ars_samps,
-                      data = stan_data_adult_ss,
-                      inv_link = exp)
+    make_ars_bv_preds_and_marg(samps = ars_samps,
+                               data = stan_data_adult_ss)
   ),
   tar_target(
     surv_bv_preds_and_marg,
-    bv_preds_and_marg(samps = surv_samps,
-                      data = stan_data_adult_ss,
-                      inv_link = function(x) 1 / (1 + exp(-x)))
+    make_surv_bv_preds_and_marg(samps = surv_samps,
+                                data = stan_data_adult_ss)
   ),
   tar_target(
     ars_bv_pred_plot,
@@ -387,7 +385,7 @@ sex_map <- tar_map(
   ),
   tar_target(
     ars_bv_marg_plot,
-    plot_lines_posterior(df = ars_bv_preds_and_marg$df_marg,
+    plot_lines_posterior(df = ars_bv_preds_and_marg$df_marg_pred,
                          xlab = paste0("Breeding value for ",
                                        sex,
                                        " crossover count"),
@@ -398,7 +396,7 @@ sex_map <- tar_map(
   ),
   tar_target(
     surv_bv_pred_plot,
-    plot_lines_posterior(df = getElement(surv_bv_preds_and_marg, "df_pred"),
+    plot_lines_posterior(df = surv_bv_preds_and_marg$df_pred,
                          xlab = paste0("Breeding value for ",
                                        sex,
                                        " crossover count"),
@@ -417,7 +415,7 @@ sex_map <- tar_map(
   ),
   tar_target(
     surv_bv_marg_plot,
-    plot_lines_posterior(df = getElement(surv_bv_preds_and_marg, "df_marg"),
+    plot_lines_posterior(df = surv_bv_preds_and_marg$df_marg,
                          xlab = paste0("Breeding value for ",
                                        sex,
                                        " crossover count"),
@@ -602,12 +600,12 @@ list(
       "ye",
       "ll",
       "id",
-      "res",
+      # "res",
       "bv_lat",
       "sigma_ll",
       "sigma_ye",
       "sigma_id",
-      "sigma_res",
+      # "sigma_res",
       "y_rep")
   )
 )

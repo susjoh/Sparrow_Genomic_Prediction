@@ -105,13 +105,13 @@ ars <- function(i,
 
 data <- tar_read(stan_data_adult_ss_f)
 
-res <- lapply(X = 1:2e3,
+res <- lapply(X = 1:5e3,
               FUN = ars,
               data = data,
               alpha_mean = log(mean(c(data$sum_recruit[data$sum_recruit != 0],
                                       data$sum_recruit))),
-              beta_sd = 0.1,
-              sigma_rate = 1 / 0.1,
+              beta_sd = 0.2,
+              sigma_rate = 1 / 0.2,
               alpha_zi_mean = log(mean(data$sum_recruit == 0) /
                                     (1 - mean(data$sum_recruit == 0))),
               beta_zi_sd = 0.5,
@@ -120,9 +120,8 @@ res <- lapply(X = 1:2e3,
                 # (var(data$sum_recruit) - mean(data$sum_recruit))
               ) %>%
   do.call(rbind, .)
-summary(res)
-plot(density(res[, "Mean"]))
-plot(density(res[, "Max."]))
+apply(res, 1, function(x) mean(x == 0)) %>% hist(breaks = 50)
+apply(res, 1, max) %>% hist(breaks = 50)
 
 surv <- function(i, data, alpha_mean, beta_sd, sigma_rate) {
 
