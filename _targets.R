@@ -40,7 +40,6 @@ tar_option_set(
                "GGally",
                "dplyr",
                "qs",
-               "dplyr",
                "magrittr",
                "tools",
                "INLA",
@@ -172,7 +171,17 @@ sex_map <- tar_map(
     co_data_adult_ars,
     make_adult_ars_gp_data(pheno_data = co_data,
                            lrs_path = lrs_data_path,
-                           fam_path = geno_data_paths[3])
+                           fam_path = geno_data_paths[3],
+                           sex_num = sex_num_lrs)
+  ),
+  tar_target(
+    co_data_adult_parent,
+    make_adult_parent_gp_data(pheno_data = co_data,
+                              lrs_path = lrs_data_path,
+                              lrs_path2 = lrs_data_path2,
+                              fam_path = geno_data_paths[3],
+                              ped_path = pedigree_path,
+                              sex_keep = sex_keep)
   ),
   tar_target(
     co_adult_ars_grm_files,
@@ -197,6 +206,19 @@ sex_map <- tar_map(
            inverse_relatedness_matrix = co_adult_ars_grm_obj$inv_grm,
            effects_vec = inla_effects_gp_vector_grm_all,
            y = paste0("co_count_", sex_lc))
+  ),
+  tar_target(
+    co_gp_adult_ars2, # genomic animal model for crossover rate in females
+    run_gp(pheno_data = co_data_adult_ars,
+           inverse_relatedness_matrix = co_adult_ars_grm_obj$inv_grm,
+           effects_vec = inla_effects_gp_vector_grm_all,
+           y = paste0("co_count_", sex_lc),
+           comp_conf = TRUE)
+  ),
+  tar_target(
+    bv_covmat, # genomic animal model for crossover rate in females
+    inla_bv_covmat(model = co_gp_adult_ars2,
+                   ncores = 16)
   ),
   tar_target(
     data_adult,
@@ -479,6 +501,12 @@ list(
   tar_target(
     morph_data_path,
     "data/AdultMorphology_20240201_fix.csv",
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    pedigree_path,
+    "data/20230317_Sparrow_Pedigree.txt",
     format = "file",
     deployment = "main"
   ),

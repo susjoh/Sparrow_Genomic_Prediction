@@ -113,7 +113,8 @@ prep_co_data <- function(recomb_data_path,
 
 make_adult_ars_gp_data <- function(pheno_data,
                                    lrs_path,
-                                   fam_path) {
+                                   fam_path,
+                                   sex_num) {
 
   geno_inds <- fread(file = fam_path, select = 2)$V2
   geno_inds_red <- gsub(x = geno_inds, pattern = "_.+", "")
@@ -128,6 +129,15 @@ make_adult_ars_gp_data <- function(pheno_data,
   lrs <- lrs[!duplicated(lrs$ringnr), ]
   # Remove non-genotyped inds
   lrs <- lrs[lrs$ringnr %in% geno_inds_red, ]
+  # Remove inds with missing sex
+  lrs %<>% dplyr::filter(!is.na(sex))
+  # Sex filtering
+  if (sex_num != "all") {
+    lrs %<>%
+      dplyr::filter(sex != 1.5) %>%
+      mutate(sex = round(sex)) %>%
+      filter(sex %in% sex_num)
+  }
   # For duplicated genotypes:
   lrs$id_red <- lrs$ringnr
   lrs$ringnr[which(!lrs$ringnr %in% geno_inds)] <-
@@ -146,6 +156,74 @@ make_adult_ars_gp_data <- function(pheno_data,
                                        by = 1)
   # Merge
   plyr::rbind.fill(pheno_data, lrs)
+}
+
+# Sex-GP on inds with offspring with fitness measures
+make_adult_parent_gp_data <- function(pheno_data,
+                                      lrs_path,
+                                      lrs_path2,
+                                      fam_path,
+                                      ped_path,
+                                      sex_keep) {
+
+  geno_inds <- fread(file = fam_path, select = 2)$V2
+  geno_inds_red <- gsub(x = geno_inds, pattern = "_.+", "")
+
+  pedigree <- read.table(file = ped_path, header = TRUE)
+  pedigree$id_red <- gsub(x = pedigree$id, pattern = "_.+", "")
+  pedigree$dam_red <- gsub(x = pedigree$dam, pattern = "_.+", "")
+  pedigree$sire_red <- gsub(x = pedigree$sire, pattern = "_.+", "")
+
+  lrs <- fread(file = lrs_path)
+  # remove last loc. outside of main islands
+  lrs <- lrs[lrs$last_locality %in%
+               c(20, 22, 23, 24, 26, 27, 28, 34, 35, 38, 331, 332),
+             c("ringnr", "sex", "hatch_year", "first_locality")]
+  # Only need a single row per ind now
+  lrs <- lrs[!duplicated(lrs$ringnr), ]
+
+  lrs2 <- fread(file = lrs_path2)
+  lrs2 <- lrs2[!duplicated(lrs2$ringnr), ]
+  lrs2 <- lrs2[lrs2$last_locality %in%
+        c(20, 22, 23, 24, 26, 27, 28, 34, 35, 38, 331, 332),
+      c("ringnr", "sex", "hatch_year", "first_locality")]
+
+  # Keep only inds with fitness data
+  pedigree %<>% dplyr::filter(id_red %in% lrs$ringnr)
+  # Inds we want to do GP on (genotyped, and have child with fitness data)
+  if (sex_keep == "F") {
+    gp_inds <- unique(pedigree$dam[pedigree$dam %in% geno_inds])
+  } else if (sex_keep == "M") {
+    gp_inds <- unique(pedigree$sire[pedigree$sire %in% geno_inds])
+  } else {
+    stop("sex mistake")
+  }
+  # Don't need to do GP for inds already phenotyped
+  gp_inds <- gp_inds[!gp_inds %in% pheno_data$id]
+  gp_inds_red <- gsub(x = gp_inds, pattern = "_.+", "")
+
+  # Data frame to add to pheno_data
+  gp_inds_df <- lrs[lrs$ringnr %in% gp_inds_red, ]
+  # Add inds missing from lrs, but present in lrs2
+  gp_inds_df <- rbind(gp_inds_df,
+                      lrs2[(!lrs2$ringnr %in% gp_inds_df$ringnr) &
+                             (lrs2$ringnr %in% gp_inds_red),
+                           c("ringnr", "sex", "hatch_year", "first_locality")])
+  # For duplicated genotypes:
+  gp_inds_df$id_red <- gp_inds_df$ringnr
+  gp_inds_df$ringnr[which(!gp_inds_df$ringnr %in% geno_inds)] <-
+    sapply(which(!gp_inds_df$ringnr %in% geno_inds),
+           function(ind) {
+             geno_inds[match(gp_inds_df$ringnr[ind], geno_inds_red)]
+           })
+  gp_inds_df$id <- gp_inds_df$ringnr
+  # Recasting
+  gp_inds_df$sex <- ifelse(gp_inds_df$sex > 1.5, "F", "M")
+  gp_inds_df$hatch_year <- as.factor(gp_inds_df$hatch_year)
+  gp_inds_df$id1 <- gp_inds_df$id2 <- gp_inds_df$id3 <-
+    seq(from = max(pheno_data$id1) + 1,  length = nrow(gp_inds_df), by = 1)
+  # Merge
+  plyr::rbind.fill(pheno_data, gp_inds_df)
 }
 
 make_data_adult <- function(gp_data,
@@ -333,7 +411,8 @@ run_gp <- function(pheno_data,
                    effects_vec,
                    y,
                    pc_matrix = NULL,
-                   va_apriori = NULL) {
+                   va_apriori = NULL,
+                   comp_conf = FALSE) {
 
   pheno_data$y <- pheno_data[, y]
 
@@ -352,7 +431,7 @@ run_gp <- function(pheno_data,
        family = "gaussian",
        data = pheno_data,
        verbose  = TRUE,
-       # control.compute = list(config = TRUE),
+       control.compute = list(config = comp_conf),
        control.family = list(hyper = prior$hyperpar_var)) %>%
     inla.rerun()
 }
@@ -675,8 +754,8 @@ make_ars_bv_preds_and_marg <- function(data,
 }
 
 make_surv_bv_preds_and_marg <- function(data,
-                                   samps,
-                                   n_plot = 200) {
+                                        samps,
+                                        n_plot = 200) {
   n_samp <- length(samps$alpha)
   avg_age <- mean(data$age)
   avg_f <- mean(data$f)
@@ -844,4 +923,18 @@ do_surv_ppc <- function(y, yrep, co_n, co_meas, ll_i, ye_i, id_i) {
       # sd_co_n = ppc_stat_grouped(y, yrep, group = co_n, stat = "sd"),
       p_mean = mean(colMeans(yrep) > mean(y)),
       p_sd = mean(apply(yrep, 2, sd) > sd(y)))
+}
+
+inla_bv_covmat <- function(model, n_samp = 1e4, ncores) {
+
+  covmat <- INLA::inla.posterior.sample(n = n_samp,
+                              result = model,
+                              add.names = FALSE,
+                              num.threads = ncores) %>%
+    INLA::inla.posterior.sample.eval(fun = function() id1) %>%
+    t() %>%
+    cov()
+  # Same order as pheno_data
+  covmat[order(model$summary.random$id1$ID),
+         order(model$summary.random$id1$ID)]
 }
