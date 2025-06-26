@@ -968,8 +968,8 @@ make_stan_data_adult <- function(data) {
        f = data$fhat3,
        bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
        bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
-       data$co_n,
-       data$co_meas)
+       co_n = data$co_n,
+       co_meas = data$co_meas)
 }
 
 do_ars_ppc <- function(y, yrep, ll_i, ye_i, id_i) {
