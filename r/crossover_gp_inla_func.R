@@ -270,7 +270,7 @@ make_data_adult <- function(gp_data,
 
   # Number of crossover measurements
   lrs$co_n <- gp_data$n[match(lrs$ringnr, gp_data$id_red)]
-  lrs %>% mutate(co_n = ifelse(is.na(co_n), 0, co_n))
+  lrs %<>% mutate(co_n = ifelse(is.na(co_n), 0, co_n))
   lrs$co_meas <- (lrs$co_n > 0)
 
   lrs[order(lrs$co_meas), ]

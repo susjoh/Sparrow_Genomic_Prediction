@@ -367,7 +367,7 @@ sex_map <- tar_map(
          chains = 16,
          cores = 16,
          control = list(adapt_delta = 0.95),
-         pars = surv_pars,
+         pars = c(surv_pars, "beta_co_n", "beta_co_n_std"),
          model_name = paste0("stan_adult_surv_ss_", sex_lc),
          thin = 1.6e2) # to keep final object reasonably small
   ),

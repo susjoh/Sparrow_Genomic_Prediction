@@ -47,7 +47,7 @@ transformed data {
   real bv_std_const4 = 2 * bv_mean_std / bv_std_const3;
 
   // Matrix containing fixed predictors
-  matrix[N, 4] fixed_pred_mat = append_col(append_col(append_col(rep_vector(1, N), age_q1_std), age_q2_std), f_std);
+  matrix[N, 5] fixed_pred_mat = append_col(append_col(append_col(append_col(rep_vector(1, N), age_q1_std), age_q2_std), f_std), co_n_std);
 }
 
 parameters {
@@ -147,6 +147,7 @@ generated quantities {
   real beta_age_q1 = beta_age_q1_std / sd_age_q1;
   real beta_age_q2 = beta_age_q2_std / sd_age_q2;
   real beta_f = beta_f_std / sd_f;
+  real beta_co_n = beta_co_n_std / sd_co_n;
 
   // Posterior predictions
   int y_rep[N]; // Posterior predictive samples
