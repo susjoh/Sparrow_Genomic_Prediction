@@ -45,7 +45,8 @@ tar_option_set(
                "INLA",
                "rstan",
                "bayesplot",
-               "tidyr"), # Packages that your targets need for their tasks.
+               "tidyr",
+               "mvtnorm"), # Packages that your targets need for their tasks.
   format = "qs", # Optionally set the default storage format. qs is fast.
   error = "continue", # produce result even if the target errored
   resources = tar_resources(

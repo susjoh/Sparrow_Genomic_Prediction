@@ -972,6 +972,52 @@ make_stan_data_adult <- function(data) {
        co_meas = data$co_meas)
 }
 
+make_stan_data_adult_covmat <- function(data, gp_data, covmat) {
+
+  # Make bv stats same order as ringnr, and give one entry per ind.
+  bv_mean <- data$bv_mean[order(data$ringnr_num)][
+    match(unique(data[order(data$ringnr_num)]$ringnr),
+          data[order(data$ringnr_num)]$ringnr)]
+
+  # All the same reordering that was done for bv_mean
+  bv_covmat <- covmat[
+    gp_data$id1, gp_data$id1][
+      match(data$ringnr, gp_data$id_red),
+      match(data$ringnr, gp_data$id_red)][
+        order(data$ringnr_num), order(data$ringnr_num)][
+          match(unique(data[order(data$ringnr_num)]$ringnr),
+                data[order(data$ringnr_num)]$ringnr),
+          match(unique(data[order(data$ringnr_num)]$ringnr),
+                data[order(data$ringnr_num)]$ringnr)]
+
+  # sample, and add repeats
+  bv_std_vec <- rmvnorm(1e4, bv_mean, bv_covmat)[, data$ringnr_num]
+
+  list(N = nrow(data),
+       sex = data$sex,
+       N_ll = max(data$ll_num),
+       N_ye = max(data$y_num),
+       N_id = max(data$ringnr_num),
+       ye_idx = data$y_num,
+       ll_idx = data$ll_num,
+       id_idx = data$ringnr_num,
+       bv_mean = bv_mean,
+       bv_covmat = bv_covmat,
+       bv_covmat_chol = t(chol(bv_covmat)), # pre-multiply this with z-vec
+       sum_recruit = data$sum_recruit,
+       sum_recruit_log_mean = log(mean(data$sum_recruit)),
+       survival = data$survival,
+       survival_logit_mean = log(1 / (1 / mean(data$survival) - 1)),
+       age = data$age,
+       age_q1 = poly(data$age, degree = 2)[, 1],
+       age_q2 = poly(data$age, degree = 2)[, 2],
+       f = data$fhat3,
+       bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
+       bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
+       co_n = data$co_n,
+       co_meas = data$co_meas)
+}
+
 do_ars_ppc <- function(y, yrep, ll_i, ye_i, id_i) {
 
   lst(mean = ppc_stat(y, yrep),
