@@ -185,6 +185,16 @@ sex_map <- tar_map(
                         sex_keep = sex_keep)
   ),
   tar_target(
+    co_data_nestling_gp,
+    make_nestling_gp_data(pheno_data = co_data,
+                          lrs_path = lrs_data_path,
+                          lrs_path2 = lrs_data_path2,
+                          nestling_path = nestling_data_path,
+                          fam_path = geno_data_paths[3],
+                          ped_path = pedigree_path,
+                          sex_keep = sex_keep)
+  ),
+  tar_target(
     co_adult_ars_grm_files,
     make_grm(analysis_inds = unique(co_data_adult_ars$ringnr),
              bfile = gsub(x = geno_data_paths[1], ".bed", ""),
@@ -209,6 +219,18 @@ sex_map <- tar_map(
     format = "file"
   ),
   tar_target(
+    co_nestling_grm_files,
+    make_grm(analysis_inds = unique(co_data_nestling_gp$ringnr),
+             bfile = gsub(x = geno_data_paths[1], ".bed", ""),
+             ncores = 4,
+             mem = 4 * 6000,
+             # Path to plink program:
+             plink_path = plink_path,
+             # Where to save result:
+             dir = paste0("data/co_nestling_", sex_lc, "_grm")),
+    format = "file"
+  ),
+  tar_target(
     co_adult_ars_grm_obj,
     load_grm(dir = gsub(x = co_adult_ars_grm_files[1], "/grm.rel.bin",  ""),
              pheno_data = co_data_adult_ars)
@@ -217,6 +239,11 @@ sex_map <- tar_map(
     co_parent_grm_obj,
     load_grm(dir = gsub(x = co_parent_grm_files[1], "/grm.rel.bin",  ""),
              pheno_data = co_data_parent_gp)
+  ),
+  tar_target(
+    co_nestling_grm_obj,
+    load_grm(dir = gsub(x = co_nestling_grm_files[1], "/grm.rel.bin",  ""),
+             pheno_data = co_data_nestling_gp)
   ),
   tar_target(
     co_gp_adult_ars,
@@ -242,12 +269,25 @@ sex_map <- tar_map(
            comp_conf = TRUE)
   ),
   tar_target(
+    co_gp_nestling,
+    run_gp(pheno_data = co_data_nestling_gp,
+           inverse_relatedness_matrix = co_nestling_grm_obj$inv_grm,
+           effects_vec = inla_effects_gp_vector_grm_all,
+           y = paste0("co_count_", sex_lc),
+           comp_conf = TRUE)
+  ),
+  tar_target(
     bv_covmat,
     inla_bv_covmat(model = co_gp_adult_ars2,
                    ncores = 16)
   ),
   tar_target(
     bv_covmat_parent,
+    inla_bv_covmat(model = co_gp_parent,
+                   ncores = 16)
+  ),
+  tar_target(
+    bv_covmat_nestling,
     inla_bv_covmat(model = co_gp_parent,
                    ncores = 16)
   ),
@@ -269,10 +309,19 @@ sex_map <- tar_map(
                            ped_path = pedigree_path)
   ),
   tar_target(
+    data_nestling,
+    make_data_nestling(gp_data = co_data_nestling_gp,
+                       gp_model = co_gp_nestling,
+                       nestling_data_path = nestling_data_path,
+                       sex_num = sex_num_lrs,
+                       inbreeding = inbreeding,
+                       ped_path = pedigree_path)
+  ),
+  tar_target(
     # We generally find more extreme estimated bvs with the more measurements
     bv_vs_n_meas_plot,
     dplyr::filter(data_adult_ss, !duplicated(ringnr)) %>%
-    ggplot(aes(y = abs(bv_mean), x = ifelse(is.na(co_n), 0, co_n))) +
+      ggplot(aes(y = abs(bv_mean), x = ifelse(is.na(co_n), 0, co_n))) +
       geom_point() +
       labs(y = "Absolute estimated breeding value",
            x = "Number of crossover count measurements") +
@@ -281,6 +330,11 @@ sex_map <- tar_map(
   tar_target(
     stan_data_adult_ss,
     make_stan_data_adult(data_adult_ss),
+    deployment = "main"
+  ),
+  tar_target(
+    stan_data_adult_ss_covmat,
+    make_stan_data_adult_covmat(data_adult_ss, co_data_adult_ars, bv_covmat),
     deployment = "main"
   ),
   tar_target(
@@ -343,6 +397,23 @@ sex_map <- tar_map(
          data = c(stan_data_adult_ss,
                   list(Y = stan_data_adult_ss$survival,
                        alpha_prior_mean = stan_data_adult_ss$survival_logit_mean,
+                       beta_prior_sd = 0.5,
+                       exp_rate = sqrt(1 / 0.5^2))),
+         iter = 4.8e4,
+         warmup = 8e3,
+         chains = 16,
+         cores = 16,
+         control = list(adapt_delta = 0.95),
+         pars = surv_pars,
+         model_name = paste0("stan_adult_surv_ss_", sex_lc),
+         thin = 1.6e2) # to keep final object reasonably small
+  ),
+  tar_target(
+    stan_adult_surv_ss_covmat,
+    stan(file = stan_file_adult_surv_covmat,
+         data = c(stan_data_adult_ss_covmat,
+                  list(Y = stan_data_adult_ss_covmat$survival,
+                       alpha_prior_mean = stan_data_adult_ss_covmat$survival_logit_mean,
                        beta_prior_sd = 0.5,
                        exp_rate = sqrt(1 / 0.5^2))),
          iter = 4.8e4,
@@ -603,7 +674,7 @@ list(
     deployment = "main"
   ),
   tar_target(
-    lrs_data_path2,
+    lrs_data_path2, # only to be used for hatch/year info, not fitness data
     "data/Missing_LRS_Sparrows_revised_WithInfo_fix.csv",
     format = "file",
     deployment = "main"
@@ -656,6 +727,12 @@ list(
   tar_target(
     stan_file_adult_surv,
     "r/adult_surv.stan",
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    stan_file_adult_surv_covmat,
+    "r/adult_surv_covmat.stan",
     format = "file",
     deployment = "main"
   ),

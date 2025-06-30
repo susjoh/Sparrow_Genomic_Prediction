@@ -188,15 +188,86 @@ make_parent_gp_data <- function(pheno_data,
                  c(20, 22, 23, 24, 26, 27, 28, 34, 35, 38, 331, 332),
                c("ringnr", "sex", "hatch_year", "first_locality")]
 
-  # Keep only inds (adult or nestling) with fitness data
-  pedigree %<>% dplyr::filter(id_red %in% lrs$ringnr | id_red %in% lrs2$ringnr)
+  # Keep only adults with fitness data
+  pedigree %<>% dplyr::filter(id_red %in% lrs$ringnr)
   # Inds we want to do GP on (genotyped, and have child with fitness data)
   if (sex_keep == "F") {
     gp_inds <- unique(pedigree$dam[pedigree$dam %in% geno_inds])
   } else if (sex_keep == "M") {
     gp_inds <- unique(pedigree$sire[pedigree$sire %in% geno_inds])
   } else {
-    stop("sex mistake")
+    stop("sex error")
+  }
+  # Don't need to do GP for inds already phenotyped
+  gp_inds <- gp_inds[!gp_inds %in% pheno_data$id]
+  gp_inds_red <- gsub(x = gp_inds, pattern = "_.+", "")
+
+  # Data frame to add to pheno_data
+  gp_inds_df <- lrs[lrs$ringnr %in% gp_inds_red, ]
+  # Add inds missing from lrs, but present in lrs2
+  gp_inds_df <- rbind(gp_inds_df,
+                      lrs2[(!lrs2$ringnr %in% gp_inds_df$ringnr) &
+                             (lrs2$ringnr %in% gp_inds_red), ])
+  # For duplicated genotypes:
+  gp_inds_df$id_red <- gp_inds_df$ringnr
+  gp_inds_df$ringnr[which(!gp_inds_df$ringnr %in% geno_inds)] <-
+    sapply(which(!gp_inds_df$ringnr %in% geno_inds),
+           function(ind) {
+             geno_inds[match(gp_inds_df$ringnr[ind], geno_inds_red)]
+           })
+  gp_inds_df$id <- gp_inds_df$ringnr
+  # Recasting
+  gp_inds_df %<>% dplyr::filter(!is.na(sex))
+  gp_inds_df$sex <- ifelse(gp_inds_df$sex > 1.5, "F", "M")
+  gp_inds_df$hatch_year <- as.factor(gp_inds_df$hatch_year)
+  gp_inds_df$id1 <- gp_inds_df$id2 <- gp_inds_df$id3 <-
+    seq(from = max(pheno_data$id1) + 1,  length = nrow(gp_inds_df), by = 1)
+  # Merge
+  plyr::rbind.fill(pheno_data, gp_inds_df)
+}
+
+# Sex-GP on inds with offspring with fitness measures
+make_nestling_gp_data <- function(pheno_data,
+                                  lrs_path,
+                                  lrs_path2,
+                                  nestling_path,
+                                  fam_path,
+                                  ped_path,
+                                  sex_keep) {
+
+  geno_inds <- fread(file = fam_path, select = 2)$V2
+  geno_inds_red <- gsub(x = geno_inds, pattern = "_.+", "")
+
+  pedigree <- read.table(file = ped_path, header = TRUE)
+  pedigree$id_red <- gsub(x = pedigree$id, pattern = "_.+", "")
+  pedigree$dam_red <- gsub(x = pedigree$dam, pattern = "_.+", "")
+  pedigree$sire_red <- gsub(x = pedigree$sire, pattern = "_.+", "")
+
+  lrs <- fread(file = lrs_path)
+  # remove last loc. outside of main islands
+  lrs <- lrs[lrs$last_locality %in%
+               c(20, 22, 23, 24, 26, 27, 28, 34, 35, 38, 331, 332),
+             c("ringnr", "sex", "hatch_year", "first_locality")]
+  # Only need a single row per ind now
+  lrs <- lrs[!duplicated(lrs$ringnr), ]
+
+  lrs2 <- fread(file = lrs_path2)
+  lrs2 <- lrs2[!duplicated(lrs2$ringnr), ]
+  lrs2 <- lrs2[lrs2$last_locality %in%
+                 c(20, 22, 23, 24, 26, 27, 28, 34, 35, 38, 331, 332),
+               c("ringnr", "sex", "hatch_year", "first_locality")]
+
+  nest <- fread(file = nestling_path)
+
+  # Keep only nestlings with fitness data
+  pedigree %<>% dplyr::filter(id_red %in% nest$ringnr)
+  # Inds we want to do GP on (genotyped, and have child with fitness data)
+  if (sex_keep == "F") {
+    gp_inds <- unique(pedigree$dam[pedigree$dam %in% geno_inds])
+  } else if (sex_keep == "M") {
+    gp_inds <- unique(pedigree$sire[pedigree$sire %in% geno_inds])
+  } else {
+    stop("sex error")
   }
   # Don't need to do GP for inds already phenotyped
   gp_inds <- gp_inds[!gp_inds %in% pheno_data$id]
@@ -337,7 +408,6 @@ make_data_parent_adult <- function(gp_data,
   lrs$hy_num <- match(lrs$hatch_year, unique(lrs$hatch_year))
 
   # Add inbreeding info
-  # NOTE: some missing
   ibc <- fread(file = inbreeding)
   gp_data$fhat3 <- ibc$Fhat3[match(gp_data$ringnr, ibc$IID)]
   lrs$fhat3 <- gp_data$fhat3[match(lrs$parent, gp_data$id_red)]
@@ -348,6 +418,64 @@ make_data_parent_adult <- function(gp_data,
   lrs$co_meas <- (lrs$co_n > 0)
 
   lrs[order(lrs$co_meas), ]
+}
+
+make_data_nestling <- function(gp_data,
+                               gp_model,
+                               nestling_data_path,
+                               inbreeding,
+                               sex_num,
+                               ped_path) {
+
+  nest <- fread(file = nestling_data_path)
+
+  pedigree <- read.table(file = ped_path, header = TRUE)
+  pedigree$id_red <- gsub(x = pedigree$id, pattern = "_.+", "")
+  pedigree$dam_red <- gsub(x = pedigree$dam, pattern = "_.+", "")
+  pedigree$sire_red <- gsub(x = pedigree$sire, pattern = "_.+", "")
+
+  # add predicted phenotypes and breeding values from GP model to data
+  gp_data$pred_pheno <- gp_model$summary.fitted.values$mean
+  gp_data$bv_mean <- gp_model$summary.random$id1$mean[
+    order(gp_model$summary.random$id1$ID)][gp_data$id1]
+  gp_data$bv_sd <- gp_model$summary.random$id1$sd[
+    order(gp_model$summary.random$id1$ID)][gp_data$id1]
+
+  # Keep nest entries where gp_data ringnrs are in pedigree
+  if (sex_num == 2) {
+    pedigree %<>% dplyr::filter(dam %in% gp_data$id_red)
+  } else if (sex_num == 1) {
+    pedigree %<>% dplyr::filter(sire %in% gp_data$id_red)
+  } else {
+    stop("sex mistake")
+  }
+  nest %<>% dplyr::filter(ringnr %in% pedigree$id_red)
+
+  # add parent's BV stats
+  if (sex_num == 2) {
+    nest$parent <- pedigree$dam_red[match(nest$ringnr, pedigree$id_red)]
+  } else if (sex_num == 1) {
+    nest$parent <- pedigree$sire_red[match(nest$ringnr, pedigree$id_red)]
+  }
+  nest$bv_mean <- gp_data$bv_mean[match(nest$parent, gp_data$id_red)]
+  nest$bv_sd <- gp_data$bv_sd[match(nest$parent, gp_data$id_red)]
+
+  nest$ringnr_num <- match(nest$ringnr, unique(nest$ringnr))
+  # call it ll, but it is hatch_island
+  nest$ll_num <- match(nest$hatch_island, unique(nest$hatch_island))
+  nest$hy_num <- match(nest$hatch_year, unique(nest$hatch_year))
+
+  # Add inbreeding info
+  ibc <- fread(file = inbreeding)
+  gp_data$fhat3 <- ibc$Fhat3[match(gp_data$ringnr, ibc$IID)]
+  nest$fhat3 <- gp_data$fhat3[match(nest$parent, gp_data$id_red)]
+
+  # # Number of crossover measurements
+  nest$co_n <- gp_data$n[match(nest$parent, gp_data$id_red)]
+  nest %>% mutate(co_n = ifelse(is.na(co_n), 0, co_n))
+  nest$co_meas <- (nest$co_n > 0)
+
+  nest[order(nest$co_meas), ]
 }
 
 find_inbreeding <- function(bfile,
@@ -921,11 +1049,15 @@ plot_lines_posterior <- function(df, xlab, ylab, title, data = NULL) {
 
   if (!is.null(data)) {
     plot <- plot +
-      geom_ribbon(aes(ymin = 0, ymax = hist_height, alpha = 0.1)) +
+      geom_ribbon(aes(ymin = 0, ymax = hist_height),
+                  alpha = 0.25,
+                  fill = "red") +
       scale_y_continuous(name = ylab,
                          # Add a second axis and specify its features
                          sec.axis = sec_axis(trans = ~ . * scaling,
-                                             name = "#inds."))
+                                             name = "#inds."))# +
+    # guides(alpha = guide_legend(title = waiver(),
+    #                             label = "Number of individuals"))
   }
   plot
 }
