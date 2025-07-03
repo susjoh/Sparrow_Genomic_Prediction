@@ -403,6 +403,7 @@ make_data_parent_adult <- function(gp_data,
   lrs$age <- lrs$year - lrs$hatch_year
 
   lrs$ringnr_num <- match(lrs$ringnr, unique(lrs$ringnr))
+  lrs$parent_num <- match(lrs$parent, unique(lrs$parent))
   lrs$ll_num <- match(lrs$last_locality, unique(lrs$last_locality))
   lrs$y_num <- match(lrs$year, unique(lrs$year))
   lrs$hy_num <- match(lrs$hatch_year, unique(lrs$hatch_year))
@@ -461,8 +462,8 @@ make_data_nestling <- function(gp_data,
   nest$bv_sd <- gp_data$bv_sd[match(nest$parent, gp_data$id_red)]
 
   nest$ringnr_num <- match(nest$ringnr, unique(nest$ringnr))
-  # call it ll, but it is hatch_island
-  nest$ll_num <- match(nest$hatch_island, unique(nest$hatch_island))
+  nest$parent_num <- match(nest$parent, unique(nest$parent))
+  nest$hi_num <- match(nest$hatch_island, unique(nest$hatch_island))
   nest$hy_num <- match(nest$hatch_year, unique(nest$hatch_year))
 
   # Add inbreeding info
@@ -991,6 +992,72 @@ make_surv_bv_preds_and_marg <- function(data,
   lst(df_pred, df_marg)
 }
 
+make_surv_bv_preds_and_marg_co_n <- function(data,
+                                             samps,
+                                             n_plot = 200) {
+  n_samp <- length(samps$alpha)
+  avg_age <- mean(data$age)
+  avg_f <- mean(data$f)
+  avg_co_n <- mean(data$co_n)
+
+  age_poly <- poly(data$age, degree = 2)
+  avg_age_q <- predict(age_poly, newdata = mean(data$age))
+
+  bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
+
+  predictor_samples <- array(NA, dim = c(n_samp, n_plot))
+  for (i in seq_len(n_samp)) {
+    for (j in seq_len(n_plot)) {
+      predictor_samples[i, j] <- samps$alpha[i] +
+        samps$beta_bv[i] * bv[j] +
+        samps$beta_bv2[i] * bv[j]^2 +
+        samps$beta_age_q1[i] * avg_age_q[, 1] +
+        samps$beta_age_q2[i] * avg_age_q[, 2] +
+        samps$beta_f[i] * avg_f +
+        samps$beta_co_n[i] * avg_co_n
+    }
+  }
+  pred_prob_samples <- inv_logit(predictor_samples)
+  df_pred <- samp_plot_df(y = pred_prob_samples, x = bv, n_samp = n_samp)
+
+  marg_effect <-
+    sapply(bv, function(x) samps$beta_bv + 2 * samps$beta_bv2 * x) *
+    pred_prob_samples *
+    (1 - pred_prob_samples)
+  df_marg <- samp_plot_df(y = marg_effect, x = bv, n_samp = n_samp)
+
+  lst(df_pred, df_marg)
+}
+
+make_nest_bv_preds_and_marg <- function(data,
+                                        samps,
+                                        n_plot = 200) {
+  n_samp <- length(samps$alpha)
+  avg_f <- mean(data$f)
+
+  bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
+
+  predictor_samples <- array(NA, dim = c(n_samp, n_plot))
+  for (i in seq_len(n_samp)) {
+    for (j in seq_len(n_plot)) {
+      predictor_samples[i, j] <- samps$alpha[i] +
+        samps$beta_bv[i] * bv[j] +
+        samps$beta_bv2[i] * bv[j]^2 +
+        samps$beta_f[i] * avg_f
+    }
+  }
+  pred_prob_samples <- inv_logit(predictor_samples)
+  df_pred <- samp_plot_df(y = pred_prob_samples, x = bv, n_samp = n_samp)
+
+  marg_effect <-
+    sapply(bv, function(x) samps$beta_bv + 2 * samps$beta_bv2 * x) *
+    pred_prob_samples *
+    (1 - pred_prob_samples)
+  df_marg <- samp_plot_df(y = marg_effect, x = bv, n_samp = n_samp)
+
+  lst(df_pred, df_marg)
+}
+
 plot_lines_posterior <- function(df, xlab, ylab, title, data = NULL) {
 
   if (!is.null(data)) {
@@ -1143,6 +1210,96 @@ make_stan_data_adult_covmat <- function(data, gp_data, covmat) {
        age = data$age,
        age_q1 = poly(data$age, degree = 2)[, 1],
        age_q2 = poly(data$age, degree = 2)[, 2],
+       f = data$fhat3,
+       bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
+       bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
+       co_n = data$co_n,
+       co_meas = data$co_meas)
+}
+
+make_stan_data_parent_covmat <- function(data, gp_data, covmat) {
+
+  # Make bv stats same order as ringnr, and give one entry per ind.
+  bv_mean <- data$bv_mean[order(data$parent_num)][
+    match(unique(data[order(data$parent_num)]$parent),
+          data[order(data$parent_num)]$parent)]
+
+  # All the same reordering that was done for bv_mean
+  bv_covmat <- covmat[
+    gp_data$id1, gp_data$id1][
+      match(data$parent, gp_data$id_red),
+      match(data$parent, gp_data$id_red)][
+        order(data$parent_num), order(data$parent_num)][
+          match(unique(data[order(data$parent_num)]$parent),
+                data[order(data$parent_num)]$parent),
+          match(unique(data[order(data$parent_num)]$parent),
+                data[order(data$parent_num)]$parent)]
+
+  # sample, and add repeats
+  bv_std_vec <- rmvnorm(1e4, bv_mean, bv_covmat)[, data$parent_num]
+
+  list(N = nrow(data),
+       sex = data$sex,
+       N_ll = max(data$ll_num),
+       N_ye = max(data$y_num),
+       N_id = max(data$ringnr_num),
+       N_par = max(data$parent_num),
+       ye_idx = data$y_num,
+       ll_idx = data$ll_num,
+       id_idx = data$ringnr_num,
+       par_idx = data$parent_num,
+       bv_mean = bv_mean,
+       bv_covmat = bv_covmat,
+       bv_covmat_chol = t(chol(bv_covmat)), # pre-multiply this with z-vec
+       sum_recruit = data$sum_recruit,
+       sum_recruit_log_mean = log(mean(data$sum_recruit)),
+       survival = data$survival,
+       survival_logit_mean = log(1 / (1 / mean(data$survival) - 1)),
+       age = data$age,
+       age_q1 = poly(data$age, degree = 2)[, 1],
+       age_q2 = poly(data$age, degree = 2)[, 2],
+       f = data$fhat3,
+       bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
+       bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
+       co_n = data$co_n,
+       co_meas = data$co_meas)
+}
+
+make_stan_data_nestling_covmat <- function(data, gp_data, covmat) {
+
+  # Make bv stats same order as ringnr, and give one entry per parent
+  bv_mean <- data$bv_mean[order(data$parent_num)][
+    match(unique(data[order(data$parent_num)]$parent),
+          data[order(data$parent_num)]$parent)]
+
+  # All the same reordering that was done for bv_mean
+  bv_covmat <- covmat[
+    gp_data$id1, gp_data$id1][
+      match(data$parent, gp_data$id_red),
+      match(data$parent, gp_data$id_red)][
+        order(data$parent_num), order(data$parent_num)][
+          match(unique(data[order(data$parent_num)]$parent),
+                data[order(data$parent_num)]$parent),
+          match(unique(data[order(data$parent_num)]$parent),
+                data[order(data$parent_num)]$parent)]
+
+  # sample, and add repeats
+  bv_std_vec <- rmvnorm(1e4, bv_mean, bv_covmat)[, data$parent_num]
+
+  list(N = nrow(data),
+       N_hi = max(data$hi_num),
+       N_hy = max(data$hy_num),
+       N_id = max(data$ringnr_num),
+       N_par = max(data$parent_num),
+       hi_idx = data$hi_num,
+       hy_idx = data$hy_num,
+       id_idx = data$ringnr_num,
+       par_idx = data$parent_num,
+       bv_mean = bv_mean,
+       bv_covmat = bv_covmat,
+       bv_covmat_chol = t(chol(bv_covmat)), # pre-multiply this with z-vec
+       recruit = data$recruit,
+       recruit_logit_mean = log(1 / (1 / mean(data$recruit) - 1)),
        f = data$fhat3,
        bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
        bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
