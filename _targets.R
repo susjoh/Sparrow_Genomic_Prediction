@@ -777,7 +777,9 @@ sex_map <- tar_map(
                                        sex,
                                        " crossover count"),
                          ylab = paste0("Predicted nestling survival"),
-                         title = "")
+                         title = "",
+                         # use this because no ids are repeated
+                         data = data_nestling)
   ),
   tar_target(
     nest_bv_marg_plot,
@@ -786,7 +788,8 @@ sex_map <- tar_map(
                                        sex,
                                        " crossover count"),
                          ylab = paste0("Predicted nestling survival"),
-                         title = "")
+                         title = "",
+                         data = data_nestling)
   ),
   tar_target(
     ars_bv_pred_plot_pdf,

@@ -1058,11 +1058,15 @@ make_nest_bv_preds_and_marg <- function(data,
   lst(df_pred, df_marg)
 }
 
-plot_lines_posterior <- function(df, xlab, ylab, title, data = NULL) {
+plot_lines_posterior <- function(df,
+                                 xlab,
+                                 ylab,
+                                 title,
+                                 data = NULL,
+                                 n_bins = 25) {
 
   if (!is.null(data)) {
     # Stats for sample size histogram hist
-    n_bins <- 25
     breaks <- seq(from = range(data$bv_mean)[1],
                   range(data$bv_mean)[2],
                   length = n_bins)
@@ -1119,10 +1123,14 @@ plot_lines_posterior <- function(df, xlab, ylab, title, data = NULL) {
       geom_ribbon(aes(ymin = 0, ymax = hist_height),
                   alpha = 0.25,
                   fill = "red") +
-      scale_y_continuous(name = ylab,
-                         # Add a second axis and specify its features
-                         sec.axis = sec_axis(trans = ~ . * scaling,
-                                             name = "#inds."))# +
+      scale_y_continuous(
+        name = ylab,
+        # Add a second y-axis
+        sec.axis = sec_axis(trans = ~ . * scaling,
+                            name = "Number of individuals",
+                            labels = function(x) {
+                              ifelse(x >= 0, as.character(x), "")
+                            })) # +
     # guides(alpha = guide_legend(title = waiver(),
     #                             label = "Number of individuals"))
   }
