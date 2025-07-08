@@ -390,7 +390,8 @@ sex_map <- tar_map(
          warmup = 8e3,
          chains = 16,
          cores = 16,
-         pars = ars_pars,
+         # Remove random effects in zero-inflation component
+         pars = ars_pars[-(c(32:34, 36:38))],
          control = list(adapt_delta = 0.9),
          model_name = paste0("stan_adult_ars_ss_covmat_", sex_lc),
          thin = 1.6e2) # to keep final object reasonably small
