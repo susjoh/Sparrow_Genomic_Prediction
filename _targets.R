@@ -412,7 +412,7 @@ sex_map <- tar_map(
          warmup = 8e3,
          chains = 16,
          cores = 16,
-         pars = ars_pars,
+         pars = c(ars_pars, "par", "sigma_par", "par_zi", "sigma_par_zi"),
          control = list(adapt_delta = 0.9),
          model_name = paste0("stan_parent_adult_ars_ss_covmat_", sex_lc),
          thin = 1.6e2) # to keep final object reasonably small
@@ -563,10 +563,6 @@ sex_map <- tar_map(
     get_samps(model = stan_parent_adult_ars_ss_covmat,
               pars = ars_pars)
   ),
-  # tar_target(
-  #   ars_samp_pairs_plot,
-  #   ggpairs(as.data.frame(ars_samps)[, c("energy", ars_pars[c(1:6, 17:20)])])
-  # ),
   tar_target(
     surv_samps,
     get_samps(model = stan_adult_surv_ss,
@@ -594,7 +590,8 @@ sex_map <- tar_map(
   ),
   tar_target(
     surv_samp_pairs_plot,
-    as.data.frame(surv_samps)[, c("energy", surv_pars[c(1:6, 17:19)])] %>%
+    as.data.frame(surv_samps)[, c("energy", "ll.1", "ye.1", "id.1",
+                                  surv_pars[c(1:6, 17:19)])] %>%
       dplyr::mutate(sigma_ll = log(sigma_ll),
                     sigma_ye = log(sigma_ye),
                     sigma_id = log(sigma_id)) %>%
@@ -1067,14 +1064,10 @@ list(
       "ye_zi",
       "ll_zi",
       "id_zi",
-      # "res_zi",
       "bv_lat",
       "sigma_ll_zi",
       "sigma_ye_zi",
       "sigma_id_zi",
-      # "sigma_res_zi",
-      # "phi_inv",
-      # "phi",
       "theta",
       "y_rep")
   ),
@@ -1095,12 +1088,10 @@ list(
       "ye",
       "ll",
       "id",
-      # "res",
       "bv_lat",
       "sigma_ll",
       "sigma_ye",
       "sigma_id",
-      # "sigma_res",
       "y_rep")
   ),
   tar_target(
@@ -1115,13 +1106,11 @@ list(
       "beta_f_std",
       "hy",
       "hi",
-      "id",
-      # "res",
+      "par",
       "bv_lat",
       "sigma_hi",
       "sigma_hy",
-      "sigma_id",
-      # "sigma_res",
+      "sigma_par",
       "y_rep")
   )
 )

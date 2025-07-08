@@ -9,7 +9,7 @@ data {
   int<lower=0,upper=N_ll> ll_idx[N];
   int<lower=0> N_id;                     // Number of levels in identity random effect
   int<lower=0,upper=N_id> id_idx[N];
-  int<lower=0> N_par;                     // Number of levels in identity random effect
+  int<lower=0> N_par;                     // Number of levels in parent random effect
   int<lower=0,upper=N_par> par_idx[N];
   vector[N_par] bv_mean;                  // Posterior means of breeding values
   matrix[N_par, N_par] bv_covmat_chol;     // Chol decomp of covariance for bvs
@@ -51,8 +51,8 @@ parameters {
   vector[N_ye] z_ye;              // Std.normal noise for year random effect
   vector[N_ll] z_ll;              // Std.normal noise for last locality random effect
   vector[N_id] z_id;              // Std.normal noise for identity random effect
-  // vector[N] z_res;                // Std.normal noise for residual random effect
-  vector[N_par] z_bv;              // Std.norm noise in bv
+  vector[N_par] z_par;            // Std.normal noise for parent random effect
+  vector[N_par] z_bv;             // Std.norm noise in bv
   real z_alpha;
   real z_beta_bv;
   real z_beta_bv2;
@@ -62,18 +62,18 @@ parameters {
   real<lower=0,upper=1> sigma_ye_raw;
   real<lower=0,upper=1> sigma_ll_raw;
   real<lower=0,upper=1> sigma_id_raw;
-  // real<lower=0,upper=1> sigma_res_raw;
+  real<lower=0,upper=1> sigma_par_raw;
 }
 
 transformed parameters {
   real<lower=0> sigma_ye = -log(sigma_ye_raw) / exp_rate;
   real<lower=0> sigma_ll = -log(sigma_ll_raw) / exp_rate;
   real<lower=0> sigma_id = -log(sigma_id_raw) / exp_rate;
-  // real<lower=0> sigma_res = -log(sigma_res_raw) / exp_rate;
+  real<lower=0> sigma_par = -log(sigma_par_raw) / exp_rate;
   vector[N_ye] ye = z_ye * sigma_ye;                // Levels in year random effect
   vector[N_ll] ll = z_ll * sigma_ll;                // Levels in last locality random effect
   vector[N_id] id = z_id * sigma_id;                // Levels in identity random effect
-  // vector[N] res = z_res * sigma_res;             // Levels in residual random effect
+  vector[N_par] par = z_par * sigma_par;             // Levels in parent random effect
 
   // Full bv vector (non-centered parameterization berkson errored GP results)
   real alpha_std = alpha_prior_mean + beta_prior_sd * z_alpha;
@@ -98,7 +98,7 @@ transformed parameters {
   }
   x_mat = append_col(append_col(fixed_pred_mat, bv_lat_full), square(bv_lat_full));
   for (i in 1:N) {
-    rand_inter[i] = ye[ye_idx[i]] + ll[ll_idx[i]] + id[id_idx[i]]; // + res[i];
+    rand_inter[i] = ye[ye_idx[i]] + ll[ll_idx[i]] + id[id_idx[i]] + par[par_idx[i]];
   }
 }
 
@@ -107,13 +107,13 @@ model {
   sigma_ye_raw ~ uniform(0, 1);
   sigma_ll_raw ~ uniform(0, 1);
   sigma_id_raw ~ uniform(0, 1);
-  // sigma_res_raw ~ uniform(0, 1);
+  sigma_par_raw ~ uniform(0, 1);
 
   // Non-centered parameterizations
   z_ye ~ std_normal();
   z_ll ~ std_normal();
   z_id ~ std_normal();
-  // z_res ~ std_normal();
+  z_par ~ std_normal();
   z_bv ~ std_normal();
 
   z_alpha ~ std_normal();

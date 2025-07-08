@@ -57,10 +57,11 @@ parameters {
   vector[N_ye] z_ye;
   vector[N_ll] z_ll;
   vector[N_id] z_id;
+  vector[N_par] z_par;
   vector[N_ye] z_ye_zi;
   vector[N_ll] z_ll_zi;
   vector[N_id] z_id_zi;
-  // vector[N] z_res_zi;
+  vector[N_par] z_par_zi;
   // Std.norm noise in breeding value
   vector[N_par] z_bv;
   // Uniform noise for
@@ -69,9 +70,11 @@ parameters {
   real<lower=0,upper=1> sigma_ye_raw;
   real<lower=0,upper=1> sigma_ll_raw;
   real<lower=0,upper=1> sigma_id_raw;
+  real<lower=0,upper=1> sigma_par_raw;
   real<lower=0,upper=1> sigma_ye_zi_raw;
   real<lower=0,upper=1> sigma_ll_zi_raw;
   real<lower=0,upper=1> sigma_id_zi_raw;
+  real<lower=0,upper=1> sigma_par_zi_raw;
   // real<lower=0,upper=1> sigma_res_zi_raw;
   // Std.normal noise for count component coefficients:
   real z_alpha;
@@ -94,18 +97,20 @@ transformed parameters {
   real<lower=0> sigma_ye = -log(sigma_ye_raw) / exp_rate;
   real<lower=0> sigma_ll = -log(sigma_ll_raw) / exp_rate;
   real<lower=0> sigma_id = -log(sigma_id_raw) / exp_rate;
+  real<lower=0> sigma_par = -log(sigma_par_raw) / exp_rate;
   real<lower=0> sigma_ye_zi = -log(sigma_ye_zi_raw) / exp_rate;
   real<lower=0> sigma_ll_zi = -log(sigma_ll_zi_raw) / exp_rate;
   real<lower=0> sigma_id_zi = -log(sigma_id_zi_raw) / exp_rate;
-  // real<lower=0> sigma_res_zi = -log(sigma_res_zi_raw) / exp_rate;
+  real<lower=0> sigma_par_zi = -log(sigma_par_zi_raw) / exp_rate;
   // Levels in random effects:
   vector[N_ye] ye = z_ye * sigma_ye;
   vector[N_ll] ll = z_ll * sigma_ll;
   vector[N_id] id = z_id * sigma_id;
+  vector[N_par] par = z_par * sigma_par;
   vector[N_ye] ye_zi = z_ye_zi * sigma_ye_zi;
   vector[N_ll] ll_zi = z_ll_zi * sigma_ll_zi;
   vector[N_id] id_zi = z_id_zi * sigma_id_zi;
-  // vector[N] res_zi = z_res_zi * sigma_res_zi;
+  vector[N_par] par_zi = z_par_zi * sigma_par_zi;
   // 1 / (overdispersion parameter)
   // real<lower=0> phi_inv = -log(phi_inv_raw) / phi_inv_rate;
   // Overdispersion parameter
@@ -148,7 +153,7 @@ transformed parameters {
   x_mat = append_col(append_col(fixed_pred_mat, bv_lat_full), square(bv_lat_full));
 
   for (i in 1:N) {
-    rand_inter[i] = ye[ye_idx[i]] + ll[ll_idx[i]] + id[id_idx[i]];
+    rand_inter[i] = ye[ye_idx[i]] + ll[ll_idx[i]] + id[id_idx[i]] + par[par_idx[i]];
   }
 
   // Zero-inflation linear predictor
@@ -159,7 +164,7 @@ transformed parameters {
     + beta_zi_age_q1_std * age_q1_std[i]
     + beta_zi_age_q2_std * age_q2_std[i]
     + beta_zi_f_std * f_std[i]
-    + ye_zi[ye_idx[i]] + ll_zi[ll_idx[i]] + id_zi[id_idx[i]];# + res_zi[i];
+    + ye_zi[ye_idx[i]] + ll_zi[ll_idx[i]] + id_zi[id_idx[i]]+ par_zi[par_idx[i]];
   }
   theta = inv_logit(logit_theta);
 }
@@ -173,20 +178,22 @@ model {
   z_ye ~ std_normal();
   z_ll ~ std_normal();
   z_id ~ std_normal();
+  z_par ~ std_normal();
 
   z_ye_zi ~ std_normal();
   z_ll_zi ~ std_normal();
   z_id_zi ~ std_normal();
-  // z_res_zi ~ std_normal();
+  z_par_zi ~ std_normal();
 
   // phi_inv_raw ~ uniform(0, 1);
   sigma_ye_raw ~ uniform(0, 1);
   sigma_ll_raw ~ uniform(0, 1);
   sigma_id_raw ~ uniform(0, 1);
+  sigma_par_raw ~ uniform(0, 1);
   sigma_ye_zi_raw ~ uniform(0, 1);
   sigma_ll_zi_raw ~ uniform(0, 1);
   sigma_id_zi_raw ~ uniform(0, 1);
-  // sigma_res_zi_raw ~ uniform(0, 1);
+  sigma_par_zi_raw ~ uniform(0, 1);
 
   z_alpha ~ std_normal();
   z_beta_bv ~ std_normal();
