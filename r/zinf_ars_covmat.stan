@@ -80,11 +80,11 @@ parameters {
   real z_beta_f;
   // Std.normal noise for zero-inflation component coefficients:
   real z_alpha_zi;
-  real z_beta_zi_bv;
-  real z_beta_zi_bv2;
-  real z_beta_zi_age_q1;
-  real z_beta_zi_age_q2;
-  real z_beta_zi_f;
+  // real z_beta_zi_bv;
+  // real z_beta_zi_bv2;
+  // real z_beta_zi_age_q1;
+  // real z_beta_zi_age_q2;
+  // real z_beta_zi_f;
 }
 
 transformed parameters {
@@ -118,11 +118,11 @@ transformed parameters {
   real beta_f_std = beta_prior_sd * z_beta_f;
   // Standardized zero-inflation regression coefficients
   real alpha_zi_std = alpha_zi_prior_mean + beta_zi_prior_sd * z_alpha_zi;
-  real beta_zi_bv_std = beta_zi_prior_sd * z_beta_zi_bv;
-  real beta_zi_bv2_std = beta_zi_prior_sd * z_beta_zi_bv2 / sqrt(2);
-  real beta_zi_age_q1_std = beta_zi_prior_sd * z_beta_zi_age_q1;
-  real beta_zi_age_q2_std = beta_zi_prior_sd * z_beta_zi_age_q2;
-  real beta_zi_f_std = beta_zi_prior_sd * z_beta_zi_f;
+  // real beta_zi_bv_std = beta_zi_prior_sd * z_beta_zi_bv;
+  // real beta_zi_bv2_std = beta_zi_prior_sd * z_beta_zi_bv2 / sqrt(2);
+  // real beta_zi_age_q1_std = beta_zi_prior_sd * z_beta_zi_age_q1;
+  // real beta_zi_age_q2_std = beta_zi_prior_sd * z_beta_zi_age_q2;
+  // real beta_zi_f_std = beta_zi_prior_sd * z_beta_zi_f;
 
   // Full bv vector (non-centered parameterization berkson errored GP results)
   vector[N_id] bv_lat = bv_mean + bv_covmat_chol * z_bv;
@@ -151,12 +151,12 @@ transformed parameters {
 
   // Zero-inflation linear predictor
   for (i in 1:N) {
-    logit_theta[i] = alpha_zi_std
-    + beta_zi_bv_std * bv_lat_full[i]
-    + beta_zi_bv2_std * square(bv_lat_full[i])
-    + beta_zi_age_q1_std * age_q1_std[i]
-    + beta_zi_age_q2_std * age_q2_std[i]
-    + beta_zi_f_std * f_std[i];
+    logit_theta[i] = alpha_zi_std;
+    // + beta_zi_bv_std * bv_lat_full[i]
+    // + beta_zi_bv2_std * square(bv_lat_full[i])
+    // + beta_zi_age_q1_std * age_q1_std[i]
+    // + beta_zi_age_q2_std * age_q2_std[i]
+    // + beta_zi_f_std * f_std[i];
     // + ye_zi[ye_idx[i]] + ll_zi[ll_idx[i]] + id_zi[id_idx[i]];# + res_zi[i];
   }
   theta = inv_logit(logit_theta);
@@ -194,11 +194,11 @@ model {
   z_beta_f ~ std_normal();
 
   z_alpha_zi ~ std_normal();
-  z_beta_zi_bv ~ std_normal();
-  z_beta_zi_bv2 ~ std_normal();
-  z_beta_zi_age_q1 ~ std_normal();
-  z_beta_zi_age_q2 ~ std_normal();
-  z_beta_zi_f ~ std_normal();
+  // z_beta_zi_bv ~ std_normal();
+  // z_beta_zi_bv2 ~ std_normal();
+  // z_beta_zi_age_q1 ~ std_normal();
+  // z_beta_zi_age_q2 ~ std_normal();
+  // z_beta_zi_f ~ std_normal();
 
   // Likelihood
   for (i in 1:N) {
@@ -228,18 +228,18 @@ generated quantities {
   real beta_age_q2 = beta_age_q2_std / sd_age_q2;
   real beta_f = beta_f_std / sd_f;
 
-  real alpha_zi = alpha_zi_std
-  - beta_zi_bv_std * bv_std_const1
-  + beta_zi_bv2_std * bv_std_const2
-  - beta_zi_age_q1_std * age_q1_const
-  - beta_zi_age_q2_std * age_q2_const
-  - beta_zi_f_std * f_const;
+  real alpha_zi = alpha_zi_std;
+  // - beta_zi_bv_std * bv_std_const1
+  // + beta_zi_bv2_std * bv_std_const2
+  // - beta_zi_age_q1_std * age_q1_const
+  // - beta_zi_age_q2_std * age_q2_const
+  // - beta_zi_f_std * f_const;
 
-  real beta_zi_bv = beta_zi_bv_std / bv_sd_std - beta_zi_bv2_std * bv_std_const4;
-  real beta_zi_bv2 = beta_zi_bv2_std / bv_std_const3;
-  real beta_zi_age_q1 = beta_zi_age_q1_std / sd_age_q1;
-  real beta_zi_age_q2 = beta_zi_age_q2_std / sd_age_q2;
-  real beta_zi_f = beta_zi_f_std / sd_f;
+  // real beta_zi_bv = beta_zi_bv_std / bv_sd_std - beta_zi_bv2_std * bv_std_const4;
+  // real beta_zi_bv2 = beta_zi_bv2_std / bv_std_const3;
+  // real beta_zi_age_q1 = beta_zi_age_q1_std / sd_age_q1;
+  // real beta_zi_age_q2 = beta_zi_age_q2_std / sd_age_q2;
+  // real beta_zi_f = beta_zi_f_std / sd_f;
 
 
   // Posterior predictions

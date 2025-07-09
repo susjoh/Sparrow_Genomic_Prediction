@@ -25,7 +25,7 @@ controller_slurm <- crew_controller_slurm(
   slurm_log_output = "Jobs/%A.log",
   slurm_memory_gigabytes_per_cpu = 6,
   slurm_cpus_per_task = 16,
-  slurm_time_minutes = 60 * 24 * 1, # minutes * hours * days
+  slurm_time_minutes = 60 * 24 * 10, # minutes * hours * days
   slurm_partition = "CPUQ",
   verbose = TRUE
 )
@@ -391,7 +391,7 @@ sex_map <- tar_map(
          chains = 16,
          cores = 16,
          # Remove random effects in zero-inflation component
-         pars = ars_pars[-(c(32:34, 36:38))],
+         pars = ars_pars[-(c(21:25, 27:34, 36:38))],
          control = list(adapt_delta = 0.9),
          model_name = paste0("stan_adult_ars_ss_covmat_", sex_lc),
          thin = 1.6e2) # to keep final object reasonably small
@@ -500,14 +500,14 @@ sex_map <- tar_map(
                        alpha_prior_mean = stan_data_parent_adult_ss_covmat$survival_logit_mean,
                        beta_prior_sd = 0.5,
                        exp_rate = sqrt(1 / 0.5^2))),
-         iter = 4.8e5,
-         warmup = 8e4,
+         iter = 6.6e6,
+         warmup = 1.1e6,
          chains = 16,
          cores = 16,
          control = list(adapt_delta = 0.9),
          pars = surv_pars,
          model_name = paste0("stan_parent_adult_surv_ss_covmat_", sex_lc),
-         thin = 1.6e3) # to keep final object reasonably small
+         thin = 2.2e4) # to keep final object reasonably small
   ),
   tar_target(
     stan_nestling_surv_covmat,
@@ -557,7 +557,7 @@ sex_map <- tar_map(
   tar_target(
     ars_samps_covmat,
     get_samps(model = stan_adult_ars_ss_covmat,
-              pars = ars_pars)
+              pars = ars_pars[-(c(21:25, 27:34, 36:38))])
   ),
   tar_target(
     ars_samps_parent,
@@ -619,7 +619,7 @@ sex_map <- tar_map(
                                 data = stan_data_parent_adult_ss_covmat)
   ),
   tar_target(
-    ars_covmat_bv_preds_and_margt,
+    ars_covmat_bv_preds_and_marg,
     make_ars_bv_preds_and_marg(samps = ars_samps_covmat,
                                data = stan_data_adult_ss_covmat)
   ),
@@ -675,7 +675,7 @@ sex_map <- tar_map(
   ),
   tar_target(
     ars_covmat_bv_pred_plot,
-    plot_lines_posterior(df = ars_covmat_bv_preds_and_margt$df_pred,
+    plot_lines_posterior(df = ars_covmat_bv_preds_and_marg$df_pred,
                          xlab = paste0("Breeding value for ",
                                        sex,
                                        " crossover count"),
@@ -687,7 +687,7 @@ sex_map <- tar_map(
   ),
   tar_target(
     ars_covmat_bv_marg_plot,
-    plot_lines_posterior(df = ars_covmat_bv_preds_and_margt$df_marg_pred,
+    plot_lines_posterior(df = ars_covmat_bv_preds_and_marg$df_marg_pred,
                          xlab = paste0("Breeding value for ",
                                        sex,
                                        " crossover count"),
@@ -868,25 +868,38 @@ sex_map <- tar_map(
                 device = "pdf"),
     format = "file",
     deployment = "main"
-  ),
-  tar_target(
-    ars_ppc,
-    do_ars_ppc(y = stan_data_adult_ss$sum_recruit,
-               yrep = ars_samps$y_rep,
-               ll_i = stan_data_adult_ss$ll_idx,
-               ye_i = stan_data_adult_ss$ye_idx,
-               id_i = stan_data_adult_ss$id_idx)
-  ),
-  tar_target(
-    surv_ppc,
-    do_surv_ppc(y = stan_data_adult_ss$survival,
-                yrep = surv_samps$y_rep,
-                # co_n = replace_na(data_adult_ss$co_n, 0),
-                # co_meas = data_adult_ss$co_meas,
-                ll_i = stan_data_adult_ss$ll_idx,
-                ye_i = stan_data_adult_ss$ye_idx,
-                id_i = stan_data_adult_ss$id_idx)
-  )
+  )#,
+  # tar_target(
+  #   ars_ppc,
+  #   do_ars_ppc(y = stan_data_adult_ss$sum_recruit,
+  #              yrep = ars_samps$y_rep,
+  #              ll_i = stan_data_adult_ss$ll_idx,
+  #              ye_i = stan_data_adult_ss$ye_idx,
+  #              id_i = stan_data_adult_ss$id_idx)
+  # ),
+  # tar_target(
+  #   ars_covmat_ppc,
+  #   do_ars_ppc(y = stan_data_adult_ss_covmat$sum_recruit,
+  #              yrep = ars_samps_covmat$y_rep,
+  #              ll_i = stan_data_adult_ss_covmat$ll_idx,
+  #              ye_i = stan_data_adult_ss_covmat$ye_idx,
+  #              id_i = stan_data_adult_ss_covmat$id_idx)
+  # ),
+  # tar_target(
+  #   ars_covmat_ppc_pl,
+  #   ars_covmat_ppc,
+  #   pattern = map(ars_covmat_ppc)
+  # ),
+  # tar_target(
+  #   surv_ppc,
+  #   do_surv_ppc(y = stan_data_adult_ss$survival,
+  #               yrep = surv_samps$y_rep,
+  #               # co_n = replace_na(data_adult_ss$co_n, 0),
+  #               # co_meas = data_adult_ss$co_meas,
+  #               ll_i = stan_data_adult_ss$ll_idx,
+  #               ye_i = stan_data_adult_ss$ye_idx,
+  #               id_i = stan_data_adult_ss$id_idx)
+  # )
 )
 
 list(

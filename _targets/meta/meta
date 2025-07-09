@@ -1,16 +1,78 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+ars_bv_marg_plot_f|stem|bc260dc9d9134992|390b33a8ccccd445|d69f078b822e062e|961615481||t20277.3990277778s|7d22b23735a21783|17738421|qs|local|list|||0.228||
+ars_bv_marg_plot_m|stem|04afcbbdc224ce7c|77004eaab12fbd8b|6dc04d97d6976d25|818813707||t20277.3990277778s|c93ff5778cfa2aa5|17118581|qs|local|list|||0.238||
+ars_bv_pred_plot_f|stem|04ecd1d6ba557eee|6804f45967819159|d69f078b822e062e|-1139394851||t20277.3990277778s|f16ccd6941aae3be|16694252|qs|local|list|||0.217||
+ars_bv_pred_plot_m|stem|3b1cc1674defc346|8b0a34a97b3b19f3|6dc04d97d6976d25|-1260724041||t20277.3990393519s|6ff14216ee129d2b|16587555|qs|local|list|||0.278||
+ars_bv_pred_plot_pdf_f|stem|fff9aff9b2fb2d49|e0210f6f3bd36ad8|d097793e3154c764|-1833229379|figs/ars_bv_pred_f.pdf|t20277.3995138889s|c6f932e81a2d459e|3666605|file|local|list|||10.762||
+ars_bv_pred_plot_pdf_m|stem|64985a70ce52e277|b5af5b463211a685|681c894f72a9f4fc|291761780|figs/ars_bv_pred_m.pdf|t20277.3997916667s|f5db234280bf04c0|3792915|file|local|list|||10.797||
 ars_bv_preds_and_marg_f|stem|1f08b07883bdb99e|1d531dd93b6001ce|98863fbd6390acb0|797619339||t20265.7656712963s|a62d1c24113edbe9|29569828|qs|local|list|||20.749||
 ars_bv_preds_and_marg_m|stem|c05b8bf3dffe765d|c463a9bc5d8cf13b|bdcbe56b274eeb4b|-1409319243||t20265.8180555556s|b7ab8832e3c8e0f7|30076427|qs|local|list|||20.531||
 ars_bvpost_sim|function|5b341e3164fd5110|||||||||||||||
+ars_covmat_bv_marg_plot_f|stem|1df02b8c0f7e1582|9eba4aa3c4bc3996|4517571693a54989|1951623614||t20278.4166666667s|356cdb39e3578560|88025864|qs|local|list|||0.101||
+ars_covmat_bv_pred_plot_f|stem|4c1da9242f2fb7fc|17f466e0839ba89d|4517571693a54989|1607526287||t20278.4166666667s|7c1588b5ae81fa23|87904856|qs|local|list|||0.088||
+ars_covmat_bv_pred_plot_pdf_f|stem|a430ee0c2f2ad665|8e995c413fb0d6a1|8ca045542faaa45c|-434207400|figs/ars_covmat_bv_pred_f.pdf|t20278.3981944444s|55431932ee9a0b8e|3159119|file|local|list|||25.947||
+ars_covmat_bv_preds_and_marg_f|stem|e3621a023a4e02be|8b6482d47e84d27c|75d5d11af6d5a08f|-1822558466||t20278.4162731481s|25d168305715f5fd|30255155|qs|local|list|||26.987||
+ars_covmat_ppc_f|stem|d3f0fd9133e16457|d4941e257d8b13fc|e353906bccdf103b|-458852222||t20278.398287037s|e529f28361c636d7|693030499|qs|local|list|||76.207||
+ars_covmat_ppc_m|stem||4b211125df362d6c|99750403c02d9dd4|-474194984||t20278.5333523411s||0|qs|local|list|||0.005||could not load dependencies of target ars_covmat_ppc_m. Expecting a single string value typecharacter extent0.
+ars_covmat_ppc_pl_f|pattern|e2297f544fbc9248|3ccd10287c8180ff||-189263832||||14092744565|qs|local|list||ars_covmat_ppc_pl_f_e4e0ac33*ars_covmat_ppc_pl_f_29b59317*ars_covmat_ppc_pl_f_494ba07e*ars_covmat_ppc_pl_f_7def16f5*ars_covmat_ppc_pl_f_edf7b4a0*ars_covmat_ppc_pl_f_42e2be36*ars_covmat_ppc_pl_f_4aec51b3*ars_covmat_ppc_pl_f_463c83b6*ars_covmat_ppc_pl_f_2b1dd66e*ars_covmat_ppc_pl_f_2602ca2d*ars_covmat_ppc_pl_f_23f209e0*ars_covmat_ppc_pl_f_ca968c17*ars_covmat_ppc_pl_f_ab3e6b4f*ars_covmat_ppc_pl_f_661bf2da*ars_covmat_ppc_pl_f_119bbb76*ars_covmat_ppc_pl_f_0142165d*ars_covmat_ppc_pl_f_97578fd2*ars_covmat_ppc_pl_f_a55d41a8*ars_covmat_ppc_pl_f_67643d0f*ars_covmat_ppc_pl_f_a5f15137*ars_covmat_ppc_pl_f_aceaf998*ars_covmat_ppc_pl_f_ad1a297c*ars_covmat_ppc_pl_f_2c68b19e*ars_covmat_ppc_pl_f_fa40f995*ars_covmat_ppc_pl_f_f5133ff1*ars_covmat_ppc_pl_f_c60463bd*ars_covmat_ppc_pl_f_388dcf9c*ars_covmat_ppc_pl_f_97b5e94f*ars_covmat_ppc_pl_f_16aea98f*ars_covmat_ppc_pl_f_e8912718*ars_covmat_ppc_pl_f_36393096*ars_covmat_ppc_pl_f_7e6c37ac*ars_covmat_ppc_pl_f_05a0814a*ars_covmat_ppc_pl_f_4717f50a*ars_covmat_ppc_pl_f_6116e810*ars_covmat_ppc_pl_f_d9a2eea2*ars_covmat_ppc_pl_f_66de5735|0.02||
+ars_covmat_ppc_pl_f_0142165d|branch|fe69143414a40af1|3ccd10287c8180ff|ef46db3751d8e999|-836498899||t20278.4157523148s|fe6393819035288c|503371157|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_05a0814a|branch|336139d4b4131d34|3ccd10287c8180ff|ef46db3751d8e999|1188095925||t20278.4160416667s|6efc4bfe9d27bd5a|46|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_119bbb76|branch|e7a8010390548a49|3ccd10287c8180ff|ef46db3751d8e999|727695868||t20278.4155439815s|ef45fc1d93a5c68f|493455066|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_16aea98f|branch|4d06e283ce079c56|3ccd10287c8180ff|ef46db3751d8e999|1946804526||t20278.4162731481s|32b1f55f1df7ca46|651611163|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_23f209e0|branch|e7df653179c51481|3ccd10287c8180ff|ef46db3751d8e999|257833077||t20278.4155324074s|7f7756df4b9af7b4|456255358|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_2602ca2d|branch|ebb747439da1b2f1|3ccd10287c8180ff|ef46db3751d8e999|-1797779641||t20278.415462963s|21e1c402e6cd84a5|447395647|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_29b59317|branch|9ae1d3fadcf72479|3ccd10287c8180ff|ef46db3751d8e999|-2011105207||t20278.4153587963s|e3f9807f55dc3093|8733390|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_2b1dd66e|branch|0ea751e5bf180755|3ccd10287c8180ff|ef46db3751d8e999|413276460||t20278.415462963s|cc80f736d68ddea1|438536422|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_2c68b19e|branch|b73b805913f60eaa|3ccd10287c8180ff|ef46db3751d8e999|-558705471||t20278.4158101852s|f7db6f0031031853|575455689|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_36393096|branch|976e82b5a0b54c39|3ccd10287c8180ff|ef46db3751d8e999|1672321709||t20278.4161921296s|8b5688db587900f7|678446003|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_388dcf9c|branch|f7e0bc5f73cc8ae8|3ccd10287c8180ff|ef46db3751d8e999|-1850124642||t20278.4159027778s|b23db5ff45c40f36|625155956|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_42e2be36|branch|89b9d1c82b15798f|3ccd10287c8180ff|ef46db3751d8e999|-2087138609||t20278.4154398148s|2f3486c2cde305ce|412141032|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_463c83b6|branch|b25bbc5f1e7646ee|3ccd10287c8180ff|ef46db3751d8e999|1534279550||t20278.4154398148s|f320e535c6a8700f|429723053|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_4717f50a|branch|d5295872f37a8071|3ccd10287c8180ff|ef46db3751d8e999|1794193560||t20278.4160416667s|6efc4bfe9d27bd5a|46|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_494ba07e|branch|b05bdef6bdaf4ed5|3ccd10287c8180ff|ef46db3751d8e999|365307237||t20278.4153819444s|cdf6df2a53d02dd5|385953460|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_4aec51b3|branch|fabeb8d99a574b4c|3ccd10287c8180ff|ef46db3751d8e999|-254199302||t20278.4154398148s|99d681dbac129777|420919660|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_6116e810|branch|56b0397480d91fde|3ccd10287c8180ff|ef46db3751d8e999|-502770274||t20278.4160416667s|6efc4bfe9d27bd5a|46|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_661bf2da|branch|f1295ddbe5667ce6|3ccd10287c8180ff|ef46db3751d8e999|-411398899||t20278.4155439815s|f33c245ff98810d2|483766169|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_66de5735|branch|a12fb126457ac6d0|3ccd10287c8180ff|ef46db3751d8e999|2030193813||t20278.4160532407s|6efc4bfe9d27bd5a|46|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_67643d0f|branch|6dc83f35fb382397|3ccd10287c8180ff|ef46db3751d8e999|-934984470||t20278.4157638889s|f5ed111ab08eb12f|534005560|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_7def16f5|branch|f298a6617ea65472|3ccd10287c8180ff|ef46db3751d8e999|67390101||t20278.4154398148s|fba65a84f68fbccb|394676617|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_7e6c37ac|branch|1485e44861215064|3ccd10287c8180ff|ef46db3751d8e999|1704006958||t20278.4160416667s|33ce326302e4636e|9926762|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_97578fd2|branch|26c8a12725da8ae8|3ccd10287c8180ff|ef46db3751d8e999|1619232123||t20278.4157523148s|d26eb4ef2cfefbe3|513465694|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_97b5e94f|branch|86212b5a9918eb0b|3ccd10287c8180ff|ef46db3751d8e999|-750838058||t20278.4161689815s|473a312b3d7b5ce9|638264851|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_a55d41a8|branch|ab486f2ecbd7ae12|3ccd10287c8180ff|ef46db3751d8e999|1004719661||t20278.4157638889s|bf7dab1ba8d62bef|523653933|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_a5f15137|branch|518482585f9747be|3ccd10287c8180ff|ef46db3751d8e999|1853459829||t20278.415775463s|9160e5a1de6edf0b|544376167|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_ab3e6b4f|branch|9f96ae6d612ee1de|3ccd10287c8180ff|ef46db3751d8e999|2135525973||t20278.4155439815s|a7def116a5ad6afd|474283474|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_aceaf998|branch|f4b62f1a6af78bcb|3ccd10287c8180ff|ef46db3751d8e999|489640572||t20278.4157986111s|d3f2f062199b85e5|554807665|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_ad1a297c|branch|860e54b269aee884|3ccd10287c8180ff|ef46db3751d8e999|-853340361||t20278.4157060185s|6a3bf2432e11b09b|9368713|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_c60463bd|branch|058121b6ee363fa2|3ccd10287c8180ff|ef46db3751d8e999|-1475965419||t20278.4158217593s|0de34b2963a97d03|612252252|qs|local|list|ars_covmat_ppc_pl_f||0||
+ars_covmat_ppc_pl_f_ca968c17|branch|effdafb46fb67b8a|3ccd10287c8180ff|ef46db3751d8e999|-594842466||t20278.415462963s|75d38ef76cfd0e42|8691960|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_d9a2eea2|branch|ecfc8a063402e76f|3ccd10287c8180ff|ef46db3751d8e999|-1272694727||t20278.4160416667s|6efc4bfe9d27bd5a|46|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_e4e0ac33|branch|90c837bd9456f655|3ccd10287c8180ff|ef46db3751d8e999|1761192120||t20278.4153587963s|f9fb4315492d10ec|8732989|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_e8912718|branch|8ce2c956ceb60bcf|3ccd10287c8180ff|ef46db3751d8e999|1528076864||t20278.4162847222s|9ce21f6971654813|664991632|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_edf7b4a0|branch|0d8b47521fbf8fe0|3ccd10287c8180ff|ef46db3751d8e999|-2126723639||t20278.4154398148s|8f0141561553d983|403390992|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_f5133ff1|branch|c0acdd2963f2a50a|3ccd10287c8180ff|ef46db3751d8e999|1172331088||t20278.4158101852s|1732f943c38e4f82|599623887|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_covmat_ppc_pl_f_fa40f995|branch|e386327beafbc8d7|3ccd10287c8180ff|ef46db3751d8e999|665231221||t20278.4161574074s|fa54c2dd724c1ac0|587311962|qs|local|list|ars_covmat_ppc_pl_f||0.001||
+ars_parent_bv_pred_plot_f|stem|34813d158ff36571|8ac2eb0167859107|78bb55130e3f024e|-1722744468||t20277.7178356481s|856c2c5eee2e68b8|15324570|qs|local|list|||0.233||
+ars_parent_bv_pred_plot_m|stem|a71a4935eee1dfd2|cf8b87e7d73cbc9a|b25b621ce119a331|1185517279||t20277.7671643519s|dccc40a6656640bd|15663550|qs|local|list|||0.253||
+ars_parent_bv_pred_plot_pdf_f|stem|1fdcf3f756614196|ed79668cdc31c236|a5b9a069fc28fb0a|-878473942|figs/ars_parent_bv_pred_f.pdf|t20277.7179398148s|c31754d574a6e043|3590809|file|local|list|||8.156||
+ars_parent_bv_pred_plot_pdf_m|stem|e19601bfdd729354|46a7e9ceab793d11|9704e462fb55d401|613995994|figs/ars_parent_bv_pred_m.pdf|t20277.7672685185s|f48e193dbbe0589c|3358267|file|local|list|||8.463||
+ars_parent_bv_preds_and_marg_f|stem|e7d25539f8739921|930e2e3b84ddafb1|0334402ed5f07230|342921056||t20277.7177199074s|68647eac4b942d22|29784581|qs|local|list|||25.095||
+ars_parent_bv_preds_and_marg_m|stem|bbcfaa7e3ddaab3a|844cc1e09d7e0472|a2dc600d7d55ae9a|965966216||t20277.7670717593s|4b1ed43a58a7b881|30001699|qs|local|list|||23.658||
 ars_pars|stem|03acb4c4fd253471|d83293acb280a1cc|ef46db3751d8e999|-72748201||t20154.4328009259s|3280407603f78daf|233|qs|local|list|||4.59||
 ars_ppc_f|stem|fa193dd76cd7c2ed|e0771d33970f2f77|dc875f26d47bcc0b|-1958484240||t20265.7662152778s|6caa9c3bb7382109|701927184|qs|local|list|||60.87||
 ars_ppc_m|stem|bd529e3ae27d526f|7d8a7f1bc23484d7|3688a4c9b673869b|-380925322||t20265.8186342593s|3c315cdf95b287ad|756031103|qs|local|list|||63.847||
+ars_samps_covmat_f|stem|03c3d68d56d3ef84|7509285579d4ca9b|277e419a1446ea4c|-975032240||t20278.3968287037s||1.94693964354746e-308|qs|local|list|||0.005||could not load dependencies of target ars_samps_covmat_f. Expecting a single string value typecharacter extent0.
+ars_samps_covmat_m|stem||e2e2475394b1b4a1|541375d1d722e77b|1292560908||t20278.5330100578s||0|qs|local|list|||0.005||could not load dependencies of target ars_samps_covmat_m. Expecting a single string value typecharacter extent0.
 ars_samps_f|stem|d3661bbdbfef6194|ed38b3ee941c355c|c9f0cc5301132779|671210037||t20265.7653009259s|c04d814fb4020c1f|357437978|qs|local|list|||2.796||
 ars_samps_m|stem|09eee6ac99ab2533|2cffa96496757d33|98a63a92e8d03454|-718921671||t20265.8176736111s|b50c853c91735908|381751130|qs|local|list|||2.969||
+ars_samps_parent_f|stem|f3dd1196eb80dfb2|5a9f27ca8f0b0b3e|2235a117e34e9c54|186839303||t20277.7173263889s|e2e10e3efb9a375a|144309085|qs|local|list|||1.954||
+ars_samps_parent_m|stem|a3ba82d306627613|231f3622b7006018|762d56af173fcc93|-1614736048||t20277.7667013889s|2a0db32bc4beecac|159966454|qs|local|list|||1.569||
 ars_sim_f|stem|cb1b61023b4bb073|458340148d9f9584|2e4748fe13ad5163|2094721853||t20265.559837963s|198113ce78e06bbf|8601|qs|local|list|||0.023||
 ars_sim_m|stem|3f4d82780e870da5|c0a118cf13ca32a6|7cfb675820a88666|-1944834497||t20265.559849537s|5103a3fed5c231b3|9934|qs|local|list|||0.003||
 bv_covmat_f|stem|2af4b0b119e3aa04|0550b95ef2077e18|a116dffea7e474e9|-1253004655||t20262.6413773148s|7fb7cb1cb5728689|53472862|qs|local|list|||128.781||
 bv_covmat_m|stem|836b56591b80f00f|2df88e493d99e1e3|4f4949d650473cdf|-2144555752||t20262.6404166667s|52a9a4077ea39f3e|56012433|qs|local|list|||137.368||
+bv_covmat_nestling_f|stem|a0b6b5a8c704879a|0a2bfbf8b3b939cd|e0d62f6897eead06|4917435||t20271.4193981481s|00b60cc2a843594d|14173654|qs|local|list|||50.836||
+bv_covmat_nestling_m|stem|7c762f47451c8a77|2adabf4fefe1e806|cb64c53230c935f9|857531639||t20271.4194097222s|87392e9731465c7b|12996153|qs|local|list|||48.311||
 bv_covmat_parent_f|stem|567f09011428a055|0284b45adefff5e9|f014876779f3b368|106688988||t20269.6337847222s|9f7793e0e00bdf36|17058114|qs|local|list|||41.186||
 bv_covmat_parent_m|stem|70bd4c61dd97ceea|254b6a94393206c3|23d7cad3e0177816|-514126186||t20269.6308564815s|7ed9bc22898db885|15638562|qs|local|list|||38.661||
 bv_preds_and_marg|function|de1ad10932d7d3f6|||||||||||||||
@@ -78,6 +140,10 @@ cv_test_sets_f|stem|0b0d52b9d00e0f06|4bb7c74f9bd981e0|c7318ff5d839f60c|-28022861
 cv_test_sets_m|stem|e98654089dd4bd7f|f73b4787a6d53740|03ac24142176bf3f|981130233||t20088.6288310185s|bef9f1f3a7f57722|5674|qs|local|list||cv_test_sets_m_99887153*cv_test_sets_m_7782d7b5*cv_test_sets_m_6463b675*cv_test_sets_m_529bff54*cv_test_sets_m_420b66cf*cv_test_sets_m_0cac84fe*cv_test_sets_m_c8eecca3*cv_test_sets_m_9380612b*cv_test_sets_m_32a194e1*cv_test_sets_m_52b3fee7|0.004||
 data_adult_ss_f|stem|541edf4c9ad858d4|79d7d8ed86b28fb5|195164af02d4410c|619297751||t20265.5597569444s|1852d68f70eccfb2|125136|qs|local|list|||0.243||
 data_adult_ss_m|stem|799c1bdf17da0bd2|15fc4ebc6514e932|c42db884d31da5b3|607982597||t20265.5597569444s|adcdfad002e974b6|135588|qs|local|list|||0.301||
+data_nestling_f|stem|7e5599e997d89067|d078d64917b13ad7|2db8cef74ef2044f|692521839||t20271.5393171296s|4e99f68c6b16a479|74975|qs|local|list|||0.211||
+data_nestling_m|stem|63184cba59205457|a82668de2a3f1e1c|b44dfe870b8b3496|-707924054||t20271.5393171296s|e11f9ac6f3803aab|83659|qs|local|list|||0.107||
+data_parent_adult_ss_f|stem|15b8681469a9d679|66cc24265509ee9a|9446d4ff91a1f182|-1078462505||t20271.5393171296s|0db5b82368f503c1|60410|qs|local|list|||0.139||
+data_parent_adult_ss_m|stem|9a8b91856c38a304|a4e68c4de44d8f9d|e3328033bbb205a4|1960536883||t20271.5393287037s|fc12d2cb91d1f8fd|67173|qs|local|list|||0.126||
 gamma.parms.from.quantiles|function|c8f8a256f5b990d9|||||||||||||||
 geno_data_paths|stem|dbfd5f4574c88b37|312ba767523b043b|ef46db3751d8e999|-1774351963|data/70K_200K_maf_geno_mind_v5.bed*data/70K_200K_maf_geno_mind_v5.bim*data/70K_200K_maf_geno_mind_v5.fam|t19587.6090625s|354739fd4e7cc0aa|186074590|file|local|list|||1.454|package data.table was built under R version 4.3.2. package ggplot2 was built under R version 4.3.2. package dplyr was built under R version 4.3.2. package qs was built under R version 4.3.2. package INLA was built under R version 4.3.2. package Matrix was built under R version 4.3.2. package sp was built under R version 4.3.2|
 get_ars_samps|function|c04fb97afb19a26d|||||||||||||||
@@ -92,6 +158,17 @@ make_data_adult_ars|function|0d7590a3fee0eb91|||||||||||||||
 make_data_adult_ars_bvpost|function|884f127d357f974f|||||||||||||||
 make_stan_data_adult_ars|function|04d9c51e483ddd61|||||||||||||||
 morph_data_path|stem|a92931c652193af4|064721f524822004|ef46db3751d8e999|-504400090|data/AdultMorphology_20240201_fix.csv|t19996.6270949074s|3ee6f3d772e220a1|1613923|file|local|list|||1.931|package data.table was built under R version 4.3.2. package ggplot2 was built under R version 4.3.2. package dplyr was built under R version 4.3.2. package qs was built under R version 4.3.2. package INLA was built under R version 4.3.2. package Matrix was built under R version 4.3.2. package sp was built under R version 4.3.2|
+nest_bv_marg_plot_f|stem|19339bdd8cd6c234|be6ca4916ec5276b|449549adf5f323ce|-1770853365||t20277.6056018519s|269effa867462ec8|17065642|qs|local|list|||0.064||
+nest_bv_marg_plot_m|stem|33cedcc5e802e8df|e3d8aea5c4ebd0da|28275d7ac7ef153b|540226884||t20277.6292592593s|9dbe79c887f68f78|17068865|qs|local|list|||0.065||
+nest_bv_pred_plot_f|stem|2ff03d521ad4657b|350ac3ffe305241b|449549adf5f323ce|-730773657||t20277.605787037s|519537c93056128f|16693223|qs|local|list|||0.072||
+nest_bv_pred_plot_m|stem|ccda0c7e108b51be|9126866e6c1af032|28275d7ac7ef153b|882601580||t20277.6292824074s|69de809105701ae7|16761912|qs|local|list|||0.071||
+nest_bv_pred_plot_pdf_f|stem|32c9f18a7bc99f16|7a3f94455d17b0bc|17e14db2e499d104|525618641|figs/nest_bv_pred_f.pdf|t20277.6059606481s|d4d0bab290202fa4|3821802|file|local|list|||14.322||
+nest_bv_pred_plot_pdf_m|stem|5048938626e7d4c7|6fd5c3924f79090f|387892bd417ca683|208419612|figs/nest_bv_pred_m.pdf|t20277.6294212963s|1ab16586aa61d861|3722015|file|local|list|||10.999||
+nest_bv_preds_and_marg_f|stem|7a0130ce4b21a8b2|dcfffc67cdace6ce|b9d6db1eddba9773|942091877||t20277.6052777778s|787ec878b7dd83ce|10022173|qs|local|list|||1.871||
+nest_bv_preds_and_marg_m|stem|444f70dbcdeab666|25a34ee6ddc8e60b|83f0a549175b87fe|-2104843276||t20277.6289236111s|f4bdbd748570e241|10066421|qs|local|list|||1.794||
+nest_pars|stem|fc5a400959d74b8e|e8792df7efd7df44|ef46db3751d8e999|-1992738318||t20277.5857986111s|6aac70ce59868a33|131|qs|local|list|||4.413||
+nest_samps_f|stem|f8babcc103389f77|28425a280412cd64|580fba7977defe0a|2066884464||t20277.6049305556s|b95af24c2afd34f3|30397938|qs|local|list|||1.215||
+nest_samps_m|stem|780d71317e830d6f|a2cf42ca95830a23|b063b5ee40a15c2a|-1568518531||t20277.6285763889s|4825fa16ccbfa75d|31394814|qs|local|list|||1.011||
 nestling_data_path|stem|18495e668165ff5e|439d18c838b3a6e9|ef46db3751d8e999|674001038|data/Nestlingdata_20240312_fix.csv|t19999.5524421296s|0ee0cf33f6c68b96|150516|file|local|list|||0||
 num_meas_vs_co_count_f|stem|75322c8f46decd94|ff2125e6c539fab2|2d98f21e3aa7443d|1179186469||t20061.6486689815s|2dee69d07cb9f78f|78453|qs|local|list|||0.013||
 num_meas_vs_co_count_m|stem|58de3535b0e7a08e|d16e54c7763e3fc4|8e09a2770f9b6d99|1456075753||t20154.4330324074s|349e7a7082460ecc|77261|qs|local|list|||0.011||
@@ -101,11 +178,14 @@ posterior_lines_plot|function|6f6f74912fee3838|||||||||||||||
 prep_crossover_data|function|b1d5b47d1062005d|||||||||||||||
 prop_i|function|c75bd59d1caaf671|||||||||||||||
 recomb_data_path|stem|721a867a3139275a|5a7651ce57e81f9c|ef46db3751d8e999|-971118603|data/20240910_Sparrow_Recomb_Data.txt|t19976.5861111111s|35fd1df6bf2996d9|983969|file|local|list|||0||
-stan_adult_ars_ss_covmat_m|stem|06c71137554d9410|6e46fb465b2915f3|c3471d974a2dd7c3|-1050671166||t20270.5796759259s|c75d3392f34d6310|1886613|qs|local|list|||127.297||
+stan_adult_ars_ss_covmat_f|stem|d2c0d774316610cf|2f2d0c5c06fbfcc4|3149e12a55072624|1703492686||t20278.3570601852s||1.94693965488753e-308|qs|local|list|||0.169||0Semantic error in string, line 209, column 4 to column 18      207    real beta_f  beta_f_std  sd_f   208    real alpha_zi  alpha_zi_std   209     beta_zi_bv_std  bv_std_const1                210     beta_zi_bv2_std  bv_std_const2   211     beta_zi_age_q1_std  age_q1_const   Identifier beta_zi_bv_std not in scope.
+stan_adult_ars_ss_covmat_m|stem|06c71137554d9410|d3047d1906e84972|cefed84a0552a380|-1050671166||t20270.5796759259s||1.94693962631032e-308|qs|local|list|||0.123||0Semantic error in string, line 209, column 4 to column 18      207    real beta_f  beta_f_std  sd_f   208    real alpha_zi  alpha_zi_std   209     beta_zi_bv_std  bv_std_const1                210     beta_zi_bv2_std  bv_std_const2   211     beta_zi_age_q1_std  age_q1_const   Identifier beta_zi_bv_std not in scope.
 stan_adult_ars_ss_f|stem|603cded594254e32|cab884bdcacf496c|accfa3922b7dee32|1906242301||t20265.764849537s|36342c8a174bb69b|559868302|qs|local|list|||17234.398||
 stan_adult_ars_ss_m|stem|00edb7002b5b44bc|bc0c507e8cb3fb97|a12a34e2bceb4b87|1498404261||t20265.8173148148s|70de5ddc7ca0f80d|594624990|qs|local|list|||21766.605||
 stan_adult_surv_ss_co_n_f|stem|df64e56b7f4d7ede|816c8f0c515f5d47|6867d9c4fa2c3b3f|869315683||t20265.6213541667s|2feb5f0aa5837a86|208368094|qs|local|list|||4838.568||
 stan_adult_surv_ss_co_n_m|stem|10e48271207d50fa|b923009e4dbc9a18|423776c04a2bfc05|1831965351||t20265.6331712963s|a478138f80e0890b|216458115|qs|local|list|||5858.731||
+stan_adult_surv_ss_covmat_co_n_f|stem|4483803c9b4042ed|360924c9e16f329d|2b6b2e9c7583a9d1|-1983919634||t20272.2332175926s|287c23603771ae22|208416719|qs|local|list|||57580.317||
+stan_adult_surv_ss_covmat_co_n_m|stem|7ed125067fff9629|4894ac0a36f20609|e03ccb662e5269c0|775075101||t20272.2857175926s|ad8316d4a8309603|216409649|qs|local|list|||62115.629||
 stan_adult_surv_ss_covmat_f|stem|e6a15523d6557b4a|c5c5c69486db8f32|b116c0a8298dd602|1442318708||t20270.3105555556s|a62f505e1f942174|207288875|qs|local|list|||59058.96||
 stan_adult_surv_ss_covmat_m|stem|4ef716d609e0e32c|3c65c56bd51f6d8e|ee55bb46d37eaef6|1282264513||t20270.3739583333s|ffae3f3380f1f688|214991344|qs|local|list|||64527.744||
 stan_adult_surv_ss_f|stem|2833a49ad0f3f084|1c495694f6ce051a|e4cd1ac85e9f64b9|995777346||t20265.6401736111s|ed1ea6bf02a14e57|207182762|qs|local|list|||6464.23||
@@ -114,81 +194,71 @@ stan_data_adult_ss_covmat_f|stem|f3667d0e15405639|a5e2ec209a2f7509|8347c336b5d34
 stan_data_adult_ss_covmat_m|stem|662e35515fd355ac|55cfbdec57ee8e6a|0faac7418c1b1fff|40399248||t20269.6269097222s|c487f3f052a77350|75423899|qs|local|list|||6.113||
 stan_data_adult_ss_f|stem|9155d2200697cf60|053a138c3792e9a1|088d1f8ee28f2153|259919203||t20265.5598148148s|a8db96f5a389dbf6|100633|qs|local|list|||1.831||
 stan_data_adult_ss_m|stem|ca92d29eb79b7fee|cea0b5405b854a07|316203564a5334da|1563411407||t20265.559837963s|f2c28aecadc7a10b|108679|qs|local|list|||1.091||
-stan_file_adult_ars|stem|d8fa1afdf8f75c6e|a6d266d76788a119|ef46db3751d8e999|-1750910332|r/adult_ars.stan|t20124.6804513889s|1d8ee8f5101f8730|5796|file|local|list|||22.864||
-stan_file_adult_ars_zinf|stem|ac89d74942f20f4a|0d2ad0aa6f363482|ef46db3751d8e999|-1608613087|r/zinf_ars.stan|t20270.5507638889s|49ad599ce008c4bf|9100|file|local|list|||22.68||
-stan_file_adult_ars_zinf_covmat|stem|fef01dece4157fc3|22738706bca6bd05|ef46db3751d8e999|-2075151824|r/zinf_ars_covmat.stan|t20270.5512731481s|198b65c0ad61f792|9112|file|local|list|||18.084||
-stan_file_adult_surv|stem|608ebae3cd8ded0c|697d6dba53d4125c|ef46db3751d8e999|1091223821|r/adult_surv.stan|t20157.6073263889s|6d712e12af87302f|5720|file|local|list|||24.746||
-stan_file_adult_surv_co_n|stem|9b7e485fd262308d|a5c77e7515cc5509|ef46db3751d8e999|-678558440|r/adult_surv_co_n.stan|t20265.5646064815s|b5145490ce381563|6182|file|local|list|||3.22||
-stan_file_adult_surv_covmat|stem|1455bccfdb27c86b|8e53063f7e0e83d5|ef46db3751d8e999|1527118160|r/adult_surv_covmat.stan|t20265.6208796296s|9c2229106418caa4|5728|file|local|list|||23.913||
-surv_bv_preds_and_marg_f|stem|d345dd0df58401ba|4423738b75c01a07|ce0713c88e3b9317|-1205187561||t20265.640775463s|4a723b32dacb65b3|9655710|qs|local|list|||4.279||
-surv_bv_preds_and_marg_m|stem|bbbfb7e316aeb4a6|21ce363a2ff89fd1|e1506a72e042365c|1615160377||t20265.6446064815s|4709fa0f08a1aa17|9993513|qs|local|list|||4.341||
-surv_bvpost_sim|function|fc1c633d649e53ef|||||||||||||||
-surv_pars|stem|6e2578c2ace8cc24|3b59cd6029759d50|ef46db3751d8e999|1022292941||t20157.6133449074s|82d1d1c4d23d6aba|150|qs|local|list|||22.025||
-surv_ppc_f|stem|512801aa04930152|4dd2b4bee9504336|bbafd907c45bdbfa|-1114714130||t20265.6409953704s|b74c8e1eba2aaa65|58230656|qs|local|list|||18.531||
-surv_ppc_m|stem|e365be78ed966b65|fa0d84f7c5266c48|0c625d56a9414a54|438298072||t20265.6449884259s|a8a795a5ce2301d5|65816502|qs|local|list|||19.815||
-surv_samp_pairs_plot_f|stem|eb7f9a74a0fb7f45|423cea8582ebba9a|fe1037b0012de1f9|1524772856||t20265.6407291667s|c7c27ad66ab0e973|861090|qs|local|list|||0.699||
-surv_samp_pairs_plot_m|stem|a487de38d608c457|9d25da31e85df33c|b1eb478d5ebf64c4|-1845045752||t20265.6445601852s|3c492ce6f0a7db13|858169|qs|local|list|||0.703||
-surv_samps_f|stem|757d0947390e6f6f|4085217687d279e0|a0d61c98340aa187|-2071776218||t20265.6404513889s|94eaedf818ba9def|154679069|qs|local|list|||1.664||
-surv_samps_m|stem|9cc7c12821e55b8e|22de293e3608bca4|21564314cee3ef0c|1934709664||t20265.6442476852s|216faa7960bb3766|160293652|qs|local|list|||2.006||
-surv_sim_f|stem|87a7523af6327969|74560f4ffe63d665|dd445ad5e875ab3b|-623506263||t20265.559849537s|a627cb584acedaff|2849|qs|local|list|||0.026||
-surv_sim_m|stem|3b908d8cdee6020d|0f221fe2251b9172|023dbb12f6e3959b|-2018114645||t20265.559849537s|3f1f1656ca1ed597|3237|qs|local|list|||0.003||
-stan_file_adult_surv_covmat_co_n|stem|48b5e119ab06341d|362f79ef2f214eeb|ef46db3751d8e999|-1560897312|r/adult_surv_covmat_co_n.stan|t20271.3848032407s|ae5de5e3c7fe9dc4|6212|file|local|list|||14.618||
-nest_pars|stem|e38405aefbe27f16|ed3c10d390e2c35c|ef46db3751d8e999|-1992738318||t20271.4184606481s|bce99b594ffe2eda|128|qs|local|list|||5.887||
-bv_covmat_nestling_f|stem|a0b6b5a8c704879a|0a2bfbf8b3b939cd|e0d62f6897eead06|4917435||t20271.4193981481s|00b60cc2a843594d|14173654|qs|local|list|||50.836||
-bv_covmat_nestling_m|stem|7c762f47451c8a77|2adabf4fefe1e806|cb64c53230c935f9|857531639||t20271.4194097222s|87392e9731465c7b|12996153|qs|local|list|||48.311||
-data_nestling_f|stem|7e5599e997d89067|d078d64917b13ad7|2db8cef74ef2044f|692521839||t20271.5393171296s|4e99f68c6b16a479|74975|qs|local|list|||0.211||
-data_nestling_m|stem|63184cba59205457|a82668de2a3f1e1c|b44dfe870b8b3496|-707924054||t20271.5393171296s|e11f9ac6f3803aab|83659|qs|local|list|||0.107||
-data_parent_adult_ss_f|stem|15b8681469a9d679|66cc24265509ee9a|9446d4ff91a1f182|-1078462505||t20271.5393171296s|0db5b82368f503c1|60410|qs|local|list|||0.139||
-data_parent_adult_ss_m|stem|9a8b91856c38a304|a4e68c4de44d8f9d|e3328033bbb205a4|1960536883||t20271.5393287037s|fc12d2cb91d1f8fd|67173|qs|local|list|||0.126||
-stan_file_parent_surv_covmat|stem|8dec46fda812dd94|b60a2b53931ba82c|ef46db3751d8e999|-1547718279|r/parent_surv_covmat.stan|t20271.5567939815s|e45209df98b91f96|5861|file|local|list|||0||
-stan_data_parent_adult_ss_covmat_m|stem|55a3e8ea868c17ba|7630ad35a1c33622|a7ff49e95b3929ff|-2001399855||t20271.5629398148s|b7e60a44bca23d29|3538182|qs|local|list|||1.674||
-stan_file_parent_ars_zinf_covmat|stem|f4a929350ae6b74b|d99a3b4fb971d97e|ef46db3751d8e999|610787695|r/parent_zinf_ars_covmat.stan|t20271.5587268519s|0982df132d9e6df9|9241|file|local|list|||0.001||
 stan_data_nestling_covmat_f|stem|09832fbe01baafe1|734ce16c3fbb4bed|17784250f8f5f97e|-779818349||t20271.5632175926s|77f4a08dc6e9ec29|2251763|qs|local|list|||1.668||
 stan_data_nestling_covmat_m|stem|741383250deae4f8|0884a05bd702007e|f27d1ccf9a83165d|-202792508||t20271.5632291667s|25bc4c2e8871044f|2393586|qs|local|list|||1.345||
 stan_data_parent_adult_ss_covmat_f|stem|1559d45ca1000fa2|3454a2ab0e809f34|54b95c00e0116f32|-510419058||t20271.5632523148s|1daa01c91489d40c|3341870|qs|local|list|||1.089||
-stan_file_nestling_surv_covmat|stem|0358b029c7927679|239aeda8ee606839|ef46db3751d8e999|-843377165|r/nestling_surv_covmat.stan|t20271.5660300926s|1899e2fa22b73241|4871|file|local|list|||2.215||
-stan_nestling_surv_covmat_f|stem|26bdc447c0e0c67c|0428c6c8f14fbad1|cffdd6c4a7afb514|-1405702481||t20271.6384027778s|433840b67f050d2b|131101969|qs|local|list|||6189.205|There were 16 chains where the estimated Bayesian Fraction of Missing Information was low. Seehttpsmcstan.orgmiscwarnings.htmlbfmilow. Examine the pairs plot to diagnose sampling problems|
-stan_nestling_surv_covmat_m|stem|5e3d86a3ab298279|b9c102fb8bc57f24|5f8965518ac4371f|1581042999||t20271.6444097222s|1243f6f133ae8f74|139470344|qs|local|list|||6708.002|There were 9 chains where the estimated Bayesian Fraction of Missing Information was low. Seehttpsmcstan.orgmiscwarnings.htmlbfmilow. Examine the pairs plot to diagnose sampling problems|
-stan_parent_adult_ars_ss_covmat_f|stem|c96f37620e24e696|aca4a34b0bc66dc0|69643b103cbe57df|-1371212128||t20271.6511689815s|882a1a4e9fb66561|210238894|qs|local|list|||7291.951||
-ars_samps_parent_f|stem|1c5bfebb6bb58262|5a9f27ca8f0b0b3e|5aa2c156a251b7fa|186839303||t20271.6515740741s|223f27c1a388ba1d|144247130|qs|local|list|||2.08||
-stan_parent_adult_ars_ss_covmat_m|stem|5144004306c779fd|5a70df8a2e0f05d4|6799b7b58383787f|2063428410||t20271.7232986111s|45890db6ea1a6754|231135671|qs|local|list|||13523.424||
-ars_samps_parent_m|stem|6e64125f7347b5fd|231f3622b7006018|feca027b4c15fa71|-1614736048||t20271.7240509259s|1ab88fa2c7eb89e0|159775831|qs|local|list|||2.119||
-stan_parent_adult_surv_ss_covmat_f|stem|9b17fdfa068c094b|345e424e92ebdcb6|e52453183d68ae65|-1931668948||t20271.9945138889s|8afdb392d48e2ae7|71393483|qs|local|list|||36956.945|There were 16 chains where the estimated Bayesian Fraction of Missing Information was low. Seehttpsmcstan.orgmiscwarnings.htmlbfmilow. Examine the pairs plot to diagnose sampling problems|
-surv_samps_parent_f|stem|92793c02963c5b84|60667c9751d98d2c|d70271e29c49ebb8|1911167871||t20271.9950694444s|d8e53182d4a3994a|51710587|qs|local|list|||1.668||
-stan_parent_adult_surv_ss_covmat_m|stem|5da93a214bad9263|eb56cc361372d07b|d2fa0e119e8cb368|967350589||t20272.2030208333s|ac03a39c41899b77|76420639|qs|local|list|||54972.838|There were 16 chains where the estimated Bayesian Fraction of Missing Information was low. Seehttpsmcstan.orgmiscwarnings.htmlbfmilow. Examine the pairs plot to diagnose sampling problems|
-surv_samps_parent_m|stem|fb7bc15ad22c0f63|3f821fd2f43e4931|b080c6103888b6a7|664073018||t20272.2033796296s|5a6e57e161ce919f|55259140|qs|local|list|||1.093||
-stan_adult_surv_ss_covmat_co_n_f|stem|4483803c9b4042ed|360924c9e16f329d|2b6b2e9c7583a9d1|-1983919634||t20272.2332175926s|287c23603771ae22|208416719|qs|local|list|||57580.317||
-stan_adult_surv_ss_covmat_co_n_m|stem|7ed125067fff9629|4894ac0a36f20609|e03ccb662e5269c0|775075101||t20272.2857175926s|ad8316d4a8309603|216409649|qs|local|list|||62115.629||
-stan_adult_ars_ss_covmat_f|stem|58d34be71a166efe|cc8f5e3c1c9f07df|f8cd1fd2c8cdd6ef|1703492686||t20272.3752083333s|8f9fc98b6e83bc87|558205137|qs|local|list|||69846.421|There were 169 divergent transitions after warmup. Seehttpsmcstan.orgmiscwarnings.htmldivergenttransitionsafterwarmupto find out why this is a problem and how to eliminate them.. Examine the pairs plot to diagnose sampling problems|
-surv_bv_pred_plot_pdf_m|stem|9a2f86c311a51a54|961c575db8e1c2c0|0b34652148cf681b|1531775820|figs/surv_bv_pred_m.pdf|t20272.4109722222s|41e1d75004c4965c|3764895|file|local|list|||14.933||
-surv_samps_covmat_f|stem|16b145eed0bcd819|a16ff21816acef1e|57629d76b3893e9b|-103294868||t20272.410787037s|35892c42d37dd1e8|154788483|qs|local|list|||2.121||
-surv_samps_covmat_m|stem|0a751197a3a85d13|df7dfd2de553e02e|a687ac75aab81530|-1111311832||t20272.410787037s|617ea03b8d637aaf|160248980|qs|local|list|||2.531||
-ars_samps_covmat_f|stem|df8b114d2018c4ed|0603b95d2ef7be1e|6588d44d7cd160e7|-975032240||t20272.4108101852s|85db7ffe27d553f5|356030615|qs|local|list|||3.369||
-nest_samps_m|stem|5bf7144ec316fa92|a2cf42ca95830a23|51b09ecfc365a5b4|-1568518531||t20272.4107638889s|4a0a3558c1c70515|105264342|qs|local|list|||1.85||
-surv_samps_covmat_co_n_f|stem|6a4c78b4f4028ec7|082562f129a371b3|5fee863b851914ac|-962918267||t20272.410787037s|0374b1e6f8508336|154363794|qs|local|list|||2.65||
-surv_samps_covmat_co_n_m|stem|63e013dfc7e3498c|fb7dc4a966331dd1|c02d79f90989310f|-1611331853||t20272.410787037s|44b840665cdb71fb|159858092|qs|local|list|||2.718||
-ars_bv_pred_plot_pdf_f|stem|b8c0c2391793f9b0|e0210f6f3bd36ad8|87f5fc56776c77b0|-1833229379|figs/ars_bv_pred_f.pdf|t20272.4111458333s|af304d6d728050a8|3666594|file|local|list|||11.623||
-surv_bv_pred_plot_pdf_f|stem|233f3a1a34c5cb63|f6d56d7694644bec|66f7040d04ec4f55|981736674|figs/surv_bv_pred_f.pdf|t20272.4112847222s|41e1ca0f8c1a721c|3748695|file|local|list|||11.524||
-ars_bv_pred_plot_pdf_m|stem|cec23c784f34e4e3|b5af5b463211a685|3b7905adf8564c9a|291761780|figs/ars_bv_pred_m.pdf|t20272.4114236111s|a057f7cd1a41f363|3792904|file|local|list|||11.464||
-surv_parent_bv_preds_and_marg_f|stem|4bc146e608291c5f|3d21e211e2cd3ad3|365c3b78c48ab926|-266168928||t20272.4113194444s|f78d5209d5d08cfb|9731309|qs|local|list|||5.567||
-nest_samps_f|stem|7d0472dde7ba3a1d|28425a280412cd64|b5ca542f05b10106|2066884464||t20272.4112847222s|632a3a07444e29cb|98789082|qs|local|list|||1.67||
-surv_parent_bv_preds_and_marg_m|stem|9b6db643a8444df2|ff3e5977743cb0da|5ca8b005982e0408|613571135||t20272.4113078704s|2815847489c4bb28|9753849|qs|local|list|||5.291||
+stan_data_parent_adult_ss_covmat_m|stem|55a3e8ea868c17ba|7630ad35a1c33622|a7ff49e95b3929ff|-2001399855||t20271.5629398148s|b7e60a44bca23d29|3538182|qs|local|list|||1.674||
+stan_file_adult_ars|stem|d8fa1afdf8f75c6e|a6d266d76788a119|ef46db3751d8e999|-1750910332|r/adult_ars.stan|t20124.6804513889s|1d8ee8f5101f8730|5796|file|local|list|||22.864||
+stan_file_adult_ars_zinf|stem|ac89d74942f20f4a|0d2ad0aa6f363482|ef46db3751d8e999|-1608613087|r/zinf_ars.stan|t20270.5507638889s|49ad599ce008c4bf|9100|file|local|list|||22.68||
+stan_file_adult_surv|stem|608ebae3cd8ded0c|697d6dba53d4125c|ef46db3751d8e999|1091223821|r/adult_surv.stan|t20157.6073263889s|6d712e12af87302f|5720|file|local|list|||24.746||
+stan_file_adult_surv_co_n|stem|9b7e485fd262308d|a5c77e7515cc5509|ef46db3751d8e999|-678558440|r/adult_surv_co_n.stan|t20265.5646064815s|b5145490ce381563|6182|file|local|list|||3.22||
+stan_file_adult_surv_covmat|stem|1455bccfdb27c86b|8e53063f7e0e83d5|ef46db3751d8e999|1527118160|r/adult_surv_covmat.stan|t20265.6208796296s|9c2229106418caa4|5728|file|local|list|||23.913||
+stan_file_adult_surv_covmat_co_n|stem|48b5e119ab06341d|362f79ef2f214eeb|ef46db3751d8e999|-1560897312|r/adult_surv_covmat_co_n.stan|t20271.3848032407s|ae5de5e3c7fe9dc4|6212|file|local|list|||14.618||
+stan_file_nestling_surv_covmat|stem|b8c75dfbea911e1b|239aeda8ee606839|ef46db3751d8e999|-843377165|r/nestling_surv_covmat.stan|t20277.5271527778s|31922459b5c376ae|4760|file|local|list|||0.001||
+stan_file_parent_ars_zinf_covmat|stem|c5f785f0f2c1615b|d99a3b4fb971d97e|ef46db3751d8e999|610787695|r/parent_zinf_ars_covmat.stan|t20277.5422453704s|80e52d13f1ce47b5|9520|file|local|list|||16.336||
+stan_file_parent_surv_covmat|stem|1cf71fbb8e831224|b60a2b53931ba82c|ef46db3751d8e999|-1547718279|r/parent_surv_covmat.stan|t20277.5390972222s|96f07e1c1b730ed2|5845|file|local|list|||0||
+stan_nestling_surv_covmat_f|stem|d174b39ea3e89586|0428c6c8f14fbad1|1691ad65478aa900|-1405702481||t20277.6046643519s|c987b4b635d5af56|45023388|qs|local|list|||1601.798||
+stan_nestling_surv_covmat_m|stem|c6fea439cc30fbea|b9c102fb8bc57f24|30b985e541227642|1581042999||t20277.6281712963s|e9ea1ff43ac8a0b7|46657467|qs|local|list|||3632.255||
+stan_parent_adult_ars_ss_covmat_f|stem|730f4bcdd9296eff|6f8abb57dd086c6f|971b7d087c4ea443|-1371212128||t20277.7169097222s|09a2e5b63730148a|250039488|qs|local|list|||11324.753||
+stan_parent_adult_ars_ss_covmat_m|stem|4ede1378c5bd6825|1a500d1f3a63d1e6|d68255d4ed12275b|2063428410||t20277.7663888889s|ee94839f53d3462f|272060434|qs|local|list|||15597.886||
+stan_parent_adult_surv_ss_covmat_f|stem|0d4a9c1313ff193d|345e424e92ebdcb6|315471272513d6f5|-1931668948||t20278.0518055556s|008ecbbf698a5046|71879710|qs|local|list|||40259.507|There were 8 chains where the estimated Bayesian Fraction of Missing Information was low. Seehttpsmcstan.orgmiscwarnings.htmlbfmilow. Examine the pairs plot to diagnose sampling problems|
+stan_parent_adult_surv_ss_covmat_m|stem|e17048c5412a54d6|eb56cc361372d07b|aaf6d104f303d715|967350589||t20278.1517708333s|68fa491251698774|76960859|qs|local|list|||48896.355|There were 16 chains where the estimated Bayesian Fraction of Missing Information was low. Seehttpsmcstan.orgmiscwarnings.htmlbfmilow. Examine the pairs plot to diagnose sampling problems|
+surv_bv_marg_plot_f|stem|b6c82751164d71b2|8c013eadcb1400b8|0e2378176d4eec4e|1826123531||t20277.39875s|efda3733e6fc40a2|17352680|qs|local|list|||0.07||
+surv_bv_marg_plot_m|stem|9b9bc601181ff1d7|2d0cc93416141330|32dc86f6b139c9d5|-1830692977||t20277.3987615741s|953d96b67f01fa5b|17060259|qs|local|list|||0.071||
+surv_bv_pred_plot_f|stem|41c3854747a65240|5d6818ddc53030ba|0e2378176d4eec4e|469562045||t20277.3987847222s|d48c76cd3eff1ef0|16468018|qs|local|list|||0.087||
+surv_bv_pred_plot_m|stem|bb5be39e7d2bb324|757222254895d6f3|32dc86f6b139c9d5|-148277999||t20277.39875s|3c7a194b4fad4b36|16596641|qs|local|list|||0.08||
+surv_bv_pred_plot_pdf_f|stem|0a0ca126404c7359|f6d56d7694644bec|ad420eb9d1879b44|981736674|figs/surv_bv_pred_f.pdf|t20277.3993865741s|b07fbead8481a493|3748706|file|local|list|||10.979||
+surv_bv_pred_plot_pdf_m|stem|6a8a51c237e30da7|961c575db8e1c2c0|4adb7d2f5e003292|1531775820|figs/surv_bv_pred_m.pdf|t20277.3989351852s|a78119f304a540d2|3764907|file|local|list|||12.597||
+surv_bv_preds_and_marg_f|stem|d345dd0df58401ba|4423738b75c01a07|ce0713c88e3b9317|-1205187561||t20265.640775463s|4a723b32dacb65b3|9655710|qs|local|list|||4.279||
+surv_bv_preds_and_marg_m|stem|bbbfb7e316aeb4a6|21ce363a2ff89fd1|e1506a72e042365c|1615160377||t20265.6446064815s|4709fa0f08a1aa17|9993513|qs|local|list|||4.341||
+surv_bvpost_sim|function|fc1c633d649e53ef|||||||||||||||
+surv_covmat_bv_marg_plot_f|stem|928483507ddd239e|b00bbff3a9ab2c4a|b75a8760ee1650f7|738429423||t20277.3987615741s|65d4b893d8426d18|87822270|qs|local|list|||0.073||
+surv_covmat_bv_marg_plot_m|stem|33460e1da758950c|76e71a90f025868a|34bca2a33f781ddf|1226891745||t20277.3987615741s|2f06db1b0967b5f7|92491479|qs|local|list|||0.072||
+surv_covmat_bv_pred_plot_f|stem|b0204676b38468cc|e5051b8fbbe34c1a|b75a8760ee1650f7|769053776||t20277.3987615741s|ab1ebc2d031d3c68|87642098|qs|local|list|||0.071||
+surv_covmat_bv_pred_plot_m|stem|56dee1b4a256ffc2|52c617e3f41aad34|34bca2a33f781ddf|-739709657||t20277.3987615741s|4c175b8da2abb7db|92293697|qs|local|list|||0.072||
+surv_covmat_bv_pred_plot_pdf_f|stem|140ec0c830fadead|f0d1d9c32e237903|c93757109a1bca69|-1491700662|figs/surv_covmat_bv_pred_f.pdf|t20277.3991087963s|398a77db44c656d8|3770991|file|local|list|||11.411||
+surv_covmat_bv_pred_plot_pdf_m|stem|28b7b61e05356946|0259f91c2c6f3371|571218feb914cc2c|822440493|figs/surv_covmat_bv_pred_m.pdf|t20277.3992476852s|3f0759200a99e976|3489923|file|local|list|||11.18||
 surv_covmat_bv_preds_and_marg_f|stem|23cb6d199b8cff25|ff4032420a00eb96|80640de0ebe09784|419482984||t20272.4113078704s|5da8cbdc985f337b|10124348|qs|local|list|||5.167||
 surv_covmat_bv_preds_and_marg_m|stem|9b2d3fe4fca997b3|1ac64cce4b1e0d75|71245ee585ec770c|-906859186||t20272.4113078704s|bafb667fe23131dc|10132609|qs|local|list|||5.217||
+surv_covmat_co_n_bv_marg_plot_f|stem|d87931d26264269a|3d3a1b70b1c880bc|dadeeea1dec1db89|-1177866156||t20277.3987962963s|2fc934372f3fb145|87648235|qs|local|list|||0.086||
+surv_covmat_co_n_bv_marg_plot_m|stem|ac44cb72c3b93b0f|c9a0f8fefb8bfe6f|2ec0df84df0edbd4|-450340562||t20277.3987962963s|a57dc249922fb869|92428494|qs|local|list|||0.083||
+surv_covmat_co_n_bv_pred_plot_f|stem|eb7cb7e94b44a311|5d9a3bbe1ca61f90|dadeeea1dec1db89|-700703737||t20277.3987962963s|b95ec7c8670ec00e|86987991|qs|local|list|||0.086||
+surv_covmat_co_n_bv_pred_plot_m|stem|b1f6c70e28af2885|35563ad51027a518|2ec0df84df0edbd4|-1594161188||t20277.3990277778s|bc853592d246a519|92157340|qs|local|list|||0.072||
+surv_covmat_co_n_bv_pred_plot_pdf_f|stem|fd0f3d68602e502b|6c8137385bbaa219|499a18308efc53e0|212369340|figs/surv_covmat_co_n_bv_pred_f.pdf|t20277.400162037s|30595148bd58156f|3748920|file|local|list|||11.521||
+surv_covmat_co_n_bv_pred_plot_pdf_m|stem|1fb5b1f09672dd2f|6933d603c54ad247|b59c2d23626dae80|1624229584|figs/surv_covmat_co_n_bv_pred_m.pdf|t20277.4005092593s|8376ec7ffd659623|3778091|file|local|list|||11.506||
 surv_covmat_co_n_bv_preds_and_marg_f|stem|42f0fd991ad9dc04|0f50a8054a8e6e04|29c07be8caa18212|765167580||t20272.4113310185s|fff1ea4cd8cf49b3|9853508|qs|local|list|||6.485||
-nest_bv_preds_and_marg_m|stem|821627ad391f375f|25a34ee6ddc8e60b|bf4c481245520ca2|-2104843276||t20272.4112847222s|5968a9ec3f9501cd|10131384|qs|local|list|||2.309||
 surv_covmat_co_n_bv_preds_and_marg_m|stem|bec37693a958fdcb|56763a7c97720d15|7762a79dad32b2f5|852475630||t20272.4113310185s|77af5c075aebfa61|10073944|qs|local|list|||6.435||
-ars_parent_bv_preds_and_marg_m|stem|3b6d1e584751feb6|844cc1e09d7e0472|22cb8ce135563216|965966216||t20272.4115393519s|18bada52c3bc5814|30119846|qs|local|list|||25.127||
-ars_parent_bv_preds_and_marg_f|stem|c93b1cbcc9648058|930e2e3b84ddafb1|da446d71f351822c|342921056||t20272.4115509259s|9a033082aa29ad61|29753908|qs|local|list|||25.425||
-ars_covmat_bv_preds_and_margt_f|stem|8980022b58431fdd|8b6482d47e84d27c|58f2a1062e3ca6ac|1002831410||t20272.4116319444s|4858dc23752d8f1f|30244716|qs|local|list|||31.129||
-nest_bv_preds_and_marg_f|stem|8db93373092e8dfc|dcfffc67cdace6ce|c90b6e89a3a58123|942091877||t20272.4115972222s|258df6d04cd5e3cb|10110376|qs|local|list|||1.657||
-surv_covmat_bv_pred_plot_pdf_f|stem|7f44930b10b05920|f0d1d9c32e237903|9bdbe0595f278d15|-1491700662|figs/surv_covmat_bv_pred_f.pdf|t20272.4119907407s|b450d22b962ce364|3770981|file|local|list|||12.259||
-surv_covmat_bv_pred_plot_pdf_m|stem|a1f4fac0cc794346|0259f91c2c6f3371|3f3088d95ef2322b|822440493|figs/surv_covmat_bv_pred_m.pdf|t20272.4121296296s|b797a4d6ad3805e7|3489911|file|local|list|||11.639||
-nest_bv_pred_plot_pdf_m|stem|40553878bad68a92|6fd5c3924f79090f|7d1d1ece7a938c51|208419612|figs/nest_bv_pred_m.pdf|t20272.4124421296s|7623888988d6292f|3480389|file|local|list|||8.555||
-ars_covmat_bv_pred_plot_pdf_f|stem|7704b42b4b09185e|8e995c413fb0d6a1|13a038fb83cc6455|-434207400|figs/ars_covmat_bv_pred_f.pdf|t20272.4125810185s|164903287ea96015|3152838|file|local|list|||11.308||
-nest_bv_pred_plot_pdf_f|stem|046968ea596a441e|7a3f94455d17b0bc|440197b014abcb5d|525618641|figs/nest_bv_pred_f.pdf|t20272.4126851852s|fe384ff942cd305a|3770809|file|local|list|||8.163||
-surv_covmat_co_n_bv_pred_plot_pdf_f|stem|aad99c4ab42e5533|6c8137385bbaa219|0bf39273d5f4d0d7|212369340|figs/surv_covmat_co_n_bv_pred_f.pdf|t20272.4152662037s|ad927089395033a4|3748909|file|local|list|||12.39||
-surv_covmat_co_n_bv_pred_plot_pdf_m|stem|e949bbc7e4d2f6ab|6933d603c54ad247|d3f5690530fd4f12|1624229584|figs/surv_covmat_co_n_bv_pred_m.pdf|t20272.4153935185s|c328133e372df078|3778081|file|local|list|||11.259||
+surv_parent_bv_pred_plot_f|stem|22983f84413f81d8|e9914ac4d385d384|b6acfdd5ed1a0c06|-1063386911||t20278.0524305556s|f5a8ff02abee708a|15028998|qs|local|list|||0.047||
+surv_parent_bv_pred_plot_m|stem|f5eb4b7f88fd0e9e|1c1454e9f4c44b50|69dca4645f1b3a4b|955555310||t20278.1524189815s|f032bbf970801f85|15103342|qs|local|list|||0.047||
+surv_parent_bv_pred_plot_pdf_f|stem|a010896ee60e1686|fe8b05bb2e494225|bf4569b9b6becbeb|-1634178533|figs/surv_parent_bv_pred_f.pdf|t20278.0525462963s|c7ac1e89cf68dca7|3775010|file|local|list|||8.866||
+surv_parent_bv_pred_plot_pdf_m|stem|a0e612773dc63ffb|e0b7520d7915caaa|0cdde69c1c46bf14|-638665025|figs/surv_parent_bv_pred_m.pdf|t20278.1525347222s|a7545f6b9a70892a|3759464|file|local|list|||9.272||
+surv_parent_bv_preds_and_marg_f|stem|44bd1b43afdfff03|3d21e211e2cd3ad3|9b7858f1b8f4275c|-266168928||t20278.0523726852s|5de09fa4aaa10910|9750138|qs|local|list|||4.439||
+surv_parent_bv_preds_and_marg_m|stem|2075c20afa911a40|ff3e5977743cb0da|52b0082f48205b7f|613571135||t20278.1523611111s|2d81e50a2210d011|9792276|qs|local|list|||4.535||
+surv_pars|stem|6e2578c2ace8cc24|3b59cd6029759d50|ef46db3751d8e999|1022292941||t20157.6133449074s|82d1d1c4d23d6aba|150|qs|local|list|||22.025||
+surv_ppc_f|stem|512801aa04930152|4dd2b4bee9504336|bbafd907c45bdbfa|-1114714130||t20265.6409953704s|b74c8e1eba2aaa65|58230656|qs|local|list|||18.531||
+surv_ppc_m|stem|e365be78ed966b65|fa0d84f7c5266c48|0c625d56a9414a54|438298072||t20265.6449884259s|a8a795a5ce2301d5|65816502|qs|local|list|||19.815||
+surv_samp_pairs_plot_f|stem|44785eb68e8c28db|89bf9f6f4285de38|fe1037b0012de1f9|1524772856||t20277.5858333333s|031ca52b5881ae60|1430660|qs|local|list|||0.908||
+surv_samp_pairs_plot_m|stem|b13518e992a3d8d6|2b0b7ea54bce471d|b1eb478d5ebf64c4|-1845045752||t20277.5858333333s|8c890bd550681d68|1422524|qs|local|list|||0.909||
+surv_samps_covmat_co_n_f|stem|6a4c78b4f4028ec7|082562f129a371b3|5fee863b851914ac|-962918267||t20272.410787037s|0374b1e6f8508336|154363794|qs|local|list|||2.65||
+surv_samps_covmat_co_n_m|stem|63e013dfc7e3498c|fb7dc4a966331dd1|c02d79f90989310f|-1611331853||t20272.410787037s|44b840665cdb71fb|159858092|qs|local|list|||2.718||
+surv_samps_covmat_f|stem|16b145eed0bcd819|a16ff21816acef1e|57629d76b3893e9b|-103294868||t20272.410787037s|35892c42d37dd1e8|154788483|qs|local|list|||2.121||
+surv_samps_covmat_m|stem|0a751197a3a85d13|df7dfd2de553e02e|a687ac75aab81530|-1111311832||t20272.410787037s|617ea03b8d637aaf|160248980|qs|local|list|||2.531||
+surv_samps_f|stem|757d0947390e6f6f|4085217687d279e0|a0d61c98340aa187|-2071776218||t20265.6404513889s|94eaedf818ba9def|154679069|qs|local|list|||1.664||
+surv_samps_m|stem|9cc7c12821e55b8e|22de293e3608bca4|21564314cee3ef0c|1934709664||t20265.6442476852s|216faa7960bb3766|160293652|qs|local|list|||2.006||
+surv_samps_parent_f|stem|d29fc263dc441d34|60667c9751d98d2c|5ad5845cde2f90ae|1911167871||t20278.0521990741s|5d470364a3d6068f|51717118|qs|local|list|||1.196||
+surv_samps_parent_m|stem|20cbdd25a0e00ca2|3f821fd2f43e4931|60dc957bccf2ade5|664073018||t20278.1521875s|7d59b4aafde004cc|55268111|qs|local|list|||1.098||
+surv_sim_f|stem|87a7523af6327969|74560f4ffe63d665|dd445ad5e875ab3b|-623506263||t20265.559849537s|a627cb584acedaff|2849|qs|local|list|||0.026||
+surv_sim_m|stem|3b908d8cdee6020d|0f221fe2251b9172|023dbb12f6e3959b|-2018114645||t20265.559849537s|3f1f1656ca1ed597|3237|qs|local|list|||0.003||
 make_prior|function|74acda3a07824810|||||||||||||||
 find_inbreeding|function|ceb92fb371684fae|||||||||||||||
 inv_logit|function|ccb9e4e14d41668b|||||||||||||||
@@ -200,8 +270,8 @@ make_grm|function|47b5b0592fe851a4|||||||||||||||
 make_nestling_gp_data|function|48984f1a29452404|||||||||||||||
 inla_post_var|function|c93b8089aa8fcda4|||||||||||||||
 get_samps|function|807b0b53b0ff4e26|||||||||||||||
-sex_map|object|ea7ad7da674c2171|||||||||||||||
-.Random.seed|object|5f92c25357439748|||||||||||||||
+sex_map|object|ba742ad3dae5ff57|||||||||||||||
+.Random.seed|object|c60583b62d49d98a|||||||||||||||
 inla_cv|function|9069a9a283d187e3|||||||||||||||
 do_surv_ppc|function|bd6e6766b7691baa|||||||||||||||
 make_cv_test_sets|function|f5ef5e8287717a9b|||||||||||||||
@@ -219,10 +289,10 @@ make_data_adult|function|61f21cc42d05f496|||||||||||||||
 make_pc_matrix|function|f1bcb806c0f1a55f|||||||||||||||
 make_ars_sim|function|20b32438da8a20a0|||||||||||||||
 make_adult_ars_gp_data|function|4e3da5a387106175|||||||||||||||
-plot_lines_posterior|function|f01f9eaca343adbf|||||||||||||||
+plot_lines_posterior|function|99b00cf1189b25b8|||||||||||||||
 plink_pca|function|1f51c7fb32075070|||||||||||||||
 make_data_nestling|function|208bf2ce22e4626c|||||||||||||||
-controller_slurm|object|48748960d065e872|||||||||||||||
+controller_slurm|object|f7b2409457d5aca4|||||||||||||||
 make_co_data_cv|function|32814ca4203d08e7|||||||||||||||
 inla_posterior_variances|function|dfabe89985ec7ca0|||||||||||||||
 make_stan_data_adult_covmat|function|ffa026a448ed5f60|||||||||||||||
@@ -238,36 +308,7 @@ make_surv_bv_preds_and_marg_co_n|function|c8ea84907edbce4c|||||||||||||||
 make_nest_bv_preds_and_marg|function|da0c1ab331403b48|||||||||||||||
 make_ars_bv_preds_and_marg|function|d2dfcbf564b3cfc2|||||||||||||||
 make_surv_bv_preds_and_marg|function|d65f0c8a21ee08ed|||||||||||||||
-surv_bv_pred_plot_m|stem|3f3805d7496096be|757222254895d6f3|acae87f72783b67d|-148277999||t20272.4107291667s||1.1125369331908e-308|qs|local|list|||0.039||object scalin not found
-surv_bv_marg_plot_f|stem|1e4d942f22231e72|8c013eadcb1400b8|ef03ab4560c614f9|1826123531||t20272.4107291667s||1.11253693337019e-308|qs|local|list|||0.042||object scalin not found
-surv_bv_marg_plot_m|stem|3a556e57e8fc1ffe|2d0cc93416141330|acae87f72783b67d|-1830692977||t20272.4107291667s||1.11253693330635e-308|qs|local|list|||0.048||object scalin not found
-nest_bv_marg_plot_m|stem|78be73ce1f453431|e3d8aea5c4ebd0da|fd41e37d33ecf879|540226884||t20272.4115856481s||1.11253693324291e-308|qs|local|list|||0.049||object scalin not found
-nest_bv_pred_plot_m|stem|689653c7d60861b7|9126866e6c1af032|fd41e37d33ecf879|882601580||t20272.4115972222s||1.11253693320169e-308|qs|local|list|||0.05||object scalin not found
-surv_bv_pred_plot_f|stem|71a9a074bc395710|5d6818ddc53030ba|ef03ab4560c614f9|469562045||t20272.4107291667s||1.11253693315704e-308|qs|local|list|||0.05||object scalin not found
-surv_covmat_bv_pred_plot_f|stem|a41303358cd2d542|e5051b8fbbe34c1a|8766aa4678ef2ea8|769053776||t20272.4116087963s||1.11253695073695e-308|qs|local|list|||0.043||object scalin not found
-surv_covmat_co_n_bv_marg_plot_f|stem|b7e7854dba5b0b44|3d3a1b70b1c880bc|438494c20841c063|-1177866156||t20272.4150694444s||1.11253695073914e-308|qs|local|list|||0.078||object scalin not found
-surv_covmat_bv_pred_plot_m|stem|7fc051d5cac70ab7|52c617e3f41aad34|db99c65dcfb08787|-739709657||t20272.4115972222s||1.11253695189474e-308|qs|local|list|||0.041||object scalin not found
-surv_covmat_co_n_bv_pred_plot_f|stem|ceb1880c81ca6bf9|5d9a3bbe1ca61f90|438494c20841c063|-700703737||t20272.4150810185s||1.1125369505723e-308|qs|local|list|||0.073||object scalin not found
-surv_covmat_bv_marg_plot_f|stem|3423def9f16e4cd0|b00bbff3a9ab2c4a|8766aa4678ef2ea8|738429423||t20272.4115972222s||1.11253695077087e-308|qs|local|list|||0.042||object scalin not found
-ars_parent_bv_pred_plot_f|stem|1716a08d6bd40fa3|8ac2eb0167859107|ae24d5412ca1f638|-1722744468||t20277.3978472222s|92591f540a519d82|15242822|qs|local|list|||0.249||
-ars_parent_bv_pred_plot_pdf_f|stem|d4b738dd1a6af832|ed79668cdc31c236|68fa55a9c18b7eb9|-878473942|figs/ars_parent_bv_pred_f.pdf|t20277.3980439815s|186f4793b237c4c7|3614100|file|local|list|||11.495||
-surv_covmat_bv_marg_plot_m|stem|b1800cc2f6b43d22|76e71a90f025868a|db99c65dcfb08787|1226891745||t20272.4126273148s||1.11253695194845e-308|qs|local|list|||0.044||object scalin not found
-ars_covmat_bv_marg_plot_f|stem|2c8ffe9045b78e0a|846231c39d8b719e|85acea3b7f2322bc|1951623614||t20272.4119675926s||1.11253695079783e-308|qs|local|list|||0.047||object scalin not found
-ars_covmat_bv_pred_plot_f|stem|225faf1f61ad81f4|f73a635172956cbb|85acea3b7f2322bc|1607526287||t20272.4119675926s||1.11253695077484e-308|qs|local|list|||0.052||object scalin not found
-surv_covmat_co_n_bv_marg_plot_m|stem|462c48fde916dec6|c9a0f8fefb8bfe6f|f3fc94a507a9d4a4|-450340562||t20272.4150810185s||1.11253695193149e-308|qs|local|list|||0.071||object scalin not found
-ars_bv_pred_plot_f|stem|952dc884d1342f68|6804f45967819159|d17012bafd732793|-1139394851||t20272.4107407407s||1.11253693318568e-308|qs|local|list|||0.193||object scalin not found
-ars_bv_marg_plot_f|stem|160c42fe70e76115|390b33a8ccccd445|d17012bafd732793|961615481||t20272.4107523148s||1.112536933434e-308|qs|local|list|||0.199||object scalin not found
-ars_bv_pred_plot_m|stem|a48a35c2b124b46f|8b0a34a97b3b19f3|b16f0a09eecf200c|-1260724041||t20272.4112384259s||1.11253693319132e-308|qs|local|list|||0.2||object scalin not found
-ars_bv_marg_plot_m|stem|8d8a48f11ee90a4b|77004eaab12fbd8b|b16f0a09eecf200c|818813707||t20272.4112615741s||1.11253693332167e-308|qs|local|list|||0.241||object scalin not found
-surv_covmat_co_n_bv_pred_plot_m|stem|d630601919a23f1f|35563ad51027a518|f3fc94a507a9d4a4|-1594161188||t20272.4150810185s||1.11253695186238e-308|qs|local|list|||0.051||object scalin not found
-ars_parent_bv_pred_plot_m|stem|5f30ce3a24ab577c|cf8b87e7d73cbc9a|dde39b45de87b497|1185517279||t20277.3978819444s|8355acd65f2b86f1|15826326|qs|local|list|||0.222||
-ars_parent_bv_pred_plot_pdf_m|stem|55177926a16cdb1b|46a7e9ceab793d11|6419ad0fc497026e|613995994|figs/ars_parent_bv_pred_m.pdf|t20277.3981712963s|b4d371de93bb59a5|3378882|file|local|list|||9.175||
-surv_parent_bv_pred_plot_f|stem|446f95e07f47eb11|e9914ac4d385d384|def7986a9d6c2017|-1063386911||t20277.3979513889s|0bb5063a535a0cee|15004746|qs|local|list|||0.053||
-surv_parent_bv_pred_plot_pdf_f|stem|2ed7e4e2dd35c3e4|fe8b05bb2e494225|b55b087181cc169e|-1634178533|figs/surv_parent_bv_pred_f.pdf|t20277.398287037s|9556748a0f2f0d1c|3788439|file|local|list|||8.911||
-nest_bv_marg_plot_f|stem|c21f0dc84c575762|be6ca4916ec5276b|356e09f3ea6796a5|-1770853365||t20272.4119212963s||1.11253693323895e-308|qs|local|list|||0.077||object scalin not found
-nest_bv_pred_plot_f|stem|ee0b3bac3e9aa8c0|350ac3ffe305241b|356e09f3ea6796a5|-730773657||t20272.4122685185s||1.11253693319106e-308|qs|local|list|||0.043||object scalin not found
-surv_parent_bv_pred_plot_m|stem|13a3f95eecb091da|1c1454e9f4c44b50|66a19b040c101ea5|955555310||t20277.3978935185s|3cb367662463e533|15081008|qs|local|list|||0.051||
-surv_parent_bv_pred_plot_pdf_m|stem|0ff09bddf475d9ce|e0b7520d7915caaa|1347351ed3bb8ccc|-638665025|figs/surv_parent_bv_pred_m.pdf|t20277.3983912037s|08d365a6b911afce|3760217|file|local|list|||8.514||
+stan_file_adult_ars_zinf_covmat|stem|5948d4a2c1ff8b5a|22738706bca6bd05|ef46db3751d8e999|-2075151824|r/zinf_ars_covmat.stan|t20278.5714583333s|fbd51e07b19f7ba9|9262|file|local|list|||6.015||
 make_prior|function|74acda3a07824810
 find_inbreeding|function|ceb92fb371684fae
 inv_logit|function|ccb9e4e14d41668b
@@ -279,8 +320,8 @@ make_grm|function|47b5b0592fe851a4
 make_nestling_gp_data|function|48984f1a29452404
 inla_post_var|function|c93b8089aa8fcda4
 get_samps|function|807b0b53b0ff4e26
-sex_map|object|ea7ad7da674c2171
-.Random.seed|object|cea398ee756eb657
+sex_map|object|cb094302d79786d0
+.Random.seed|object|eb7bc3d503e621fd
 inla_cv|function|9069a9a283d187e3
 do_surv_ppc|function|bd6e6766b7691baa
 make_cv_test_sets|function|f5ef5e8287717a9b
@@ -301,7 +342,7 @@ make_adult_ars_gp_data|function|4e3da5a387106175
 plot_lines_posterior|function|99b00cf1189b25b8
 plink_pca|function|1f51c7fb32075070
 make_data_nestling|function|208bf2ce22e4626c
-controller_slurm|object|65de645a5b31d8d1
+controller_slurm|object|8077688c3eaad6c9
 make_co_data_cv|function|32814ca4203d08e7
 inla_posterior_variances|function|dfabe89985ec7ca0
 make_stan_data_adult_covmat|function|ffa026a448ed5f60
@@ -317,44 +358,3 @@ make_surv_bv_preds_and_marg_co_n|function|c8ea84907edbce4c
 make_nest_bv_preds_and_marg|function|da0c1ab331403b48
 make_ars_bv_preds_and_marg|function|d2dfcbf564b3cfc2
 make_surv_bv_preds_and_marg|function|d65f0c8a21ee08ed
-surv_bv_pred_plot_m|stem|bb5be39e7d2bb324|757222254895d6f3|32dc86f6b139c9d5|-148277999||t20277.39875s|3c7a194b4fad4b36|16596641|qs|local|list|||0.08||
-surv_bv_pred_plot_pdf_m|stem|6a8a51c237e30da7|961c575db8e1c2c0|4adb7d2f5e003292|1531775820|figs/surv_bv_pred_m.pdf|t20277.3989351852s|a78119f304a540d2|3764907|file|local|list|||12.597||
-surv_bv_marg_plot_f|stem|b6c82751164d71b2|8c013eadcb1400b8|0e2378176d4eec4e|1826123531||t20277.39875s|efda3733e6fc40a2|17352680|qs|local|list|||0.07||
-surv_covmat_bv_marg_plot_f|stem|928483507ddd239e|b00bbff3a9ab2c4a|b75a8760ee1650f7|738429423||t20277.3987615741s|65d4b893d8426d18|87822270|qs|local|list|||0.073||
-surv_covmat_bv_pred_plot_f|stem|b0204676b38468cc|e5051b8fbbe34c1a|b75a8760ee1650f7|769053776||t20277.3987615741s|ab1ebc2d031d3c68|87642098|qs|local|list|||0.071||
-surv_bv_marg_plot_m|stem|9b9bc601181ff1d7|2d0cc93416141330|32dc86f6b139c9d5|-1830692977||t20277.3987615741s|953d96b67f01fa5b|17060259|qs|local|list|||0.071||
-surv_covmat_bv_marg_plot_m|stem|33460e1da758950c|76e71a90f025868a|34bca2a33f781ddf|1226891745||t20277.3987615741s|2f06db1b0967b5f7|92491479|qs|local|list|||0.072||
-surv_covmat_bv_pred_plot_m|stem|56dee1b4a256ffc2|52c617e3f41aad34|34bca2a33f781ddf|-739709657||t20277.3987615741s|4c175b8da2abb7db|92293697|qs|local|list|||0.072||
-ars_covmat_bv_marg_plot_f|stem|17ae7040c65a6b5f|846231c39d8b719e|a458cfbf45f4ad9f|1951623614||t20277.3987731481s|cb009d2e8398e268|87984388|qs|local|list|||0.076||
-ars_covmat_bv_pred_plot_f|stem|bde7d07abd6e33b5|f73a635172956cbb|a458cfbf45f4ad9f|1607526287||t20277.3988310185s|f6858bdd6e2c7ff1|87896033|qs|local|list|||0.121||
-nest_bv_marg_plot_m|stem|4110d4dc4a8c84a8|e3d8aea5c4ebd0da|9ae7a34a50ad8187|540226884||t20277.3988078704s|8a88f4ca29ec646c|17101740|qs|local|list|||0.127||
-nest_bv_pred_plot_m|stem|374cb0feb248116e|9126866e6c1af032|9ae7a34a50ad8187|882601580||t20277.3987847222s|9c3642856672df12|16939474|qs|local|list|||0.088||
-surv_bv_pred_plot_f|stem|41c3854747a65240|5d6818ddc53030ba|0e2378176d4eec4e|469562045||t20277.3987847222s|d48c76cd3eff1ef0|16468018|qs|local|list|||0.087||
-surv_covmat_co_n_bv_marg_plot_f|stem|d87931d26264269a|3d3a1b70b1c880bc|dadeeea1dec1db89|-1177866156||t20277.3987962963s|2fc934372f3fb145|87648235|qs|local|list|||0.086||
-surv_covmat_bv_pred_plot_pdf_f|stem|140ec0c830fadead|f0d1d9c32e237903|c93757109a1bca69|-1491700662|figs/surv_covmat_bv_pred_f.pdf|t20277.3991087963s|398a77db44c656d8|3770991|file|local|list|||11.411||
-surv_covmat_co_n_bv_marg_plot_m|stem|ac44cb72c3b93b0f|c9a0f8fefb8bfe6f|2ec0df84df0edbd4|-450340562||t20277.3987962963s|a57dc249922fb869|92428494|qs|local|list|||0.083||
-surv_covmat_bv_pred_plot_pdf_m|stem|28b7b61e05356946|0259f91c2c6f3371|571218feb914cc2c|822440493|figs/surv_covmat_bv_pred_m.pdf|t20277.3992476852s|3f0759200a99e976|3489923|file|local|list|||11.18||
-surv_covmat_co_n_bv_pred_plot_f|stem|eb7cb7e94b44a311|5d9a3bbe1ca61f90|dadeeea1dec1db89|-700703737||t20277.3987962963s|b95ec7c8670ec00e|86987991|qs|local|list|||0.086||
-surv_bv_pred_plot_pdf_f|stem|0a0ca126404c7359|f6d56d7694644bec|ad420eb9d1879b44|981736674|figs/surv_bv_pred_f.pdf|t20277.3993865741s|b07fbead8481a493|3748706|file|local|list|||10.979||
-ars_bv_pred_plot_f|stem|04ecd1d6ba557eee|6804f45967819159|d69f078b822e062e|-1139394851||t20277.3990277778s|f16ccd6941aae3be|16694252|qs|local|list|||0.217||
-ars_bv_pred_plot_pdf_f|stem|fff9aff9b2fb2d49|e0210f6f3bd36ad8|d097793e3154c764|-1833229379|figs/ars_bv_pred_f.pdf|t20277.3995138889s|c6f932e81a2d459e|3666605|file|local|list|||10.762||
-ars_bv_marg_plot_f|stem|bc260dc9d9134992|390b33a8ccccd445|d69f078b822e062e|961615481||t20277.3990277778s|7d22b23735a21783|17738421|qs|local|list|||0.228||
-nest_bv_pred_plot_pdf_m|stem|ad739890b5a6be43|6fd5c3924f79090f|b7b46defd94aac7f|208419612|figs/nest_bv_pred_m.pdf|t20277.3996527778s|224c9047497dc600|3520764|file|local|list|||11.084||
-ars_bv_pred_plot_m|stem|3b1cc1674defc346|8b0a34a97b3b19f3|6dc04d97d6976d25|-1260724041||t20277.3990393519s|6ff14216ee129d2b|16587555|qs|local|list|||0.278||
-ars_bv_pred_plot_pdf_m|stem|64985a70ce52e277|b5af5b463211a685|681c894f72a9f4fc|291761780|figs/ars_bv_pred_m.pdf|t20277.3997916667s|f5db234280bf04c0|3792915|file|local|list|||10.797||
-ars_bv_marg_plot_m|stem|04afcbbdc224ce7c|77004eaab12fbd8b|6dc04d97d6976d25|818813707||t20277.3990277778s|c93ff5778cfa2aa5|17118581|qs|local|list|||0.238||
-ars_covmat_bv_pred_plot_pdf_f|stem|91199dd82905c24d|8e995c413fb0d6a1|28450b313ed3ab1e|-434207400|figs/ars_covmat_bv_pred_f.pdf|t20277.3999189815s|c38a35574ce6abce|3152848|file|local|list|||10.694||
-ars_parent_bv_pred_plot_f|stem|8fae12e851474a6f|8ac2eb0167859107|0a85f1860af119e4|-1722744468||t20277.3990277778s|87300a8a2bcaf2fa|15248890|qs|local|list|||0.218||
-ars_parent_bv_pred_plot_pdf_f|stem|22c7a54565a4db63|ed79668cdc31c236|4219bdd8540d9a61|-878473942|figs/ars_parent_bv_pred_f.pdf|t20277.4000231481s|186f4793b237c4c7|3614100|file|local|list|||8.282||
-surv_covmat_co_n_bv_pred_plot_m|stem|b1f6c70e28af2885|35563ad51027a518|2ec0df84df0edbd4|-1594161188||t20277.3990277778s|bc853592d246a519|92157340|qs|local|list|||0.072||
-surv_covmat_co_n_bv_pred_plot_pdf_f|stem|fd0f3d68602e502b|6c8137385bbaa219|499a18308efc53e0|212369340|figs/surv_covmat_co_n_bv_pred_f.pdf|t20277.400162037s|30595148bd58156f|3748920|file|local|list|||11.521||
-ars_parent_bv_pred_plot_m|stem|b8a7460984f039ae|cf8b87e7d73cbc9a|8853ed267f340d82|1185517279||t20277.3990393519s|54a990c88adc4cbf|15826441|qs|local|list|||0.253||
-ars_parent_bv_pred_plot_pdf_m|stem|91f42c2884519b5b|46a7e9ceab793d11|85b6119a723f4625|613995994|figs/ars_parent_bv_pred_m.pdf|t20277.4002662037s|b4d371de93bb59a5|3378882|file|local|list|||8.044||
-surv_parent_bv_pred_plot_f|stem|89973c534bfc21ab|e9914ac4d385d384|29928463b7d862ad|-1063386911||t20277.3990509259s|ccba9e592177f04e|15008812|qs|local|list|||0.055||
-surv_parent_bv_pred_plot_pdf_f|stem|6c52e9c93e3ec844|fe8b05bb2e494225|6c0804b55b710ebd|-1634178533|figs/surv_parent_bv_pred_f.pdf|t20277.4003703704s|9556748a0f2f0d1c|3788439|file|local|list|||8.484||
-nest_bv_marg_plot_f|stem|02db06e1a0a9c41b|be6ca4916ec5276b|ec8bac630d51a39f|-1770853365||t20277.3990972222s|12f1601855e6f610|17109670|qs|local|list|||0.117||
-surv_covmat_co_n_bv_pred_plot_pdf_m|stem|1fb5b1f09672dd2f|6933d603c54ad247|b59c2d23626dae80|1624229584|figs/surv_covmat_co_n_bv_pred_m.pdf|t20277.4005092593s|8376ec7ffd659623|3778091|file|local|list|||11.506||
-nest_bv_pred_plot_f|stem|62c9a14e1aef52fa|350ac3ffe305241b|ec8bac630d51a39f|-730773657||t20277.3990972222s|8d084c7d5d65b2a7|16979611|qs|local|list|||0.122||
-nest_bv_pred_plot_pdf_f|stem|1aad47f48f271a3f|7a3f94455d17b0bc|2ca0f0766b36823c|525618641|figs/nest_bv_pred_f.pdf|t20277.4006481481s|8cb7383744f959d1|3822848|file|local|list|||10.991||
-surv_parent_bv_pred_plot_m|stem|7d86547fe41ce401|1c1454e9f4c44b50|67c0a1edf0cfe319|955555310||t20277.3991782407s|1f940a554be1cee8|15038366|qs|local|list|||0.051||
-surv_parent_bv_pred_plot_pdf_m|stem|c4cd1259c7dac5bd|e0b7520d7915caaa|8a9d1a81096153be|-638665025|figs/surv_parent_bv_pred_m.pdf|t20277.4007523148s|08d365a6b911afce|3760217|file|local|list|||8.325||
