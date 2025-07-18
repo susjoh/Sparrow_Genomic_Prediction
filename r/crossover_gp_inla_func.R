@@ -25,6 +25,22 @@ make_co_data_cv <- function(co_data,
   co_data
 }
 
+# Rename columns so that existing code remains compatible with both data sets
+co_data_rename_cols <- function(recomb_data_path) {
+
+  dat <- fread(recomb_data_path, data.table = FALSE)
+
+  dat$co_count <- dat$total_CO_count
+  dat$id <- dat$parent
+  dat$total_coverage <- dat$Total_Coverage
+
+  path <- gsub(x = recomb_data_path, pattern = ".txt", "")
+  new_path <- paste0(path, "_newcols.txt")
+
+  write.table(dat, file = new_path, quote = FALSE, row.names = FALSE)
+  new_path
+}
+
 prep_co_data <- function(recomb_data_path,
                          lrs_data_path,
                          lrs_data_path2,

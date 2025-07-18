@@ -78,7 +78,7 @@ sex_map <- tar_map(
   names = "sex_lc",
   tar_target(
     co_data, # All measurements of co count
-    prep_co_data(recomb_data_path,
+    prep_co_data(recomb_data_path2,
                  lrs_data_path,
                  lrs_data_path2,
                  sex_keep = sex_keep)
@@ -907,6 +907,12 @@ list(
   tar_target(
     recomb_data_path,
     "data/20240910_Sparrow_Recomb_Data.txt",
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    recomb_data_path2,
+    co_data_rename_cols("data/20250706_Sparrow_YAPP/2_recsumm_Crossover_Count_per_individual_post_QC.txt"),
     format = "file",
     deployment = "main"
   ),
