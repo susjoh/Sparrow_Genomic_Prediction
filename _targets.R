@@ -500,14 +500,14 @@ sex_map <- tar_map(
                        alpha_prior_mean = stan_data_parent_adult_ss_covmat$survival_logit_mean,
                        beta_prior_sd = 0.5,
                        exp_rate = sqrt(1 / 0.5^2))),
-         iter = 6.6e6,
-         warmup = 1.1e6,
+         iter = 4.8e4,
+         warmup = 8e3,
          chains = 16,
          cores = 16,
          control = list(adapt_delta = 0.9),
          pars = surv_pars,
          model_name = paste0("stan_parent_adult_surv_ss_covmat_", sex_lc),
-         thin = 2.2e4) # to keep final object reasonably small
+         thin = 1.6e2) # to keep final object reasonably small
   ),
   tar_target(
     stan_nestling_surv_covmat,
