@@ -72,8 +72,10 @@ transformed parameters {
   real<lower=0> sigma_par = -log(sigma_par_raw) / exp_rate;
   vector[N_ye] ye = z_ye * sigma_ye;                // Levels in year random effect
   vector[N_ll] ll = z_ll * sigma_ll;                // Levels in last locality random effect
-  vector[N_id] id = z_id * sigma_id;                // Levels in identity random effect
+  vector[N_id] id_offset = z_id * sigma_id;                // Levels in identity random effect
   vector[N_par] par = z_par * sigma_par;             // Levels in parent random effect
+  vector[N_id] id;
+
 
   // Full bv vector (non-centered parameterization berkson errored GP results)
   real alpha_std = alpha_prior_mean + beta_prior_sd * z_alpha;
@@ -97,8 +99,12 @@ transformed parameters {
     bv_lat_full[i] = (bv_lat[par_idx[i]] - bv_mean_std) / bv_sd_std;
   }
   x_mat = append_col(append_col(fixed_pred_mat, bv_lat_full), square(bv_lat_full));
+  // nested effect
+  for (i in 1:N_id) {
+    id[i] = par[id_to_par_idx[i]] + id_offset[i];
+  }
   for (i in 1:N) {
-    rand_inter[i] = ye[ye_idx[i]] + ll[ll_idx[i]] + id[id_idx[i]] + par[par_idx[i]];
+    rand_inter[i] = ye[ye_idx[i]] + ll[ll_idx[i]] + id[id_idx[i]];
   }
 }
 

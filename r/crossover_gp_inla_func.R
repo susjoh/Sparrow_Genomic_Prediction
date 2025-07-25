@@ -77,7 +77,6 @@ prep_co_data <- function(recomb_data_path,
   pheno_data_mean <- pheno_data_all %>%
     group_by(id, sex) %>%
     summarise(co_count = mean(co_count),
-              intra_shuff = mean(intra_shuff),
               total_coverage = mean(total_coverage),
               hatch_year = mean(hatch_year),
               first_locality = mean(first_locality),
@@ -939,12 +938,13 @@ make_ars_bv_preds_and_marg <- function(data,
         exp() ->
         count_pred[i, j]
 
-      (samps$alpha_zi[i] +
-          samps$beta_zi_bv[i] * bv[j] +
-          samps$beta_zi_bv2[i] * bv[j]^2 +
-          samps$beta_zi_age_q1[i] * avg_age_q[, 1] +
-          samps$beta_zi_age_q2[i] * avg_age_q[, 2] +
-          samps$beta_zi_f[i] * avg_f) %>%
+      (samps$alpha_zi[i]# +
+          # samps$beta_zi_bv[i] * bv[j] +
+          # samps$beta_zi_bv2[i] * bv[j]^2 +
+          # samps$beta_zi_age_q1[i] * avg_age_q[, 1] +
+          # samps$beta_zi_age_q2[i] * avg_age_q[, 2] +
+          # samps$beta_zi_f[i] * avg_f
+        ) %>%
         inv_logit() ->
         zinf_pred[i, j]
     }
@@ -957,13 +957,74 @@ make_ars_bv_preds_and_marg <- function(data,
 
   marg_count <- sapply(bv, function(x) samps$beta_bv + 2 * samps$beta_bv2 * x) *
     count_pred
-  marg_zinf <-
-    sapply(bv, function(x) samps$beta_zi_bv + 2 * samps$beta_zi_bv2 * x) *
-    zinf_pred *
-    (1 - zinf_pred)
+  marg_zinf <- matrix(0, nrow = n_samp, ncol = n_plot)
+  # marg_zinf <-  sapply(bv, function(x) samps$beta_zi_bv + 2 * samps$beta_zi_bv2 * x) *
+    # zinf_pred *
+    # (1 - zinf_pred)
   marg_pred <- sapply(bv, function(x) {
-    samps$beta_bv - samps$beta_zi_bv +
-      2 * x * (samps$beta_bv2 - samps$beta_zi_bv2)
+    samps$beta_bv + # - samps$beta_zi_bv +
+      2 * x * (samps$beta_bv2)# - samps$beta_zi_bv2)
+  }) * count_pred * (1 - zinf_pred)
+
+  df_marg_count <- samp_plot_df(y = marg_count, x = bv, n_samp = n_samp)
+  df_marg_zinf <- samp_plot_df(y = marg_zinf, x = bv, n_samp = n_samp)
+  df_marg_pred <- samp_plot_df(y = marg_pred, x = bv, n_samp = n_samp)
+
+  lst(df_count, df_zinf, df_pred, df_marg_count, df_marg_zinf, df_marg_pred)
+}
+
+make_ars_bv_preds_and_marg_co_n <- function(data,
+                                       samps,
+                                       n_plot = 200) {
+  n_samp <- length(samps$alpha)
+  avg_age <- mean(data$age)
+  avg_f <- mean(data$f)
+  avg_co_n <- mean(data$co_n)
+
+  age_poly <- poly(data$age, degree = 2)
+  avg_age_q <- predict(age_poly, newdata = mean(data$age))
+
+  bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
+
+  count_pred <- zinf_pred <- array(NA, dim = c(n_samp, n_plot))
+  for (i in seq_len(n_samp)) {
+    for (j in seq_len(n_plot)) {
+      (samps$alpha[i] +
+         samps$beta_bv[i] * bv[j] +
+         samps$beta_bv2[i] * bv[j]^2 +
+         samps$beta_age_q1[i] * avg_age_q[, 1] +
+         samps$beta_age_q2[i] * avg_age_q[, 2] +
+         samps$beta_f[i] * avg_f +
+         samps$beta_co_n[i] * avg_co_n) %>%
+        exp() ->
+        count_pred[i, j]
+
+      (samps$alpha_zi[i]# +
+        # samps$beta_zi_bv[i] * bv[j] +
+        # samps$beta_zi_bv2[i] * bv[j]^2 +
+        # samps$beta_zi_age_q1[i] * avg_age_q[, 1] +
+        # samps$beta_zi_age_q2[i] * avg_age_q[, 2] +
+        # samps$beta_zi_f[i] * avg_f
+      ) %>%
+        inv_logit() ->
+        zinf_pred[i, j]
+    }
+  }
+  y_pred <- count_pred * (1 - zinf_pred)
+
+  df_count <- samp_plot_df(y = count_pred, x = bv, n_samp = n_samp)
+  df_zinf <- samp_plot_df(y = zinf_pred, x = bv, n_samp = n_samp)
+  df_pred <- samp_plot_df(y = y_pred, x = bv, n_samp = n_samp)
+
+  marg_count <- sapply(bv, function(x) samps$beta_bv + 2 * samps$beta_bv2 * x) *
+    count_pred
+  marg_zinf <- matrix(0, nrow = n_samp, ncol = n_plot)
+  # marg_zinf <- sapply(bv, function(x) samps$beta_zi_bv + 2 * samps$beta_zi_bv2 * x) *
+  #   zinf_pred *
+  #   (1 - zinf_pred)
+  marg_pred <- sapply(bv, function(x) {
+    samps$beta_bv + # - samps$beta_zi_bv +
+      2 * x * (samps$beta_bv2)# - samps$beta_zi_bv2)
   }) * count_pred * (1 - zinf_pred)
 
   df_marg_count <- samp_plot_df(y = marg_count, x = bv, n_samp = n_samp)
@@ -1262,6 +1323,8 @@ make_stan_data_parent_covmat <- function(data, gp_data, covmat) {
   # sample, and add repeats
   bv_std_vec <- rmvnorm(1e4, bv_mean, bv_covmat)[, data$parent_num]
 
+  idx <-
+
   list(N = nrow(data),
        sex = data$sex,
        N_ll = max(data$ll_num),
@@ -1272,6 +1335,8 @@ make_stan_data_parent_covmat <- function(data, gp_data, covmat) {
        ll_idx = data$ll_num,
        id_idx = data$ringnr_num,
        par_idx = data$parent_num,
+       id_to_par_idx = data$parent_num[match(seq_len(max(data$ringnr_num)),
+                                             data$ringnr_num)],
        bv_mean = bv_mean,
        bv_covmat = bv_covmat,
        bv_covmat_chol = t(chol(bv_covmat)), # pre-multiply this with z-vec
