@@ -25,7 +25,7 @@ controller_slurm <- crew_controller_slurm(
   slurm_log_output = "Jobs/%A.log",
   slurm_memory_gigabytes_per_cpu = 6,
   slurm_cpus_per_task = 16,
-  slurm_time_minutes = 60 * 24 * 1, # minutes * hours * days
+  slurm_time_minutes = 60 * 24 * 5, # minutes * hours * days
   slurm_partition = "CPUQ",
   verbose = TRUE
 )
@@ -46,7 +46,8 @@ tar_option_set(
                "rstan",
                "bayesplot",
                "tidyr",
-               "mvtnorm"), # Packages that your targets need for their tasks.
+               "mvtnorm",
+               "ggpubr"), # Packages that your targets need for their tasks.
   format = "qs", # Optionally set the default storage format. qs is fast.
   error = "continue", # produce result even if the target errored
   resources = tar_resources(
@@ -367,7 +368,7 @@ sex_map <- tar_map(
          chains = 16,
          cores = 16,
          # Remove random effects in zero-inflation component
-         pars = ars_pars[-(c(21:25, 27:34, 36:38))],
+         pars = ars_pars[-(c(21:25, 27:34, 35:37))],
          control = list(adapt_delta = 0.9),
          model_name = paste0("stan_adult_ars_ss_covmat_", sex_lc),
          thin = 1.6e2) # to keep final object reasonably small
@@ -379,21 +380,21 @@ sex_map <- tar_map(
                   list(Y = stan_data_adult_ss_covmat$sum_recruit,
                        alpha_prior_mean = log(mean(c(stan_data_adult_ss_covmat$sum_recruit[stan_data_adult_ss_covmat$sum_recruit != 0],
                                                      stan_data_adult_ss_covmat$sum_recruit))),
-                       beta_prior_sd = 0.2,
-                       exp_rate = 1 / 0.2,
+                       beta_prior_sd = (1 / 6),
+                       exp_rate = 1 / (1 / 6),
                        alpha_zi_prior_mean = log(mean(stan_data_adult_ss_covmat$sum_recruit == 0) /
                                                    (1 - mean(stan_data_adult_ss_covmat$sum_recruit == 0))),
-                       beta_zi_prior_sd = 0.5,
-                       exp_rate_zi = 1 / 0.5)),
-         iter = 4.8e4,
-         warmup = 8e3,
+                       beta_zi_prior_sd = (1 / 6),
+                       exp_rate_zi = 1 / (1 / 5))),
+         iter = 4.8e4 * 3,
+         warmup = 8e3 * 3,
          chains = 16,
          cores = 16,
          # Remove random effects in zero-inflation component
-         pars = c(ars_pars[-(c(21:25, 27:34, 36:38))], "beta_co_n", "beta_co_n_std"),
-         control = list(adapt_delta = 0.95),
+         pars = c(ars_pars[-(c(21:25, 27:34, 35:37))], "beta_co_n", "beta_co_n_std"),
+         control = list(adapt_delta = 0.99),
          model_name = paste0("stan_adult_ars_ss_covmat_", sex_lc),
-         thin = 1.6e2) # to keep final object reasonably small
+         thin = 1.6e2 * 3) # to keep final object reasonably small
   ),
   tar_target(
     stan_parent_adult_ars_ss_covmat,
@@ -412,8 +413,8 @@ sex_map <- tar_map(
          warmup = 8e3,
          chains = 16,
          cores = 16,
-         pars = c(ars_pars[-(c(21:25, 27:34, 36:38))], "par", "sigma_par"),# "par_zi", "sigma_par_zi"),
-         control = list(adapt_delta = 0.95),
+         pars = c(ars_pars[-(c(21:25, 27:34, 35:37))], "par", "sigma_par"),# "par_zi", "sigma_par_zi"),
+         control = list(adapt_delta = 0.96),
          model_name = paste0("stan_parent_adult_ars_ss_covmat_", sex_lc),
          thin = 1.6e2) # to keep final object reasonably small
   ),
@@ -468,7 +469,7 @@ sex_map <- tar_map(
          warmup = 8e3,
          chains = 16,
          cores = 16,
-         control = list(adapt_delta = 0.95),
+         control = list(adapt_delta = 0.99),
          pars = surv_pars,
          model_name = paste0("stan_parent_adult_surv_ss_covmat_", sex_lc),
          thin = 1.6e2) # to keep final object reasonably small
@@ -516,17 +517,17 @@ sex_map <- tar_map(
   tar_target(
     ars_samps_covmat,
     get_samps(model = stan_adult_ars_ss_covmat,
-              pars = ars_pars[-(c(21:25, 27:34, 36:38))])
+              pars = ars_pars[-(c(21:25, 27:34, 35:37))])
   ),
   tar_target(
     ars_samps_covmat_co_n,
     get_samps(model = stan_adult_ars_ss_covmat_co_n,
-              pars = c(ars_pars[-(c(21:25, 27:34, 36:38))], "beta_co_n", "beta_co_n_std"))
+              pars = c(ars_pars[-(c(21:25, 27:34, 35:37))], "beta_co_n", "beta_co_n_std"))
   ),
   tar_target(
     ars_samps_parent,
     get_samps(model = stan_parent_adult_ars_ss_covmat,
-              pars = c(ars_pars[-(c(21:25, 27:34, 36:38))], "par", "sigma_par"))
+              pars = c(ars_pars[-(c(21:25, 27:34, 35:37))], "par", "sigma_par"))
   ),
   tar_target(
     surv_samps_covmat,
@@ -722,6 +723,52 @@ sex_map <- tar_map(
                          data = data_nestling)
   ),
   tar_target(
+    ars_bv_pred_plot_poster,
+    plot_lines_posterior(df = ars_covmat_bv_preds_and_marg$df_pred,
+                         xlab = paste0("Breeding value for ",
+                                       sex,
+                                       " crossover count"),
+                         ylab = paste0("Predicted ",
+                                       sex,
+                                       " annual reproductive success"),
+                         title = "",
+                         lw = 1.4,
+                         bs = 11 * 1.4)
+  ),
+  tar_target(
+    surv_bv_pred_plot_poster,
+    plot_lines_posterior(df = surv_covmat_bv_preds_and_marg$df_pred,
+                         xlab = paste0("Breeding value for ",
+                                       sex,
+                                       " crossover count"),
+                         ylab = paste0("Predicted ", sex," annual survival"),
+                         title = "",
+                         lw = 1.4,
+                         bs = 11 * 1.4)
+  ),
+  tar_target(
+    nest_bv_pred_plot_poster,
+    plot_lines_posterior(df = nest_bv_preds_and_marg$df_pred,
+                         xlab = paste0("Parental breeding value for ",
+                                       sex,
+                                       " crossover count"),
+                         ylab = paste0("Predicted nestling survival"),
+                         title = "",
+                         lw = 1.4,
+                         bs = 11 * 1.4)
+  ),
+  tar_target(
+    ggarrange(ars_bv_pred_plot_poster_f,
+              ars_bv_pred_plot_poster_m,
+              surv_bv_pred_plot_poster_f,
+              surv_bv_pred_plot_poster_m,
+              nest_bv_pred_plot_poster_f,
+              nest_bv_pred_plot_poster_m,
+              common.legend = FALSE,
+              ncol = 2,
+              nrow = 3)
+  ),
+  tar_target(
     ars_parent_bv_pred_plot_pdf,
     ggsave_path(paste0("figs/ars_parent_bv_pred_", sex_lc, ".pdf"),
                 plot = ars_parent_bv_pred_plot,
@@ -787,6 +834,16 @@ sex_map <- tar_map(
                 plot = nest_bv_pred_plot,
                 width = 7,
                 height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    nest_bv_pred_plot_poster_pdf,
+    ggsave_path(paste0("figs/nest_bv_pred_", sex_lc, ".pdf"),
+                plot = nest_bv_pred_plot_poster,
+                width = 12.5,
+                height = 12.5,
                 device = "pdf"),
     format = "file",
     deployment = "main"
@@ -988,7 +1045,6 @@ list(
       "ye_zi",
       "ll_zi",
       "id_zi",
-      "bv_lat",
       "sigma_ll_zi",
       "sigma_ye_zi",
       "sigma_id_zi",

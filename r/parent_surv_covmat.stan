@@ -11,6 +11,7 @@ data {
   int<lower=0,upper=N_id> id_idx[N];
   int<lower=0> N_par;                     // Number of levels in parent random effect
   int<lower=0,upper=N_par> par_idx[N];
+  int<lower=0,upper=N_par> id_to_par_idx[N_id];
   vector[N_par] bv_mean;                  // Posterior means of breeding values
   matrix[N_par, N_par] bv_covmat_chol;     // Chol decomp of covariance for bvs
   real bv_mean_std;                  // Constant used to standardize the vector of breeding values

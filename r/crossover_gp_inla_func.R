@@ -823,6 +823,15 @@ get_samps <- function(model, pars) {
   samps
 }
 
+get_bfmi <- function(model) {
+  samp_params <- get_sampler_params(model, inc_warmup = FALSE)
+
+  sapply(samp_params, function(x) {
+    E <- x[, "energy__"]
+    sum((diff(E))^2) / sum((E - mean(E))^2)
+  })
+  }
+
 make_ars_sim <- function(data,
                          alpha = -0.08,
                          beta_bv = 0.1,
@@ -1140,7 +1149,10 @@ plot_lines_posterior <- function(df,
                                  ylab,
                                  title,
                                  data = NULL,
-                                 n_bins = 25) {
+                                 n_bins = 25,
+                                 bs = 11,
+                                 lw = 1,
+                                 leg.x = 0.9) {
 
   if (!is.null(data)) {
     # Stats for sample size histogram hist
@@ -1160,15 +1172,18 @@ plot_lines_posterior <- function(df,
                   group = sample,
                   color = "Posterior samples",
                   linetype = "Posterior samples"),
-              alpha = 0.01) +
+              alpha = 0.01,
+              linewidth = 0.5 * lw) +
     # Posterior mean
     geom_line(aes(y = y_mean,
                   color = "Posterior mean",
                   linetype = "Posterior mean"),
-              linewidth = 1) +
+              linewidth = 1 * lw) +
     # Posterior 95% CI
-    geom_line(aes(y = y_lower, color = "95% CI", linetype = "95% CI")) +
-    geom_line(aes(y = y_upper, color = "95% CI", linetype = "95% CI")) +
+    geom_line(aes(y = y_lower, color = "95% CI", linetype = "95% CI"),
+              linewidth = 0.5 * lw) +
+    geom_line(aes(y = y_upper, color = "95% CI", linetype = "95% CI"),
+              linewidth = 0.5 * lw) +
     # Adding a title and axis labels
     labs(x = xlab,
          y = ylab,
@@ -1176,10 +1191,10 @@ plot_lines_posterior <- function(df,
          color = "",
          linetype = "") + # Combine legends
     # Minimal theme for clean appearance
-    theme_minimal() +
+    theme_minimal(base_size = bs) +
     # Customize the color and linetype scales
     scale_color_manual(values = c("Posterior mean" = "blue",
-                                  "95% CI" = "black",
+                                  "95% CI" = "darkred",
                                   "Posterior samples" = "black")) +
     scale_linetype_manual(values = c("Posterior mean" = "solid",
                                      "95% CI" = "dashed",
@@ -1188,12 +1203,16 @@ plot_lines_posterior <- function(df,
     guides(color = guide_legend(
       override.aes = list(
         # Match transparency for samples, full for others
-        alpha = c(1, 1, 0.01),
+        alpha = c(1, 1, 0.03),
         # Make legend dashed looked like in plot
-        linewidth = c(0.5, 1, 1))),
+        linewidth = lw * c(0.5, 1, 0.5))),
       linetype = guide_legend(override.aes = list(
         # Correct dashing in legend
-        linetype = c("dashed", "solid", "solid"))))
+        linetype = c("dashed", "solid", "solid")))) +
+    theme(legend.position = c(leg.x, 0.9),
+          panel.grid = element_blank(),
+          panel.border = element_rect(fill = NA)) +
+    scale_x_continuous(expand = c(0, 0))
 
   if (!is.null(data)) {
     plot <- plot +
