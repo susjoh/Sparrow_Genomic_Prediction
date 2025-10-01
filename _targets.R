@@ -18,16 +18,16 @@ controller_slurm <- crew_controller_slurm(
   workers = 16,
   seconds_idle = 120,
   tasks_max = 1,
-  launch_max = 5,
-  script_lines = paste("#SBATCH --account=share-nv-bio \n module load",
-                       "R/4.3.2-gfbf-2023a R-bundle-CRAN/2023.12-foss-2023a",
-                       "CMake/3.26.3-GCCcore-12.3.0"),
-  slurm_log_output = "Jobs/%A.log",
-  slurm_memory_gigabytes_per_cpu = 6,
-  slurm_cpus_per_task = 16,
-  slurm_time_minutes = 60 * 24 * 5, # minutes * hours * days
-  slurm_partition = "CPUQ",
-  verbose = TRUE
+  options_cluster = crew_options_slurm(
+    script_lines = paste("#SBATCH --account=share-nv-bio \n module load",
+                         "R/4.4.2-gfbf-2024a R-bundle-CRAN/2024.11-foss-2024a",
+                         "CMake/3.29.3-GCCcore-13.3.0"),
+    log_output = "Jobs/%A.log",
+    memory_gigabytes_per_cpu = 6,
+    cpus_per_task = 16,
+    time_minutes = 60 * 6 * 1, # minutes * hours * days
+    partition = "CPUQ",
+    verbose = TRUE)
 )
 
 # Set target options:
@@ -39,7 +39,7 @@ tar_option_set(
                "ggplot2",
                "GGally",
                "dplyr",
-               "qs",
+               "qs2",
                "magrittr",
                "tools",
                "INLA",
