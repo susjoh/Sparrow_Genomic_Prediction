@@ -317,7 +317,8 @@ make_data_adult <- function(gp_data,
                             bv_samp,
                             lrs_data_path,
                             inbreeding,
-                            sex_num) {
+                            sex_num,
+                            ped_path = NULL) {
 
   lrs <- fread(file = lrs_data_path)
   lrs <- lrs[lrs$last_locality %in%
@@ -370,8 +371,7 @@ make_data_adult <- function(gp_data,
 }
 
 ars_adult_mod_func <- function(data,
-                           bv_colname
-) {
+                               bv_colname) {
   hyperpar_var <- list(
     prec = list(initial = log(1),
                 prior = "pc.prec",
@@ -389,8 +389,7 @@ ars_adult_mod_func <- function(data,
                    "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(idx, model = \"iid\", hyper = hyperpar_var)")
 
-  inla_formula <- reformulate(effects_vec,
-                              response = "sum_recruit")
+  inla_formula <- reformulate(effects_vec, response = "sum_recruit")
 
   inla(inla_formula,
        family = "zeroinflatedpoisson1",
@@ -401,8 +400,7 @@ ars_adult_mod_func <- function(data,
 }
 
 surv_adult_mod_func <- function(data,
-                            bv_colname
-) {
+                                bv_colname) {
   hyperpar_var <- list(
     prec = list(initial = log(1),
                 prior = "pc.prec",
@@ -420,8 +418,7 @@ surv_adult_mod_func <- function(data,
                    "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(idx, model = \"iid\", hyper = hyperpar_var)")
 
-  inla_formula <- reformulate(effects_vec,
-                              response = "survival")
+  inla_formula <- reformulate(effects_vec, response = "survival")
 
   inla(inla_formula,
        family = "binomial",
@@ -430,15 +427,15 @@ surv_adult_mod_func <- function(data,
        data = data,
        verbose = TRUE) %>%
     INLA::inla.rerun()
-
 }
 
-make_data_parent_adult <- function(gp_data,
-                                   gp_model,
-                                   lrs_data_path,
-                                   inbreeding,
-                                   sex_num,
-                                   ped_path) {
+make_data_parent <- function(gp_data,
+                             gp_model,
+                             bv_samp,
+                             lrs_data_path,
+                             inbreeding,
+                             sex_num,
+                             ped_path) {
 
   lrs <- fread(file = lrs_data_path)
   lrs <- lrs[lrs$last_locality %in%
@@ -455,6 +452,7 @@ make_data_parent_adult <- function(gp_data,
     order(gp_model$summary.random$id1$ID)][gp_data$id1]
   gp_data$bv_sd <- gp_model$summary.random$id1$sd[
     order(gp_model$summary.random$id1$ID)][gp_data$id1]
+  gp_data$bv_samp <- bv_samp[order(gp_model$summary.random$id1$ID)][gp_data$id1]
 
   # Remove inds with missing sex
   lrs %<>% dplyr::filter(!is.na(sex))
@@ -484,6 +482,7 @@ make_data_parent_adult <- function(gp_data,
   }
   lrs$bv_mean <- gp_data$bv_mean[match(lrs$parent, gp_data$id_red)]
   lrs$bv_sd <- gp_data$bv_sd[match(lrs$parent, gp_data$id_red)]
+  lrs$bv_samp <- gp_data$bv_samp[match(lrs$ringnr, gp_data$id_red)]
 
   # Add age
   lrs$age <- lrs$year - lrs$hatch_year
@@ -504,7 +503,72 @@ make_data_parent_adult <- function(gp_data,
   lrs %>% mutate(co_n = ifelse(is.na(co_n), 0, co_n))
   lrs$co_meas <- (lrs$co_n > 0)
 
-  lrs[order(lrs$co_meas), ]
+  age_poly <- poly(lrs$age, degree = 2)
+  lrs <- cbind(lrs, age_q1 = age_poly[, 1], age_q2 = age_poly[, 2])
+
+  lrs$idx <- seq_len(nrow(lrs))
+  lrs
+}
+
+ars_parent_mod_func <- function(data,
+                                bv_colname) {
+  hyperpar_var <- list(
+    prec = list(initial = log(1),
+                prior = "pc.prec",
+                # sd, prob larger than sd
+                param = c(sqrt(1), 0.05),
+                fixed = FALSE))
+
+  effects_vec <- c(bv_colname,
+                   paste0("I(", bv_colname, "^2)"),
+                   "age_q1",
+                   "age_q2",
+                   "fhat3",
+                   "f(y_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(parent_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+
+  inla_formula <- reformulate(effects_vec, response = "sum_recruit")
+
+  inla(inla_formula,
+       family = "zeroinflatedpoisson1",
+       control.compute = list(config = TRUE),
+       control.family = list(hyper = list(theta = list(param = c(0, 1 / 1.75^2)))),
+       data = data, verbose = TRUE) %>%
+    INLA::inla.rerun()
+}
+
+surv_parent_mod_func <- function(data,
+                                 bv_colname) {
+  hyperpar_var <- list(
+    prec = list(initial = log(1),
+                prior = "pc.prec",
+                # sd, prob larger than sd
+                param = c(sqrt(1), 0.05),
+                fixed = FALSE))
+
+  effects_vec <- c(bv_colname,
+                   paste0("I(", bv_colname, "^2)"),
+                   "age_q1",
+                   "age_q2",
+                   "fhat3",
+                   "f(y_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(parent_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+
+  inla_formula <- reformulate(effects_vec, response = "survival")
+
+  inla(inla_formula,
+       family = "binomial",
+       control.compute = list(config = TRUE),
+       control.family = list(link = "logit"),
+       data = data,
+       verbose = TRUE) %>%
+    INLA::inla.rerun()
 }
 
 make_data_nestling <- function(gp_data,

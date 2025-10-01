@@ -68,9 +68,15 @@ tar_source(files = "r/crossover_gp_inla_func.R")
 plink_path <- "PLINK/plink_linux" # path to plink program
 
 values_fitmod <- tibble(
-  mod = c("ars_adult", "surv_adult"), # "surv_parent", "ars_parent", "nest")
-  fitmod_func = rlang::syms(c("ars_adult_mod_func", "surv_adult_mod_func")),
-  fitdat_func = rlang::syms(c("make_data_adult", "make_data_adult"))
+  mod = c("ars_adult", "surv_adult", "ars_parent", "surv_parent"), # "nest")
+  fitmod_func = rlang::syms(c("ars_adult_mod_func",
+                              "surv_adult_mod_func",
+                              "ars_parent_mod_func",
+                              "surv_parent_mod_func")),
+  fitdat_func = rlang::syms(c("make_data_adult",
+                              "make_data_adult",
+                              "make_data_parent",
+                              "make_data_parent"))
 )
 
 fitmod_map <- tar_map(
@@ -83,7 +89,8 @@ fitmod_map <- tar_map(
                 bv_samp = bv_samps,
                 lrs_data_path,
                 sex_num = sex_num_lrs,
-                inbreeding = inbreeding),
+                inbreeding = inbreeding,
+                ped_path = pedigree_path),
     pattern = map(bv_samps)
   ),
   tar_target(
