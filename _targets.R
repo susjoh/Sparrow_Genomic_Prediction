@@ -67,6 +67,38 @@ tar_source(files = "r/crossover_gp_inla_func.R")
 
 plink_path <- "PLINK/plink_linux" # path to plink program
 
+values_fitmod <- tibble(
+  mod = c("ars_adult", "surv_adult"), # "surv_parent", "ars_parent", "nest")
+  fitmod_func = rlang::syms(c("ars_adult_mod_func", "surv_adult_mod_func")),
+  fitdat_func = rlang::syms(c("make_data_adult", "make_data_adult"))
+)
+
+fitmod_map <- tar_map(
+  values = values_fitmod,
+  names = "mod",
+  tar_target(
+    fitness_data,
+    fitdat_func(gp_data = co_data_adult_ars,
+                gp_model = co_gp_adult_ars,
+                bv_samp = bv_samps,
+                lrs_data_path,
+                sex_num = sex_num_lrs,
+                inbreeding = inbreeding),
+    pattern = map(bv_samps)
+  ),
+  tar_target(
+    fitness_bv_samp,
+    fitmod_func(data = fitness_data,
+                bv_colname = "bv_samp"),
+    pattern = map(fitness_data)
+  ),
+  tar_target(
+    fitness_bv_mean,
+    fitmod_func(data = fitness_data[[1]],
+                bv_colname = "bv_mean")
+  )
+)
+
 values_sex <- tibble(
   sex = c("female", "male"),
   sex_lc = c("f", "m"),
@@ -77,6 +109,7 @@ values_sex <- tibble(
 sex_map <- tar_map(
   values = values_sex,
   names = "sex_lc",
+  fitmod_map,
   tar_target(
     co_data, # All measurements of co count
     prep_co_data(recomb_data_path2,
@@ -249,13 +282,6 @@ sex_map <- tar_map(
     run_gp(pheno_data = co_data_adult_ars,
            inverse_relatedness_matrix = co_adult_ars_grm_obj$inv_grm,
            effects_vec = inla_effects_gp_vector_grm_all,
-           y = paste0("co_count_", sex_lc))
-  ),
-  tar_target(
-    co_gp_adult_ars2,
-    run_gp(pheno_data = co_data_adult_ars,
-           inverse_relatedness_matrix = co_adult_ars_grm_obj$inv_grm,
-           effects_vec = inla_effects_gp_vector_grm_all,
            y = paste0("co_count_", sex_lc),
            comp_conf = TRUE)
   ),
@@ -277,7 +303,7 @@ sex_map <- tar_map(
   ),
   tar_target(
     bv_covmat,
-    inla_bv_covmat(model = co_gp_adult_ars2,
+    inla_bv_covmat(model = co_gp_adult_ars,
                    ncores = 16)
   ),
   tar_target(
@@ -291,12 +317,19 @@ sex_map <- tar_map(
                    ncores = 16)
   ),
   tar_target(
+    bv_samps,
+    inla.posterior.sample(n = 5, result = co_gp_adult_ars, add.name = FALSE) %>%
+      inla.posterior.sample.eval(fun = "id1", return.matrix = FALSE)
+  ),
+  tar_target(
     data_adult_ss, # Single sex
     make_data_adult(gp_data = co_data_adult_ars,
                     gp_model = co_gp_adult_ars,
+                    bv_samp = bv_samps,
                     lrs_data_path,
                     sex_num = sex_num_lrs,
-                    inbreeding = inbreeding)
+                    inbreeding = inbreeding),
+    pattern = map(bv_samps)
   ),
   tar_target(
     data_parent_adult_ss,
@@ -552,7 +585,7 @@ sex_map <- tar_map(
   tar_target(
     surv_samp_pairs_plot,
     as.data.frame(surv_samps_covmat)[, c("energy", "ll.1", "ye.1", "id.1",
-                                  surv_pars[c(1:6, 17:19)])] %>%
+                                         surv_pars[c(1:6, 17:19)])] %>%
       dplyr::mutate(sigma_ll = log(sigma_ll),
                     sigma_ye = log(sigma_ye),
                     sigma_id = log(sigma_id)) %>%
@@ -581,7 +614,7 @@ sex_map <- tar_map(
   tar_target(
     ars_covmat_co_n_bv_preds_and_marg,
     make_ars_bv_preds_and_marg_co_n(samps = ars_samps_covmat_co_n,
-                                     data = stan_data_adult_ss_covmat)
+                                    data = stan_data_adult_ss_covmat)
   ),
   tar_target(
     surv_covmat_co_n_bv_preds_and_marg,
@@ -756,17 +789,6 @@ sex_map <- tar_map(
                          title = "",
                          lw = 1.4,
                          bs = 11 * 1.4)
-  ),
-  tar_target(
-    ggarrange(ars_bv_pred_plot_poster_f,
-              ars_bv_pred_plot_poster_m,
-              surv_bv_pred_plot_poster_f,
-              surv_bv_pred_plot_poster_m,
-              nest_bv_pred_plot_poster_f,
-              nest_bv_pred_plot_poster_m,
-              common.legend = FALSE,
-              ncol = 2,
-              nrow = 3)
   ),
   tar_target(
     ars_parent_bv_pred_plot_pdf,
