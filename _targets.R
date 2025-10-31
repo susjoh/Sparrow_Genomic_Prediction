@@ -15,9 +15,9 @@ controller_local <- crew_controller_local(name = "my_local_controller",
 
 controller_slurm <- crew_controller_slurm(
   name = "my_slurm_controller",
-  workers = 16,
+  workers = 20,
   seconds_idle = 120,
-  tasks_max = 1,
+  tasks_max = 30,
   options_cluster = crew_options_slurm(
     script_lines = paste("#SBATCH --account=share-nv-bio \n module load",
                          "R/4.4.2-gfbf-2024a R-bundle-CRAN/2024.11-foss-2024a",
@@ -25,13 +25,14 @@ controller_slurm <- crew_controller_slurm(
     log_output = "Jobs/%A.log",
     memory_gigabytes_per_cpu = 6,
     cpus_per_task = 16,
-    time_minutes = 60 * 6 * 1, # minutes * hours * days
+    time_minutes = 60 * 24 * 2, # minutes * hours * days
     partition = "CPUQ",
     verbose = TRUE)
 )
 
 # Set target options:
 tar_option_set(
+  # Packages that your targets need for their tasks.
   packages = c("tibble",
                "data.table",
                "stats",
@@ -47,7 +48,11 @@ tar_option_set(
                "bayesplot",
                "tidyr",
                "mvtnorm",
-               "ggpubr"), # Packages that your targets need for their tasks.
+               "ggpubr",
+               "MCMCglmm",
+               "HDInterval",
+               "rstan",
+               "bayesplot"),
   format = "qs", # Optionally set the default storage format. qs is fast.
   error = "continue", # produce result even if the target errored
   resources = tar_resources(
@@ -68,43 +73,855 @@ tar_source(files = "r/crossover_gp_inla_func.R")
 plink_path <- "PLINK/plink_linux" # path to plink program
 
 values_fitmod <- tibble(
-  mod = c("ars_adult", "surv_adult", "ars_parent", "surv_parent"), # "nest")
+  mod = c("ars_adult",
+          "surv_adult",
+          "ars_parent",
+          "surv_parent",
+          "nest"),
+  gp_data_func = rlang::syms(c("make_adult_gp_data",
+                               "make_adult_gp_data",
+                               "make_parent_gp_data",
+                               "make_parent_gp_data",
+                               "make_nestling_gp_data")),
   fitmod_func = rlang::syms(c("ars_adult_mod_func",
                               "surv_adult_mod_func",
                               "ars_parent_mod_func",
-                              "surv_parent_mod_func")),
+                              "surv_parent_mod_func",
+                              "nest_mod_func")),
+  fitness_data_path = rlang::syms(c("lrs_data_path",
+                                    "lrs_data_path",
+                                    "lrs_data_path",
+                                    "lrs_data_path",
+                                    "nestling_data_path")),
   fitdat_func = rlang::syms(c("make_data_adult",
                               "make_data_adult",
                               "make_data_parent",
-                              "make_data_parent"))
+                              "make_data_parent",
+                              "make_data_nest")),
+  parsamp_func = rlang::syms(c("ars_adult_parsamp",
+                               "surv_adult_parsamp",
+                               "ars_parent_parsamp",
+                               "surv_parent_parsamp",
+                               "nest_parsamp")),
+  bv_pred_marg_func = rlang::syms(c("make_ars_bv_preds_and_marg",
+                                    "make_surv_bv_preds_and_marg",
+                                    "make_ars_bv_preds_and_marg",
+                                    "make_surv_bv_preds_and_marg",
+                                    "make_nest_bv_preds_and_marg")),
+  trait = c("annual reproductive success",
+            "annual survival",
+            "annual reproductive success",
+            "annual survival",
+            "nestling survival"),
+  xlab_start = c("B", "B", "Parental b", "Parental b", "Parental b"),
+  make_sim = rlang::syms(c("make_sim_ars_adult",
+                           "make_sim_surv_adult",
+                           "make_sim_ars_parent",
+                           "make_sim_surv_parent",
+                           "make_sim_nest")),
+  sim_par_vec = list(list("alpha" = 0.26,
+                          "beta_bv" = -0.16,
+                          "beta_bv2" = -1.2,
+                          "beta_age_q1" = 9.4,
+                          "beta_age_q2" = -14,
+                          "beta_f" = -2.3,
+                          "alpha_zi" = -0.80,
+                          "sigma_ye" = 0.28,
+                          "sigma_ll" = 0.18,
+                          "sigma_id" = 0.30,
+                          "sigma_res" = 0),
+                     list("alpha" = 0.63,
+                          "beta_bv" = -0.067,
+                          "beta_bv2" = -1.3,
+                          "beta_age_q1" = 24,
+                          "beta_age_q2" = -2.6,
+                          "beta_f" = -0.90,
+                          "sigma_ye" = 0.33,
+                          "sigma_ll" = 0.19,
+                          "sigma_id" = 0.16,
+                          "sigma_res" = 0),
+                     list("alpha" = 0.081,
+                          "beta_bv" = -0.037,
+                          "beta_bv2" = -0.51,
+                          "beta_age_q1" = 5.4,
+                          "beta_age_q2" = -11,
+                          "beta_f" = 0.66,
+                          "alpha_zi" = -0.70,
+                          "sigma_ye" = 0.25,
+                          "sigma_ll" = 0.086,
+                          "sigma_id" = 0.42,
+                          "sigma_par" = 0.13,
+                          "sigma_res" = 0),
+                     list("alpha" = 0.20,
+                          "beta_bv" = 0.026,
+                          "beta_bv2" = -0.047,
+                          "beta_age_q1" = -6.4,
+                          "beta_age_q2" = -2.6,
+                          "beta_f" = 0.63,
+                          "sigma_ye" = 0.25,
+                          "sigma_ll" = 0.064,
+                          "sigma_id" = 0.15,
+                          "sigma_par" = 0,
+                          "sigma_res" = 0),
+                     list("alpha" = -1.3,
+                          "beta_bv" = -0.39,
+                          "beta_bv2" = -0.29,
+                          "beta_f" = 1.1,
+                          "sigma_hy" = 0.44,
+                          "sigma_hi" = 0.36,
+                          "sigma_par" = 0.40,
+                          "sigma_res" = 0)),
+  stan_data_func = rlang::syms(c("make_stan_data_adult",
+                                 "make_stan_data_adult",
+                                 "make_stan_data_parent",
+                                 "make_stan_data_parent",
+                                 "make_stan_data_nest")),
+  stan_pars = list(c("alpha",
+                     "beta_bv",
+                     "beta_bv2",
+                     "beta_age_q1",
+                     "beta_age_q2",
+                     "beta_f",
+                     "alpha_std",
+                     "beta_bv_std",
+                     "beta_bv2_std",
+                     "beta_age_q1_std",
+                     "beta_age_q2_std",
+                     "beta_f_std",
+                     "ye",
+                     "ll",
+                     "id",
+                     "bv_lat",
+                     "sigma_ll",
+                     "sigma_ye",
+                     "sigma_id",
+                     "alpha_zi",
+                     "alpha_zi_std",
+                     "theta",
+                     "y_rep"),
+                   c("alpha",
+                     "beta_bv",
+                     "beta_bv2",
+                     "beta_age_q1",
+                     "beta_age_q2",
+                     "beta_f",
+                     "alpha_std",
+                     "beta_bv_std",
+                     "beta_bv2_std",
+                     "beta_age_q1_std",
+                     "beta_age_q2_std",
+                     "beta_f_std",
+                     "ye",
+                     "ll",
+                     "id",
+                     "bv_lat",
+                     "sigma_ll",
+                     "sigma_ye",
+                     "sigma_id",
+                     "y_rep"),
+                   c("alpha",
+                     "beta_bv",
+                     "beta_bv2",
+                     "beta_age_q1",
+                     "beta_age_q2",
+                     "beta_f",
+                     "alpha_std",
+                     "beta_bv_std",
+                     "beta_bv2_std",
+                     "beta_age_q1_std",
+                     "beta_age_q2_std",
+                     "beta_f_std",
+                     "ye",
+                     "ll",
+                     "id",
+                     "par",
+                     "bv_lat",
+                     "sigma_ll",
+                     "sigma_ye",
+                     "sigma_id",
+                     "sigma_par",
+                     "alpha_zi",
+                     "alpha_zi_std",
+                     "theta",
+                     "y_rep"),
+                   c("alpha",
+                     "beta_bv",
+                     "beta_bv2",
+                     "beta_age_q1",
+                     "beta_age_q2",
+                     "beta_f",
+                     "alpha_std",
+                     "beta_bv_std",
+                     "beta_bv2_std",
+                     "beta_age_q1_std",
+                     "beta_age_q2_std",
+                     "beta_f_std",
+                     "ye",
+                     "ll",
+                     "id",
+                     "bv_lat",
+                     "sigma_ll",
+                     "sigma_ye",
+                     "sigma_id",
+                     "y_rep"),
+                   c("alpha",
+                     "beta_bv",
+                     "beta_bv2",
+                     "beta_f",
+                     "alpha_std",
+                     "beta_bv_std",
+                     "beta_bv2_std",
+                     "beta_f_std",
+                     "hy",
+                     "hi",
+                     "par",
+                     "bv_lat",
+                     "sigma_hi",
+                     "sigma_hy",
+                     "sigma_par",
+                     "y_rep")),
+  y_col = c("sum_recruit", "survival", "sum_recruit", "survival", "recruit"),
+  stan_file_name = c("r/zinf_ars_covmat.stan",
+                     "r/adult_surv_covmat.stan",
+                     "r/parent_zinf_ars_covmat.stan",
+                     "r/parent_surv_covmat.stan",
+                     "r/nestling_surv_covmat.stan")
 )
 
 fitmod_map <- tar_map(
   values = values_fitmod,
   names = "mod",
   tar_target(
+    co_data_gp,
+    gp_data_func(pheno_data = co_data,
+                 lrs_path = lrs_data_path,
+                 lrs_path2 = lrs_data_path2,
+                 nestling_path = nestling_data_path,
+                 fam_path = geno_data_paths[3],
+                 ped_path = pedigree_path,
+                 sex_num = sex_num_lrs,
+                 sex_keep = sex_keep)
+  ),
+  tar_target(
+    co_grm_files,
+    make_grm(analysis_inds = unique(getElement(co_data_gp, "ringnr")),
+             bfile = gsub(x = geno_data_paths[1], ".bed", ""),
+             ncores = 4,
+             mem = 4 * 6000,
+             # Path to plink program:
+             plink_path = plink_path,
+             # Where to save result:
+             dir = paste0("data/co_", mod, "_", sex_lc, "_grm")),
+  ),
+  tar_target(
+    co_grm_obj,
+    load_grm(dir = gsub(x = `[`(co_grm_files, 1), "/grm.rel.bin",  ""),
+             pheno_data = co_data_gp)
+  ),
+  tar_target(
+    co_gp,
+    run_gp(pheno_data = co_data_gp,
+           inverse_relatedness_matrix = getElement(co_grm_obj, "inv_grm"),
+           effects_vec = inla_effects_gp_vector_grm_all,
+           y = paste0("co_count_", sex_lc),
+           comp_conf = TRUE)
+  ),
+  tar_target(
+    bv_samps,
+    inla.posterior.sample(n = 1e3,
+                          result = co_gp,
+                          add.name = FALSE) %>%
+      inla.posterior.sample.eval(fun = "id1", return.matrix = FALSE) %>%
+      # Reorder to co_data_gp order
+      lapply(FUN = function(x) {
+        `[`(x, order(getElement(co_gp, "summary.random")$id1$ID)) %>%
+          `[`(getElement(co_data_gp, "id1"))
+      })
+  ),
+  tar_target(
     fitness_data,
-    fitdat_func(gp_data = co_data_adult_ars,
-                gp_model = co_gp_adult_ars,
-                bv_samp = bv_samps,
-                lrs_data_path,
+    fitdat_func(gp_data = co_data_gp,
+                gp_model = co_gp,
+                fitness_data_path,
                 sex_num = sex_num_lrs,
                 inbreeding = inbreeding,
-                ped_path = pedigree_path),
+                ped_path = pedigree_path)
+  ),
+  tar_target(
+    # We generally find more extreme estimated bvs with the more measurements?
+    bv_vs_n_meas_plot,
+    dplyr::filter(fitness_data, !duplicated(ringnr)) %>%
+      ggplot(aes(y = abs(bv_mean), x = ifelse(is.na(co_n), 0, co_n))) +
+      geom_point() +
+      labs(y = "Absolute estimated breeding value",
+           x = "Number of crossover count measurements") +
+      geom_smooth(method = "loess")
+  ),
+  tar_target(
+    samps_from_samped_model,
+    fitmod_func(data = fitness_data,
+                bv_colname = "bv_samp",
+                bv_samp = bv_samps) %>%
+      samp_sampmod(model = .,
+                   func = parsamp_func,
+                   n_samp = 1e3),
     pattern = map(bv_samps)
   ),
   tar_target(
-    fitness_bv_samp,
-    fitmod_func(data = fitness_data,
-                bv_colname = "bv_samp"),
-    pattern = map(fitness_data)
+    post_stats,
+    samps_from_samped_model %>%
+      do.call(what = cbind) %>%
+      apply(., 1, function(x) {
+        c("mean" = mean(x),
+          "mode" = suppressWarnings(posterior.mode(x)),
+          "median" = median(x),
+          "sd" = sd(x),
+          "var" = var(x),
+          hdi(x, credMass = 0.95)["lower"],
+          hdi(x, credMass = 0.95)["upper"])
+      })
+  ),
+  tar_target(
+    post_stats_per_model,
+    samps_from_samped_model %>%
+      apply(., 1, function(x) {
+        c("mean" = mean(x),
+          "mode" = suppressWarnings(posterior.mode(x)),
+          "median" = median(x),
+          "sd" = sd(x),
+          "var" = var(x),
+          hdi(x, credMass = 0.95)["lower"],
+          hdi(x, credMass = 0.95)["upper"])
+      }),
+    pattern = map(samps_from_samped_model)
+  ),
+  tar_target(
+    post_stats_premean1,
+    samps_from_samped_model %>%
+      simplify2array() %>%
+      apply(1:2, mean) %>%
+      apply(., 1, function(x) {
+        c("mean" = mean(x),
+          "mode" = suppressWarnings(posterior.mode(x)),
+          "median" = median(x),
+          "sd" = sd(x),
+          "var" = var(x),
+          hdi(x, credMass = 0.95)["lower"],
+          hdi(x, credMass = 0.95)["upper"])
+      })
+  ),
+  tar_target(
+    post_stats_premean2,
+    post_stats_per_model %>%
+      simplify2array() %>%
+      apply(1:2, mean)
+  ),
+  tar_target(
+    post_stats_premedian1,
+    samps_from_samped_model %>%
+      simplify2array() %>%
+      apply(1:2, median) %>%
+      apply(., 1, function(x) {
+        c("mean" = mean(x),
+          "mode" = suppressWarnings(posterior.mode(x)),
+          "median" = median(x),
+          "sd" = sd(x),
+          "var" = var(x),
+          hdi(x, credMass = 0.95)["lower"],
+          hdi(x, credMass = 0.95)["upper"])
+      })
+  ),
+  tar_target(
+    post_stats_premedian2,
+    post_stats_per_model %>%
+      simplify2array() %>%
+      apply(1:2, median)
+  ),
+  tar_target(
+    bv_pred_marg,
+    bv_pred_marg_func(data = fitness_data,
+                      samp = (samps_from_samped_model %>%
+                                do.call(what = cbind) %>%
+                                t() %>%
+                                as.data.frame()))
+  ),
+  tar_target(
+    bv_pred_plot,
+    plot_lines_posterior(df = getElement(bv_pred_marg, "df_pred"),
+                         xlab = paste0(xlab_start,
+                                       "reeding value for ",
+                                       sex,
+                                       " crossover count"),
+                         ylab = paste0("Predicted ",
+                                       sex,
+                                       " ",
+                                       trait),
+                         title = "")
+  ),
+  tar_target(
+    bv_marg_plot,
+    plot_lines_posterior(df = getElement(bv_pred_marg, "df_marg"),
+                         xlab = paste0(xlab_start,
+                                       "reeding value for ",
+                                       sex,
+                                       " crossover count"),
+                         ylab = paste0("Marginal effect on ",
+                                       sex,
+                                       " ",
+                                       trait),
+                         title = "")
+  ),
+  tar_target(
+    bv_pred_plot_pdf,
+    ggsave_path(paste0("figs/", mod, "_bv_pred_", sex_lc, ".pdf"),
+                plot = bv_pred_plot,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    bv_marg_plot_pdf,
+    ggsave_path(paste0("figs/", mod, "_bv_marg_", sex_lc, ".pdf"),
+                plot = bv_marg_plot,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
   ),
   tar_target(
     fitness_bv_mean,
-    fitmod_func(data = fitness_data[[1]],
+    fitmod_func(data = fitness_data,
                 bv_colname = "bv_mean")
+  ),
+  tar_target(
+    samps_from_mean_model,
+    samp_sampmod(model = fitness_bv_mean,
+                 func = parsamp_func,
+                 n_samp = 1e4)
+  ),
+  tar_target(
+    post_stats_meanmod,
+    samps_from_mean_model %>%
+      apply(., 1, function(x) {
+        c("mean" = mean(x),
+          "mode" = suppressWarnings(posterior.mode(x)),
+          "median" = median(x),
+          "sd" = sd(x),
+          "var" = var(x),
+          hdi(x, credMass = 0.95)["lower"],
+          hdi(x, credMass = 0.95)["upper"])
+      })
+  ),
+  tar_target(
+    bv_pred_marg_meanmod,
+    bv_pred_marg_func(data = fitness_data,
+                      samp = (samps_from_mean_model %>%
+                                t() %>%
+                                as.data.frame()))
+  ),
+  tar_target(
+    bv_pred_plot_meanmod,
+    plot_lines_posterior(df = getElement(bv_pred_marg_meanmod, "df_pred"),
+                         xlab = paste0(xlab_start,
+                                       "reeding value for ",
+                                       sex,
+                                       " crossover count"),
+                         ylab = paste0("Predicted ",
+                                       sex,
+                                       " ",
+                                       trait),
+                         title = "")
+  ),
+  tar_target(
+    bv_pred_plot_pdf_meanmod,
+    ggsave_path(paste0("figs/", mod, "_bv_pred_", sex_lc, "_meanmod.pdf"),
+                plot = bv_pred_plot_meanmod,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    fitness_bv_mean_co_meas,
+    fitmod_func(data = dplyr::filter(fitness_data, co_meas),
+                bv_colname = "bv_mean")
+  ),
+  tar_target(
+    samps_from_mean_co_meas,
+    samp_sampmod(model = fitness_bv_mean_co_meas,
+                 func = parsamp_func,
+                 n_samp = 1e4)
+  ),
+  tar_target(
+    bv_pred_marg_meanmod_co_meas,
+    bv_pred_marg_func(data = dplyr::filter(fitness_data, co_meas),
+                      samp = (samps_from_mean_co_meas %>%
+                                t() %>%
+                                as.data.frame()))
+  ),
+  tar_target(
+    post_stats_meanmod_co_meas,
+    samps_from_mean_co_meas %>%
+      apply(., 1, function(x) {
+        c("mean" = mean(x),
+          "mode" = suppressWarnings(posterior.mode(x)),
+          "median" = median(x),
+          "sd" = sd(x),
+          "var" = var(x),
+          hdi(x, credMass = 0.95)["lower"],
+          hdi(x, credMass = 0.95)["upper"])
+      })
+  ),
+  tar_target(
+    bv_pred_plot_meanmod_co_meas,
+    plot_lines_posterior(df = getElement(bv_pred_marg_meanmod_co_meas, "df_pred"),
+                         xlab = paste0(xlab_start,
+                                       "reeding value for ",
+                                       sex,
+                                       " crossover count"),
+                         ylab = paste0("Predicted ", sex, " ", trait),
+                         title = "")
+  ),
+  tar_target(
+    bv_pred_plot_pdf_meanmod_co_meas,
+    ggsave_path(paste0("figs/", mod, "_bv_pred_", sex_lc, "_meanmod_co_meas.pdf"),
+                plot = bv_pred_plot_meanmod_co_meas,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_rep(
+    sim_data,
+    make_sim(data = fitness_data,
+             pars = sim_par_vec),
+    batches = 10
+  ),
+  tar_rep(
+    sim_data_null,
+    sim_par_vec %>%
+      (function(x) {x$beta_bv <- x$beta_bv2 <- 0; x}) %>%
+      make_sim(data = fitness_data,
+               pars = .),
+    batches = 10
+  ),
+  tar_target(
+    samps_from_samped_model_sim,
+    fitmod_func(data = sim_data,
+                bv_colname = "bv_samp",
+                bv_samp = bv_samps) %>%
+      samp_sampmod(model = .,
+                   func = parsamp_func,
+                   n_samp = 1e3),
+    pattern = cross(bv_samps, sim_data)
+  ),
+  tar_target(
+    post_stats_sim,
+    samps_from_samped_model_sim %>%
+      do.call(what = cbind) %>%
+      apply(., 1, function(x) {
+        c("mean" = mean(x),
+          "mode" = suppressWarnings(posterior.mode(x)),
+          "median" = median(x),
+          "sd" = sd(x),
+          "var" = var(x),
+          hdi(x, credMass = 0.95)["lower"],
+          hdi(x, credMass = 0.95)["upper"])
+      })
+  ),
+  tar_target(
+    post_stats_per_model_sim,
+    samps_from_samped_model_sim %>%
+      apply(., 1, function(x) {
+        c("mean" = mean(x),
+          "mode" = suppressWarnings(posterior.mode(x)),
+          "median" = median(x),
+          "sd" = sd(x),
+          "var" = var(x),
+          hdi(x, credMass = 0.95)["lower"],
+          hdi(x, credMass = 0.95)["upper"])
+      }),
+    pattern = map(samps_from_samped_model_sim)
+  ),
+  tar_target(
+    post_stats_premean1_sim,
+    samps_from_samped_model_sim %>%
+      simplify2array() %>%
+      apply(1:2, mean) %>%
+      apply(., 1, function(x) {
+        c("mean" = mean(x),
+          "mode" = suppressWarnings(posterior.mode(x)),
+          "median" = median(x),
+          "sd" = sd(x),
+          "var" = var(x),
+          hdi(x, credMass = 0.95)["lower"],
+          hdi(x, credMass = 0.95)["upper"])
+      })
+  ),
+  tar_target(
+    post_stats_premean2_sim, ## RR effect estimates
+    post_stats_per_model_sim %>%
+      simplify2array() %>%
+      apply(1:2, mean)
+  ),
+  tar_target(
+    ## RR var estimate
+    post_stats_RR_var,
+    # within imputation variance:
+    `[`(post_stats_premean2_sim, "var", ) +
+      # Between-imputation variance:
+      (post_stats_per_model_sim %>%
+         lapply(function(x) x["mean", ]) %>%
+         do.call(what = rbind) %>%
+         apply(2, var)
+      ) * (1 + 1 / length(post_stats_per_model_sim))
+  ),
+  tar_target(
+    post_stats_premedian1_sim,
+    samps_from_samped_model_sim %>%
+      simplify2array() %>%
+      apply(1:2, median) %>%
+      apply(., 1, function(x) {
+        c("mean" = mean(x),
+          "mode" = suppressWarnings(posterior.mode(x)),
+          "median" = median(x),
+          "sd" = sd(x),
+          "var" = var(x),
+          hdi(x, credMass = 0.95)["lower"],
+          hdi(x, credMass = 0.95)["upper"])
+      })
+  ),
+  tar_target(
+    post_stats_premedian2_sim,
+    post_stats_per_model_sim %>%
+      simplify2array() %>%
+      apply(1:2, median)
+  ),
+  tar_target(
+    post_stats_rel_change_sim,
+    list(post_stats_premean1_sim,
+         post_stats_premean2_sim,
+         post_stats_premedian1_sim,
+         post_stats_premedian2_sim) |>
+      lapply(function(x) {
+        (x - post_stats_sim) / post_stats_sim  * 100
+      })
+  ),
+  tar_target(
+    post_stats_sim_rel_error,
+    list(all = post_stats_sim,
+         premean1 = post_stats_premean1_sim,
+         premean2 = post_stats_premean2_sim,
+         premedian1 = post_stats_premedian1_sim,
+         premedian2 = post_stats_premedian2_sim) %>%
+      lapply(function(x) {
+        apply(x[1:3, ], 1, function(y) abs(sim_par_vec - y) / abs(sim_par_vec) * 100) %>%
+          as.data.frame() %>%
+          rownames_to_column(var = "par") %>%
+          pivot_longer(cols = c("mean", "median", "mode"),
+                       names_to = "est",
+                       values_to = "rel_error")
+      }) %>%
+      bind_rows(.id = "samp_type")
+  ),
+  tar_target(
+    bv_covmat,
+    inla_bv_covmat(model = co_gp, n_samp = 1e4, ncores = 16)
+  ),
+  tar_target(
+    stan_data,
+    stan_data_func(data = fitness_data, gp_data = co_data_gp, bv_covmat),
+    deployment = "main"
+  ),
+  tar_target(
+    stan_file,
+    stan_file_name,
+    deployment = "main",
+    format = "file"
+  ),
+  tar_target(
+    stan_model,
+    stan(file = stan_file,
+         data = c(stan_data, list(Y = getElement(stan_data, y_col))),
+         iter = 4.8e4,
+         warmup = 8e3,
+         chains = 16,
+         cores = 16,
+         thin = 1.6e2, # to keep final object reasonably small
+         pars = stan_pars,
+         model_name = paste0("stan_", mod, "_", sex_lc),
+         control = list(adapt_delta = 0.96)) # up to 0.99 did not help parent
+  ),
+  tar_target(
+    stan_samps,
+    get_samps(model = stan_model,
+              pars = stan_pars)
+  ),
+  tar_target(
+    stan_post_stats,
+    summary(stan_model)$summary
+  ),
+  tar_target(
+    stan_bv_pred_marg,
+    bv_pred_marg_func(samp = stan_samps,
+                      data = fitness_data)
+  ),
+  tar_target(
+    stan_bv_pred_plot,
+    plot_lines_posterior(df = getElement(stan_bv_pred_marg, "df_pred"),
+                         xlab = paste0(xlab_start,
+                                       "reeding value for ",
+                                       sex,
+                                       " crossover count"),
+                         ylab = paste0("Predicted ", sex, " ", trait),
+                         title = "")
+  ),
+  tar_target(
+    stan_bv_marg_plot,
+    plot_lines_posterior(df = getElement(stan_bv_pred_marg, "df_marg"),
+                         xlab = paste0(xlab_start,
+                                       "reeding value for ",
+                                       sex,
+                                       " crossover count"),
+                         ylab = paste0("Marginal effect on ",
+                                       sex,
+                                       " ",
+                                       trait),
+                         title = "")
+  ),
+  tar_target(
+    stan_bv_pred_plot_pdf,
+    ggsave_path(paste0("figs/stan_", mod, "_bv_pred_", sex_lc, ".pdf"),
+                plot = stan_bv_pred_plot,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    stan_bv_marg_plot_pdf,
+    ggsave_path(paste0("figs/stan_", mod, "_bv_marg_", sex_lc, ".pdf"),
+                plot = stan_bv_marg_plot,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    stan_model_sim,
+    sim_data %>%
+      `[[`(., 1) %>%
+      stan_data_func(data = ., gp_data = co_data_gp, bv_covmat) %>%
+      stan(file = stan_file,
+           data = c(., list(Y = getElement(., y_col))),
+           iter = 4.8e4,
+           warmup = 8e3,
+           chains = 16,
+           cores = 16,
+           thin = 1.6e2, # to keep final object reasonably small
+           pars = stan_pars,
+           model_name = paste0("stan_", mod, "_", sex_lc, "_sim"),
+           control = list(adapt_delta = 0.96)), # up to 0.99 did not help parent
+    pattern = map(sim_data)
+  ),
+  tar_target(
+    stan_model_sim_null,
+    sim_data_null %>%
+      `[[`(., 1) %>%
+      stan_data_func(data = ., gp_data = co_data_gp, bv_covmat) %>%
+      stan(file = stan_file,
+           data = c(., list(Y = getElement(., y_col))),
+           iter = 4.8e4,
+           warmup = 8e3,
+           chains = 16,
+           cores = 16,
+           thin = 1.6e2, # to keep final object reasonably small
+           pars = stan_pars,
+           model_name = paste0("stan_", mod, "_", sex_lc, "_sim_null"),
+           control = list(adapt_delta = 0.96)), # up to 0.99 did not help parent
+    pattern = map(sim_data_null)
+  ),
+  tar_target(
+    stan_sim_summ,
+    summary(stan_model_sim)$summary,
+    pattern = map(stan_model_sim)
+  ),
+  tar_target(
+    stan_sim_samps,
+    get_samps(model = stan_model_sim,
+              pars = stan_pars),
+    pattern = map(stan_model_sim)
+  ),
+  tar_target(
+    stan_sim_error,
+    sapply(names(sim_par_vec),
+           function(par) {
+             x <- getElement(stan_sim_samps, par) - getElement(sim_par_vec, par)
+             if (length(x) == 0)
+               x <- rep(0, 10)
+             else
+               x <- x / abs(getElement(sim_par_vec, par))
+             c("mean" = mean(x),
+               "mode" = suppressWarnings(posterior.mode(x)),
+               "median" = median(x),
+               "sd" = sd(x),
+               "var" = var(x),
+               hdi(x, credMass = 0.95)["lower"],
+               hdi(x, credMass = 0.95)["upper"])
+           }),
+    pattern = map(stan_sim_samps)
+  ),
+  tar_target(
+    stan_sim_null_summ,
+    summary(stan_model_sim_null)$summary,
+    pattern = map(stan_model_sim_null)
+  ),
+  tar_target(
+    stan_sim_null_samps,
+    get_samps(model = stan_model_sim_null,
+              pars = stan_pars),
+    pattern = map(stan_model_sim_null)
+  ),
+  tar_target(
+    stan_sim_null_error,
+    sapply(names(sim_par_vec),
+           function(par) {
+             if (!par %in% c("beta_bv", "beta_bv2")) {
+               x <- getElement(stan_sim_null_samps, par) -
+                 getElement(sim_par_vec, par)
+             } else {
+               x <- getElement(stan_sim_null_samps, par)
+             }
+             if (length(x) == 0)
+               x <- rep(0, 10)
+             else
+               x <- x / abs(getElement(sim_par_vec, par))
+             c("mean" = mean(x),
+               "mode" = suppressWarnings(posterior.mode(x)),
+               "median" = median(x),
+               "sd" = sd(x),
+               "var" = var(x),
+               hdi(x, credMass = 0.95)["lower"],
+               hdi(x, credMass = 0.95)["upper"])
+           }),
+    pattern = map(stan_sim_null_samps)
+  ),
+  tar_target(
+    stan_sim_null_falsepos_or_miss,
+    stan_sim_null_error %>%
+      sapply(function(mat) mat["lower", ] * mat["upper", ] > 0) %>%
+      rowMeans()
   )
+  # TODO: version of models using co_n as a predictor (om vi får "utrolige" resultater)
 )
+
 
 values_sex <- tibble(
   sex = c("female", "male"),
@@ -161,24 +978,7 @@ sex_map <- tar_map(
     ggplot(data = co_data_rand, aes(x = co_count, y = n)) +
       geom_point() +
       geom_smooth(method = "lm")
-  ),
-  tar_target(
-    co_grm_files, # GRM file for inds with sex-specific crossover measurement
-    make_grm(analysis_inds = unique(co_data$ringnr), # Vector of inds.
-             bfile = gsub(x = geno_data_paths[1], ".bed", ""),
-             ncores = 4,
-             mem = 4 * 6000,
-             # Path to plink program:
-             plink_path = plink_path,
-             # Where to save result:
-             dir = paste0("data/co_", sex_lc, "_grm")),
-    format = "file"
-  ),
-  tar_target(
-    co_grm_obj, # GRM file for inds with sex-specific crossover measurement
-    load_grm(dir = gsub(x = co_grm_files[1],  "/grm.rel.bin",  ""),
-             pheno_data = co_data)
-  ),
+  )
   # tar_target(
   #   co_gam, # genomic animal model for sex-specific crossover rate
   #   run_gp(pheno_data = co_data,
@@ -207,676 +1007,139 @@ sex_map <- tar_map(
   #   inla_cv(model = co_gam,
   #           pheno_data = co_data)
   # ),
-  tar_target(
-    co_data_adult_ars,
-    make_adult_ars_gp_data(pheno_data = co_data,
-                           lrs_path = lrs_data_path,
-                           fam_path = geno_data_paths[3],
-                           sex_num = sex_num_lrs)
-  ),
-  tar_target(
-    co_data_parent_gp,
-    make_parent_gp_data(pheno_data = co_data,
-                        lrs_path = lrs_data_path,
-                        lrs_path2 = lrs_data_path2,
-                        fam_path = geno_data_paths[3],
-                        ped_path = pedigree_path,
-                        sex_keep = sex_keep)
-  ),
-  tar_target(
-    co_data_nestling_gp,
-    make_nestling_gp_data(pheno_data = co_data,
-                          lrs_path = lrs_data_path,
-                          lrs_path2 = lrs_data_path2,
-                          nestling_path = nestling_data_path,
-                          fam_path = geno_data_paths[3],
-                          ped_path = pedigree_path,
-                          sex_keep = sex_keep)
-  ),
-  tar_target(
-    co_adult_ars_grm_files,
-    make_grm(analysis_inds = unique(co_data_adult_ars$ringnr),
-             bfile = gsub(x = geno_data_paths[1], ".bed", ""),
-             ncores = 4,
-             mem = 4 * 6000,
-             # Path to plink program:
-             plink_path = plink_path,
-             # Where to save result:
-             dir = paste0("data/co_adult_ars_", sex_lc, "_grm")),
-    format = "file"
-  ),
-  tar_target(
-    co_parent_grm_files,
-    make_grm(analysis_inds = unique(co_data_parent_gp$ringnr),
-             bfile = gsub(x = geno_data_paths[1], ".bed", ""),
-             ncores = 4,
-             mem = 4 * 6000,
-             # Path to plink program:
-             plink_path = plink_path,
-             # Where to save result:
-             dir = paste0("data/co_parent_", sex_lc, "_grm")),
-    format = "file"
-  ),
-  tar_target(
-    co_nestling_grm_files,
-    make_grm(analysis_inds = unique(co_data_nestling_gp$ringnr),
-             bfile = gsub(x = geno_data_paths[1], ".bed", ""),
-             ncores = 4,
-             mem = 4 * 6000,
-             # Path to plink program:
-             plink_path = plink_path,
-             # Where to save result:
-             dir = paste0("data/co_nestling_", sex_lc, "_grm")),
-    format = "file"
-  ),
-  tar_target(
-    co_adult_ars_grm_obj,
-    load_grm(dir = gsub(x = co_adult_ars_grm_files[1], "/grm.rel.bin",  ""),
-             pheno_data = co_data_adult_ars)
-  ),
-  tar_target(
-    co_parent_grm_obj,
-    load_grm(dir = gsub(x = co_parent_grm_files[1], "/grm.rel.bin",  ""),
-             pheno_data = co_data_parent_gp)
-  ),
-  tar_target(
-    co_nestling_grm_obj,
-    load_grm(dir = gsub(x = co_nestling_grm_files[1], "/grm.rel.bin",  ""),
-             pheno_data = co_data_nestling_gp)
-  ),
-  tar_target(
-    co_gp_adult_ars,
-    run_gp(pheno_data = co_data_adult_ars,
-           inverse_relatedness_matrix = co_adult_ars_grm_obj$inv_grm,
-           effects_vec = inla_effects_gp_vector_grm_all,
-           y = paste0("co_count_", sex_lc),
-           comp_conf = TRUE)
-  ),
-  tar_target(
-    co_gp_parent,
-    run_gp(pheno_data = co_data_parent_gp,
-           inverse_relatedness_matrix = co_parent_grm_obj$inv_grm,
-           effects_vec = inla_effects_gp_vector_grm_all,
-           y = paste0("co_count_", sex_lc),
-           comp_conf = TRUE)
-  ),
-  tar_target(
-    co_gp_nestling,
-    run_gp(pheno_data = co_data_nestling_gp,
-           inverse_relatedness_matrix = co_nestling_grm_obj$inv_grm,
-           effects_vec = inla_effects_gp_vector_grm_all,
-           y = paste0("co_count_", sex_lc),
-           comp_conf = TRUE)
-  ),
-  tar_target(
-    bv_covmat,
-    inla_bv_covmat(model = co_gp_adult_ars,
-                   ncores = 16)
-  ),
-  tar_target(
-    bv_covmat_parent,
-    inla_bv_covmat(model = co_gp_parent,
-                   ncores = 16)
-  ),
-  tar_target(
-    bv_covmat_nestling,
-    inla_bv_covmat(model = co_gp_nestling,
-                   ncores = 16)
-  ),
-  tar_target(
-    bv_samps,
-    inla.posterior.sample(n = 5, result = co_gp_adult_ars, add.name = FALSE) %>%
-      inla.posterior.sample.eval(fun = "id1", return.matrix = FALSE)
-  ),
-  tar_target(
-    data_adult_ss, # Single sex
-    make_data_adult(gp_data = co_data_adult_ars,
-                    gp_model = co_gp_adult_ars,
-                    bv_samp = bv_samps,
-                    lrs_data_path,
-                    sex_num = sex_num_lrs,
-                    inbreeding = inbreeding),
-    pattern = map(bv_samps)
-  ),
-  tar_target(
-    data_parent_adult_ss,
-    make_data_parent_adult(gp_data = co_data_parent_gp,
-                           gp_model = co_gp_parent,
-                           lrs_data_path,
-                           sex_num = sex_num_lrs,
-                           inbreeding = inbreeding,
-                           ped_path = pedigree_path)
-  ),
-  tar_target(
-    data_nestling,
-    make_data_nestling(gp_data = co_data_nestling_gp,
-                       gp_model = co_gp_nestling,
-                       nestling_data_path = nestling_data_path,
-                       sex_num = sex_num_lrs,
-                       inbreeding = inbreeding,
-                       ped_path = pedigree_path)
-  ),
-  tar_target(
-    # We generally find more extreme estimated bvs with the more measurements
-    bv_vs_n_meas_plot,
-    dplyr::filter(data_adult_ss, !duplicated(ringnr)) %>%
-      ggplot(aes(y = abs(bv_mean), x = ifelse(is.na(co_n), 0, co_n))) +
-      geom_point() +
-      labs(y = "Absolute estimated breeding value",
-           x = "Number of crossover count measurements") +
-      geom_smooth(method = "loess")
-  ),
-  tar_target(
-    stan_data_adult_ss,
-    make_stan_data_adult(data_adult_ss),
-    deployment = "main"
-  ),
-  tar_target(
-    stan_data_adult_ss_covmat,
-    make_stan_data_adult_covmat(data_adult_ss, co_data_adult_ars, bv_covmat),
-    deployment = "main"
-  ),
-  tar_target(
-    stan_data_parent_adult_ss_covmat,
-    make_stan_data_parent_covmat(data = data_parent_adult_ss,
-                                 gp_data = co_data_parent_gp,
-                                 covmat = bv_covmat_parent),
-    deployment = "main"
-  ),
-  tar_target(
-    stan_data_nestling_covmat,
-    make_stan_data_nestling_covmat(data = data_nestling,
-                                   gp_data = co_data_nestling_gp,
-                                   covmat = bv_covmat_nestling),
-    deployment = "main"
-  ),
-  tar_target(
-    stan_adult_ars_ss_covmat,
-    stan(file = stan_file_adult_ars_zinf_covmat,
-         data = c(stan_data_adult_ss_covmat,
-                  list(Y = stan_data_adult_ss_covmat$sum_recruit,
-                       alpha_prior_mean = log(mean(c(stan_data_adult_ss_covmat$sum_recruit[stan_data_adult_ss_covmat$sum_recruit != 0],
-                                                     stan_data_adult_ss_covmat$sum_recruit))),
-                       beta_prior_sd = 0.2,
-                       exp_rate = 1 / 0.2,
-                       alpha_zi_prior_mean = log(mean(stan_data_adult_ss_covmat$sum_recruit == 0) /
-                                                   (1 - mean(stan_data_adult_ss_covmat$sum_recruit == 0))),
-                       beta_zi_prior_sd = 0.5,
-                       exp_rate_zi = 1 / 0.5)),
-         iter = 4.8e4,
-         warmup = 8e3,
-         chains = 16,
-         cores = 16,
-         # Remove random effects in zero-inflation component
-         pars = ars_pars[-(c(21:25, 27:34, 35:37))],
-         control = list(adapt_delta = 0.9),
-         model_name = paste0("stan_adult_ars_ss_covmat_", sex_lc),
-         thin = 1.6e2) # to keep final object reasonably small
-  ),
-  tar_target(
-    stan_adult_ars_ss_covmat_co_n,
-    stan(file = stan_file_adult_ars_zinf_covmat_co_n,
-         data = c(stan_data_adult_ss_covmat,
-                  list(Y = stan_data_adult_ss_covmat$sum_recruit,
-                       alpha_prior_mean = log(mean(c(stan_data_adult_ss_covmat$sum_recruit[stan_data_adult_ss_covmat$sum_recruit != 0],
-                                                     stan_data_adult_ss_covmat$sum_recruit))),
-                       beta_prior_sd = (1 / 6),
-                       exp_rate = 1 / (1 / 6),
-                       alpha_zi_prior_mean = log(mean(stan_data_adult_ss_covmat$sum_recruit == 0) /
-                                                   (1 - mean(stan_data_adult_ss_covmat$sum_recruit == 0))),
-                       beta_zi_prior_sd = (1 / 6),
-                       exp_rate_zi = 1 / (1 / 5))),
-         iter = 4.8e4 * 3,
-         warmup = 8e3 * 3,
-         chains = 16,
-         cores = 16,
-         # Remove random effects in zero-inflation component
-         pars = c(ars_pars[-(c(21:25, 27:34, 35:37))], "beta_co_n", "beta_co_n_std"),
-         control = list(adapt_delta = 0.99),
-         model_name = paste0("stan_adult_ars_ss_covmat_", sex_lc),
-         thin = 1.6e2 * 3) # to keep final object reasonably small
-  ),
-  tar_target(
-    stan_parent_adult_ars_ss_covmat,
-    stan(file = stan_file_parent_ars_zinf_covmat,
-         data = c(stan_data_parent_adult_ss_covmat,
-                  list(Y = stan_data_parent_adult_ss_covmat$sum_recruit,
-                       alpha_prior_mean = log(mean(c(stan_data_parent_adult_ss_covmat$sum_recruit[stan_data_parent_adult_ss_covmat$sum_recruit != 0],
-                                                     stan_data_parent_adult_ss_covmat$sum_recruit))),
-                       beta_prior_sd = 0.2,
-                       exp_rate = 1 / 0.2,
-                       alpha_zi_prior_mean = log(mean(stan_data_parent_adult_ss_covmat$sum_recruit == 0) /
-                                                   (1 - mean(stan_data_parent_adult_ss_covmat$sum_recruit == 0))),
-                       beta_zi_prior_sd = 0.5,
-                       exp_rate_zi = 1 / 0.5)),
-         iter = 4.8e4,
-         warmup = 8e3,
-         chains = 16,
-         cores = 16,
-         pars = c(ars_pars[-(c(21:25, 27:34, 35:37))], "par", "sigma_par"),# "par_zi", "sigma_par_zi"),
-         control = list(adapt_delta = 0.96),
-         model_name = paste0("stan_parent_adult_ars_ss_covmat_", sex_lc),
-         thin = 1.6e2) # to keep final object reasonably small
-  ),
-  tar_target(
-    ars_sim,
-    lapply(1:3, function(i) make_ars_sim(stan_data_adult_ss)),
-    deployment = "main"
-  ),
-  tar_target(
-    stan_adult_surv_ss_covmat,
-    stan(file = stan_file_adult_surv_covmat,
-         data = c(stan_data_adult_ss_covmat,
-                  list(Y = stan_data_adult_ss_covmat$survival,
-                       alpha_prior_mean = stan_data_adult_ss_covmat$survival_logit_mean,
-                       beta_prior_sd = 0.5,
-                       exp_rate = sqrt(1 / 0.5^2))),
-         iter = 4.8e4,
-         warmup = 8e3,
-         chains = 16,
-         cores = 16,
-         control = list(adapt_delta = 0.95),
-         pars = surv_pars,
-         model_name = paste0("stan_adult_surv_ss_", sex_lc),
-         thin = 1.6e2) # to keep final object reasonably small
-  ),
-  tar_target(
-    stan_adult_surv_ss_covmat_co_n,
-    stan(file = stan_file_adult_surv_covmat_co_n,
-         data = c(stan_data_adult_ss_covmat,
-                  list(Y = stan_data_adult_ss_covmat$survival,
-                       alpha_prior_mean = stan_data_adult_ss_covmat$survival_logit_mean,
-                       beta_prior_sd = 0.5,
-                       exp_rate = sqrt(1 / 0.5^2))),
-         iter = 4.8e4,
-         warmup = 8e3,
-         chains = 16,
-         cores = 16,
-         control = list(adapt_delta = 0.95),
-         pars = c(surv_pars, "beta_co_n", "beta_co_n_std"),
-         model_name = paste0("stan_adult_surv_ss_covmat_co_n_", sex_lc),
-         thin = 1.6e2) # to keep final object reasonably small
-  ),
-  tar_target(
-    stan_parent_adult_surv_ss_covmat,
-    stan(file = stan_file_parent_surv_covmat,
-         data = c(stan_data_parent_adult_ss_covmat,
-                  list(Y = stan_data_parent_adult_ss_covmat$survival,
-                       alpha_prior_mean = stan_data_parent_adult_ss_covmat$survival_logit_mean,
-                       beta_prior_sd = 0.5,
-                       exp_rate = sqrt(1 / 0.5^2))),
-         iter = 4.8e4,
-         warmup = 8e3,
-         chains = 16,
-         cores = 16,
-         control = list(adapt_delta = 0.99),
-         pars = surv_pars,
-         model_name = paste0("stan_parent_adult_surv_ss_covmat_", sex_lc),
-         thin = 1.6e2) # to keep final object reasonably small
-  ),
-  tar_target(
-    stan_nestling_surv_covmat,
-    stan(file = stan_file_nestling_surv_covmat,
-         data = c(stan_data_nestling_covmat,
-                  list(Y = stan_data_nestling_covmat$recruit,
-                       alpha_prior_mean = stan_data_nestling_covmat$recruit_logit_mean,
-                       beta_prior_sd = 0.5,
-                       exp_rate = sqrt(1 / 0.5^2))),
-         iter = 4.8e4,
-         warmup = 8e3,
-         chains = 16,
-         cores = 16,
-         control = list(adapt_delta = 0.95),
-         pars = nest_pars,
-         model_name = paste0("stan_nestling_surv_", sex_lc),
-         thin = 1.6e2) # to keep final object reasonably small
-  ),
-  tar_target(
-    surv_sim,
-    lapply(1:3, function(i) make_surv_sim(stan_data_adult_ss)),
-    deployment = "main"
-  ),
   # tar_target(
-  #   stan_adult_surv_sim,
-  #   stan(file = stan_file_adult_surv,
-  #        data = c(stan_data_adult,
-  #                 list(Y = surv_sim,
-  #                      alpha_prior_mean = log(1 / (1 / mean(surv_sim) - 1)),
-  #                      beta_prior_sd = 0.5,
-  #                      exp_rate = sqrt(1 / 0.5^2))),
-  #        iter = 3.6e4,
-  #        warmup = 6e3,
+  #   stan_adult_ars_ss_covmat_co_n,
+  #   stan(file = stan_file_adult_ars_zinf_covmat_co_n,
+  #        data = c(stan_data_adult_ss_covmat,
+  #                 list(Y = stan_data_adult_ss_covmat$sum_recruit,
+  #                      alpha_prior_mean = log(mean(c(stan_data_adult_ss_covmat$sum_recruit[stan_data_adult_ss_covmat$sum_recruit != 0],
+  #                                                    stan_data_adult_ss_covmat$sum_recruit))),
+  #                      beta_prior_sd = (1 / 6),
+  #                      exp_rate = 1 / (1 / 6),
+  #                      alpha_zi_prior_mean = log(mean(stan_data_adult_ss_covmat$sum_recruit == 0) /
+  #                                                  (1 - mean(stan_data_adult_ss_covmat$sum_recruit == 0))),
+  #                      beta_zi_prior_sd = (1 / 6),
+  #                      exp_rate_zi = 1 / (1 / 5))),
+  #        iter = 4.8e4 * 3,
+  #        warmup = 8e3 * 3,
   #        chains = 16,
   #        cores = 16,
-  #        control = list(adapt_delta = 0.9),
-  #        pars = surv_pars,
-  #        model_name = paste0("stan_adult_surv_", sex_lc, "_sim"),
-  #        thin = 1.2e2), # to keep final object reasonably small
-  #   pattern = map(surv_sim)
+  #        # Remove random effects in zero-inflation component
+  #        pars = c(ars_pars[-(c(21:25, 27:34, 35:37))], "beta_co_n", "beta_co_n_std"),
+  #        control = list(adapt_delta = 0.99),
+  #        model_name = paste0("stan_adult_ars_ss_covmat_", sex_lc),
+  #        thin = 1.6e2 * 3) # to keep final object reasonably small
   # ),
-  tar_target(
-    ars_samps_covmat,
-    get_samps(model = stan_adult_ars_ss_covmat,
-              pars = ars_pars[-(c(21:25, 27:34, 35:37))])
-  ),
-  tar_target(
-    ars_samps_covmat_co_n,
-    get_samps(model = stan_adult_ars_ss_covmat_co_n,
-              pars = c(ars_pars[-(c(21:25, 27:34, 35:37))], "beta_co_n", "beta_co_n_std"))
-  ),
-  tar_target(
-    ars_samps_parent,
-    get_samps(model = stan_parent_adult_ars_ss_covmat,
-              pars = c(ars_pars[-(c(21:25, 27:34, 35:37))], "par", "sigma_par"))
-  ),
-  tar_target(
-    surv_samps_covmat,
-    get_samps(model = stan_adult_surv_ss_covmat,
-              pars = surv_pars)
-  ),
-  tar_target(
-    surv_samps_covmat_co_n,
-    get_samps(model = stan_adult_surv_ss_covmat_co_n,
-              pars = c(surv_pars, "beta_co_n", "beta_co_n_std"))
-  ),
-  tar_target(
-    surv_samps_parent,
-    get_samps(model = stan_parent_adult_surv_ss_covmat,
-              pars = surv_pars)
-  ),
-  tar_target(
-    nest_samps,
-    get_samps(model = stan_nestling_surv_covmat,
-              pars = nest_pars)
-  ),
-  tar_target(
-    surv_samp_pairs_plot,
-    as.data.frame(surv_samps_covmat)[, c("energy", "ll.1", "ye.1", "id.1",
-                                         surv_pars[c(1:6, 17:19)])] %>%
-      dplyr::mutate(sigma_ll = log(sigma_ll),
-                    sigma_ye = log(sigma_ye),
-                    sigma_id = log(sigma_id)) %>%
-      ggpairs() # aes(color = factor(surv_samps_f$divergent)))
-  ),
-  tar_target(
-    ars_parent_bv_preds_and_marg,
-    make_ars_bv_preds_and_marg(samps = ars_samps_parent,
-                               data = stan_data_parent_adult_ss_covmat)
-  ),
-  tar_target(
-    surv_parent_bv_preds_and_marg,
-    make_surv_bv_preds_and_marg(samps = surv_samps_parent,
-                                data = stan_data_parent_adult_ss_covmat)
-  ),
-  tar_target(
-    ars_covmat_bv_preds_and_marg,
-    make_ars_bv_preds_and_marg(samps = ars_samps_covmat,
-                               data = stan_data_adult_ss_covmat)
-  ),
-  tar_target(
-    surv_covmat_bv_preds_and_marg,
-    make_surv_bv_preds_and_marg(samps = surv_samps_covmat,
-                                data = stan_data_adult_ss_covmat)
-  ),
-  tar_target(
-    ars_covmat_co_n_bv_preds_and_marg,
-    make_ars_bv_preds_and_marg_co_n(samps = ars_samps_covmat_co_n,
-                                    data = stan_data_adult_ss_covmat)
-  ),
-  tar_target(
-    surv_covmat_co_n_bv_preds_and_marg,
-    make_surv_bv_preds_and_marg_co_n(samps = surv_samps_covmat_co_n,
-                                     data = stan_data_adult_ss_covmat)
-  ),
-  tar_target(
-    nest_bv_preds_and_marg,
-    make_nest_bv_preds_and_marg(samps = nest_samps,
-                                data = stan_data_nestling_covmat)
-  ),
-  tar_target(
-    ars_parent_bv_pred_plot,
-    plot_lines_posterior(df = ars_parent_bv_preds_and_marg$df_pred,
-                         xlab = paste0("Parental breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted ",
-                                       sex,
-                                       " annual reproductive success"),
-                         title = "")
-  ),
-  tar_target(
-    ars_covmat_bv_pred_plot,
-    plot_lines_posterior(df = ars_covmat_bv_preds_and_marg$df_pred,
-                         xlab = paste0("Breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted ",
-                                       sex,
-                                       " annual reproductive success"),
-                         title = "",
-                         data = stan_data_adult_ss_covmat)
-  ),
-  tar_target(
-    ars_covmat_bv_marg_plot,
-    plot_lines_posterior(df = ars_covmat_bv_preds_and_marg$df_marg_pred,
-                         xlab = paste0("Breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted ",
-                                       sex,
-                                       " annual reproductive success"),
-                         title = "",
-                         data = stan_data_adult_ss_covmat)
-  ),
-  tar_target(
-    ars_covmat_co_n_bv_pred_plot,
-    plot_lines_posterior(df = ars_covmat_co_n_bv_preds_and_marg$df_pred,
-                         xlab = paste0("Breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted ",
-                                       sex,
-                                       " annual reproductive success"),
-                         title = "",
-                         data = stan_data_adult_ss_covmat)
-  ),
-  tar_target(
-    ars_covmat_co_n_bv_marg_plot,
-    plot_lines_posterior(df = ars_covmat_co_n_bv_preds_and_marg$df_marg_pred,
-                         xlab = paste0("Breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted ",
-                                       sex,
-                                       " annual reproductive success"),
-                         title = "",
-                         data = stan_data_adult_ss_covmat)
-  ),
-  tar_target(
-    surv_parent_bv_pred_plot,
-    plot_lines_posterior(df = surv_parent_bv_preds_and_marg$df_pred,
-                         xlab = paste0("Parental breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted ", sex," annual survival"),
-                         title = "")
-  ),
-  tar_target(
-    surv_covmat_bv_pred_plot,
-    plot_lines_posterior(df = surv_covmat_bv_preds_and_marg$df_pred,
-                         xlab = paste0("Breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted ", sex," annual survival"),
-                         title = "",
-                         data = stan_data_adult_ss_covmat)
-  ),
-  tar_target(
-    surv_covmat_bv_marg_plot,
-    plot_lines_posterior(df = surv_covmat_bv_preds_and_marg$df_marg,
-                         xlab = paste0("Breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted ", sex," annual survival"),
-                         title = "",
-                         data = stan_data_adult_ss_covmat)
-  ),
-  tar_target(
-    surv_covmat_co_n_bv_pred_plot,
-    plot_lines_posterior(df = surv_covmat_co_n_bv_preds_and_marg$df_pred,
-                         xlab = paste0("Breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted ", sex," annual survival"),
-                         title = "",
-                         data = stan_data_adult_ss_covmat)
-  ),
-  tar_target(
-    surv_covmat_co_n_bv_marg_plot,
-    plot_lines_posterior(df = surv_covmat_co_n_bv_preds_and_marg$df_marg,
-                         xlab = paste0("Breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted ", sex," annual survival"),
-                         title = "",
-                         data = stan_data_adult_ss_covmat)
-  ),
-  tar_target(
-    nest_bv_pred_plot,
-    plot_lines_posterior(df = nest_bv_preds_and_marg$df_pred,
-                         xlab = paste0("Parental breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted nestling survival"),
-                         title = "",
-                         # use this because no ids are repeated
-                         data = data_nestling)
-  ),
-  tar_target(
-    nest_bv_marg_plot,
-    plot_lines_posterior(df = nest_bv_preds_and_marg$df_marg,
-                         xlab = paste0("Parental breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted nestling survival"),
-                         title = "",
-                         data = data_nestling)
-  ),
-  tar_target(
-    ars_bv_pred_plot_poster,
-    plot_lines_posterior(df = ars_covmat_bv_preds_and_marg$df_pred,
-                         xlab = paste0("Breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted ",
-                                       sex,
-                                       " annual reproductive success"),
-                         title = "",
-                         lw = 1.4,
-                         bs = 11 * 1.4)
-  ),
-  tar_target(
-    surv_bv_pred_plot_poster,
-    plot_lines_posterior(df = surv_covmat_bv_preds_and_marg$df_pred,
-                         xlab = paste0("Breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted ", sex," annual survival"),
-                         title = "",
-                         lw = 1.4,
-                         bs = 11 * 1.4)
-  ),
-  tar_target(
-    nest_bv_pred_plot_poster,
-    plot_lines_posterior(df = nest_bv_preds_and_marg$df_pred,
-                         xlab = paste0("Parental breeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted nestling survival"),
-                         title = "",
-                         lw = 1.4,
-                         bs = 11 * 1.4)
-  ),
-  tar_target(
-    ars_parent_bv_pred_plot_pdf,
-    ggsave_path(paste0("figs/ars_parent_bv_pred_", sex_lc, ".pdf"),
-                plot = ars_parent_bv_pred_plot,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
-  ),
-  tar_target(
-    ars_covmat_bv_pred_plot_pdf,
-    ggsave_path(paste0("figs/ars_covmat_bv_pred_", sex_lc, ".pdf"),
-                plot = ars_covmat_bv_pred_plot,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
-  ),
-  tar_target(
-    ars_covmat_co_n_bv_pred_plot_pdf,
-    ggsave_path(paste0("figs/ars_covmat_co_n_bv_pred_", sex_lc, ".pdf"),
-                plot = ars_covmat_co_n_bv_pred_plot,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
-  ),
-  tar_target(
-    surv_parent_bv_pred_plot_pdf,
-    ggsave_path(paste0("figs/surv_parent_bv_pred_", sex_lc, ".pdf"),
-                plot = surv_parent_bv_pred_plot,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
-  ),
-  tar_target(
-    surv_covmat_bv_pred_plot_pdf,
-    ggsave_path(paste0("figs/surv_covmat_bv_pred_", sex_lc, ".pdf"),
-                plot = surv_covmat_bv_pred_plot,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
-  ),
-  tar_target(
-    surv_covmat_co_n_bv_pred_plot_pdf,
-    ggsave_path(paste0("figs/surv_covmat_co_n_bv_pred_", sex_lc, ".pdf"),
-                plot = surv_covmat_co_n_bv_pred_plot,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
-  ),
-  tar_target(
-    nest_bv_pred_plot_pdf,
-    ggsave_path(paste0("figs/nest_bv_pred_", sex_lc, ".pdf"),
-                plot = nest_bv_pred_plot,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
-  ),
-  tar_target(
-    nest_bv_pred_plot_poster_pdf,
-    ggsave_path(paste0("figs/nest_bv_pred_", sex_lc, ".pdf"),
-                plot = nest_bv_pred_plot_poster,
-                width = 12.5,
-                height = 12.5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
-  )#,
+  # tar_target(
+  #   stan_adult_surv_ss_covmat_co_n,
+  #   stan(file = stan_file_adult_surv_covmat_co_n,
+  #        data = c(stan_data_adult_ss_covmat,
+  #                 list(Y = stan_data_adult_ss_covmat$survival,
+  #                      alpha_prior_mean = stan_data_adult_ss_covmat$survival_logit_mean,
+  #                      beta_prior_sd = 0.5,
+  #                      exp_rate = sqrt(1 / 0.5^2))),
+  #        iter = 4.8e4,
+  #        warmup = 8e3,
+  #        chains = 16,
+  #        cores = 16,
+  #        control = list(adapt_delta = 0.95),
+  #        pars = c(surv_pars, "beta_co_n", "beta_co_n_std"),
+  #        model_name = paste0("stan_adult_surv_ss_covmat_co_n_", sex_lc),
+  #        thin = 1.6e2) # to keep final object reasonably small
+  # ),
+  # tar_target(
+  #   surv_samps_covmat_co_n,
+  #   get_samps(model = stan_adult_surv_ss_covmat_co_n,
+  #             pars = c(surv_pars, "beta_co_n", "beta_co_n_std"))
+  # ),
+  # tar_target(
+  #   ars_samps_covmat_co_n,
+  #   get_samps(model = stan_adult_ars_ss_covmat_co_n,
+  #             pars = c(ars_pars[-(c(21:25, 27:34, 35:37))], "beta_co_n", "beta_co_n_std"))
+  # ),
+  # tar_target(
+  #   surv_samp_pairs_plot,
+  #   as.data.frame(surv_samps_covmat)[, c("energy", "ll.1", "ye.1", "id.1",
+  #                                        surv_pars[c(1:6, 17:19)])] %>%
+  #     dplyr::mutate(sigma_ll = log(sigma_ll),
+  #                   sigma_ye = log(sigma_ye),
+  #                   sigma_id = log(sigma_id)) %>%
+  #     ggpairs() # aes(color = factor(surv_samps_f$divergent)))
+  # ),
+  # tar_target(
+  #   ars_covmat_co_n_bv_preds_and_marg,
+  #   make_ars_bv_preds_and_marg_co_n(samps = ars_samps_covmat_co_n,
+  #                                   data = stan_data_adult_ss_covmat)
+  # ),
+  # tar_target(
+  #   surv_covmat_co_n_bv_preds_and_marg,
+  #   make_surv_bv_preds_and_marg_co_n(samps = surv_samps_covmat_co_n,
+  #                                    data = stan_data_adult_ss_covmat)
+  # ),
+  # tar_target(
+  #   ars_covmat_co_n_bv_pred_plot,
+  #   plot_lines_posterior(df = ars_covmat_co_n_bv_preds_and_marg$df_pred,
+  #                        xlab = paste0("Breeding value for ",
+  #                                      sex,
+  #                                      " crossover count"),
+  #                        ylab = paste0("Predicted ",
+  #                                      sex,
+  #                                      " annual reproductive success"),
+  #                        title = "",
+  #                        data = stan_data_adult_ss_covmat)
+  # ),
+  # tar_target(
+  #   ars_covmat_co_n_bv_marg_plot,
+  #   plot_lines_posterior(df = ars_covmat_co_n_bv_preds_and_marg$df_marg_pred,
+  #                        xlab = paste0("Breeding value for ",
+  #                                      sex,
+  #                                      " crossover count"),
+  #                        ylab = paste0("Predicted ",
+  #                                      sex,
+  #                                      " annual reproductive success"),
+  #                        title = "",
+  #                        data = stan_data_adult_ss_covmat)
+  # ),
+  # tar_target(
+  #   surv_covmat_co_n_bv_pred_plot,
+  #   plot_lines_posterior(df = surv_covmat_co_n_bv_preds_and_marg$df_pred,
+  #                        xlab = paste0("Breeding value for ",
+  #                                      sex,
+  #                                      " crossover count"),
+  #                        ylab = paste0("Predicted ", sex," annual survival"),
+  #                        title = "",
+  #                        data = stan_data_adult_ss_covmat)
+  # ),
+  # tar_target(
+  #   surv_covmat_co_n_bv_marg_plot,
+  #   plot_lines_posterior(df = surv_covmat_co_n_bv_preds_and_marg$df_marg,
+  #                        xlab = paste0("Breeding value for ",
+  #                                      sex,
+  #                                      " crossover count"),
+  #                        ylab = paste0("Predicted ", sex," annual survival"),
+  #                        title = "",
+  #                        data = stan_data_adult_ss_covmat)
+  # ),
+  # tar_target(
+  #   ars_covmat_co_n_bv_pred_plot_pdf,
+  #   ggsave_path(paste0("figs/ars_covmat_co_n_bv_pred_", sex_lc, ".pdf"),
+  #               plot = ars_covmat_co_n_bv_pred_plot,
+  #               width = 7,
+  #               height = 5,
+  #               device = "pdf"),
+  #   format = "file",
+  #   deployment = "main"
+  # ),
+  # tar_target(
+  #   surv_covmat_co_n_bv_pred_plot_pdf,
+  #   ggsave_path(paste0("figs/surv_covmat_co_n_bv_pred_", sex_lc, ".pdf"),
+  #               plot = surv_covmat_co_n_bv_pred_plot,
+  #               width = 7,
+  #               height = 5,
+  #               device = "pdf"),
+  #   format = "file",
+  #   deployment = "main"
+  # ),
   # tar_target(
   #   ars_ppc,
   #   do_ars_ppc(y = stan_data_adult_ss$sum_recruit,
@@ -988,47 +1251,35 @@ list(
     deployment = "main"
   ),
   tar_target(
-    stan_file_adult_surv_covmat,
-    "r/adult_surv_covmat.stan",
-    format = "file",
+    figureuruurue,
+    list(post_stats_sim_rel_error_ars_adult_f,
+         post_stats_sim_rel_error_ars_adult_m,
+         post_stats_sim_rel_error_surv_adult_f,
+         post_stats_sim_rel_error_surv_adult_m,
+         post_stats_sim_rel_error_ars_parent_f,
+         post_stats_sim_rel_error_ars_parent_m,
+         post_stats_sim_rel_error_surv_parent_f,
+         post_stats_sim_rel_error_surv_parent_m,
+         post_stats_sim_rel_error_nest_f,
+         post_stats_sim_rel_error_nest_m) %>%
+      bind_rows(.id = "model") %>%
+      ggplot(data = .) +
+      geom_boxplot(aes(y = value, group = name)) +
+      facet_grid(samp_type ~ model),
     deployment = "main"
   ),
-  tar_target(
-    stan_file_parent_surv_covmat,
-    "r/parent_surv_covmat.stan",
-    format = "file",
-    deployment = "main"
-  ),
-  tar_target(
-    stan_file_nestling_surv_covmat,
-    "r/nestling_surv_covmat.stan",
-    format = "file",
-    deployment = "main"
-  ),
-  tar_target(
-    stan_file_adult_surv_covmat_co_n,
-    "r/adult_surv_covmat_co_n.stan",
-    format = "file",
-    deployment = "main"
-  ),
-  tar_target(
-    stan_file_adult_ars_zinf_covmat,
-    "r/zinf_ars_covmat.stan",
-    format = "file",
-    deployment = "main"
-  ),
-  tar_target(
-    stan_file_adult_ars_zinf_covmat_co_n,
-    "r/zinf_ars_covmat_co_n.stan",
-    format = "file",
-    deployment = "main"
-  ),
-  tar_target(
-    stan_file_parent_ars_zinf_covmat,
-    "r/parent_zinf_ars_covmat.stan",
-    format = "file",
-    deployment = "main"
-  ),
+  # tar_target(
+  #   stan_file_adult_surv_covmat_co_n,
+  #   "r/adult_surv_covmat_co_n.stan",
+  #   format = "file",
+  #   deployment = "main"
+  # ),
+  # tar_target(
+  #   stan_file_adult_ars_zinf_covmat_co_n,
+  #   "r/zinf_ars_covmat_co_n.stan",
+  #   format = "file",
+  #   deployment = "main"
+  # ),
   tar_target(
     inbreeding,
     find_inbreeding(gsub(x = geno_data_paths[1], ".bed", ""),
@@ -1037,89 +1288,5 @@ list(
                     # Path to plink program:
                     plink_path = plink_path),
     format = "file"
-  ),
-  tar_target(
-    ars_pars,
-    c("alpha",
-      "beta_bv",
-      "beta_bv2",
-      "beta_age_q1",
-      "beta_age_q2",
-      "beta_f",
-      "alpha_std",
-      "beta_bv_std",
-      "beta_bv2_std",
-      "beta_age_q1_std",
-      "beta_age_q2_std",
-      "beta_f_std",
-      "ye",
-      "ll",
-      "id",
-      "bv_lat",
-      "sigma_ll",
-      "sigma_ye",
-      "sigma_id",
-      "alpha_zi",
-      "beta_zi_bv",
-      "beta_zi_bv2",
-      "beta_zi_age_q1",
-      "beta_zi_age_q2",
-      "beta_zi_f",
-      "alpha_zi_std",
-      "beta_zi_bv_std",
-      "beta_zi_bv2_std",
-      "beta_zi_age_q1_std",
-      "beta_zi_age_q2_std",
-      "beta_zi_f_std",
-      "ye_zi",
-      "ll_zi",
-      "id_zi",
-      "sigma_ll_zi",
-      "sigma_ye_zi",
-      "sigma_id_zi",
-      "theta",
-      "y_rep")
-  ),
-  tar_target(
-    surv_pars,
-    c("alpha",
-      "beta_bv",
-      "beta_bv2",
-      "beta_age_q1",
-      "beta_age_q2",
-      "beta_f",
-      "alpha_std",
-      "beta_bv_std",
-      "beta_bv2_std",
-      "beta_age_q1_std",
-      "beta_age_q2_std",
-      "beta_f_std",
-      "ye",
-      "ll",
-      "id",
-      "bv_lat",
-      "sigma_ll",
-      "sigma_ye",
-      "sigma_id",
-      "y_rep")
-  ),
-  tar_target(
-    nest_pars,
-    c("alpha",
-      "beta_bv",
-      "beta_bv2",
-      "beta_f",
-      "alpha_std",
-      "beta_bv_std",
-      "beta_bv2_std",
-      "beta_f_std",
-      "hy",
-      "hi",
-      "par",
-      "bv_lat",
-      "sigma_hi",
-      "sigma_hy",
-      "sigma_par",
-      "y_rep")
   )
 )

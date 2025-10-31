@@ -21,7 +21,7 @@ classical <- function(i,
   mod <- lm(y ~ x, data = df)
 
   # Model using just data perfectly observed
-  mod_perf <- lm(y ~ x, data = df[1:n_perf, ])
+  mod_perf <- lm(y ~ x, data = df[seq_len(n_perf), ])
 
   # Covariate observed with noise
   df$x_noise <- x +
@@ -29,10 +29,10 @@ classical <- function(i,
   # cor(x_noise, x) # check correctness of corr
 
   # Model using just noisy obs
-  mod_noise <- lm(y ~ x_noise, data = df[-(1:n_perf), ])
+  mod_noise <- lm(y ~ x_noise, data = df[-seq_len(n_perf), ])
 
   df$x_mixed <- df$x_noise
-  df$x_mixed[1:n_perf] <- df$x[1:n_perf]
+  df$x_mixed[seq_len(n_perf)] <- df$x[seq_len(n_perf)]
 
   mod_mixed <- lm(y ~ x_mixed, data = df)
 
@@ -48,8 +48,7 @@ classical <- function(i,
     coef_noise_corrected = coef(mod_noise)[2] / cor_x^2,
     sign_perf = summary(mod_perf)$coefficients["x", "Pr(>|t|)"],
     sign_mixed = summary(mod_mixed)$coefficients["x_mixed", "Pr(>|t|)"],
-    sign_noise = summary(mod_noise)$coefficients["x_noise", "Pr(>|t|)"]#,
-    # sign_perf = summary(mod_perf)$coefficients["x", "Pr(>|t|)"]
+    sign_noise = summary(mod_noise)$coefficients["x_noise", "Pr(>|t|)"]
   )
 }
 

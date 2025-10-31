@@ -126,10 +126,14 @@ prep_co_data <- function(recomb_data_path,
   pheno_data
 }
 
-make_adult_ars_gp_data <- function(pheno_data,
-                                   lrs_path,
-                                   fam_path,
-                                   sex_num) {
+make_adult_gp_data <- function(pheno_data,
+                               lrs_path,
+                               lrs_path2,
+                               nestling_path,
+                               ped_path,
+                               fam_path,
+                               sex_num,
+                               sex_keep) {
 
   geno_inds <- fread(file = fam_path, select = 2)$V2
   geno_inds_red <- gsub(x = geno_inds, pattern = "_.+", "")
@@ -177,8 +181,10 @@ make_adult_ars_gp_data <- function(pheno_data,
 make_parent_gp_data <- function(pheno_data,
                                 lrs_path,
                                 lrs_path2,
+                                nestling_path,
                                 fam_path,
                                 ped_path,
+                                sex_num,
                                 sex_keep) {
 
   geno_inds <- fread(file = fam_path, select = 2)$V2
@@ -248,6 +254,7 @@ make_nestling_gp_data <- function(pheno_data,
                                   nestling_path,
                                   fam_path,
                                   ped_path,
+                                  sex_num,
                                   sex_keep) {
 
   geno_inds <- fread(file = fam_path, select = 2)$V2
@@ -314,7 +321,6 @@ make_nestling_gp_data <- function(pheno_data,
 
 make_data_adult <- function(gp_data,
                             gp_model,
-                            bv_samp,
                             lrs_data_path,
                             inbreeding,
                             sex_num,
@@ -331,7 +337,6 @@ make_data_adult <- function(gp_data,
     order(gp_model$summary.random$id1$ID)][gp_data$id1]
   gp_data$bv_sd <- gp_model$summary.random$id1$sd[
     order(gp_model$summary.random$id1$ID)][gp_data$id1]
-  gp_data$bv_samp <- bv_samp[order(gp_model$summary.random$id1$ID)][gp_data$id1]
 
   # Remove inds with missing sex
   lrs %<>% dplyr::filter(!is.na(sex))
@@ -345,7 +350,6 @@ make_data_adult <- function(gp_data,
 
   lrs$bv_mean <- gp_data$bv_mean[match(lrs$ringnr, gp_data$id_red)]
   lrs$bv_sd <- gp_data$bv_sd[match(lrs$ringnr, gp_data$id_red)]
-  lrs$bv_samp <- gp_data$bv_samp[match(lrs$ringnr, gp_data$id_red)]
   lrs$age <- lrs$year - lrs$hatch_year
 
   lrs$ringnr_num <- match(lrs$ringnr, unique(lrs$ringnr))
@@ -370,68 +374,8 @@ make_data_adult <- function(gp_data,
   lrs
 }
 
-ars_adult_mod_func <- function(data,
-                               bv_colname) {
-  hyperpar_var <- list(
-    prec = list(initial = log(1),
-                prior = "pc.prec",
-                # sd, prob larger than sd
-                param = c(sqrt(1), 0.05),
-                fixed = FALSE))
-
-  effects_vec <- c(bv_colname,
-                   paste0("I(", bv_colname, "^2)"),
-                   "age_q1",
-                   "age_q2",
-                   "fhat3",
-                   "f(y_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
-
-  inla_formula <- reformulate(effects_vec, response = "sum_recruit")
-
-  inla(inla_formula,
-       family = "zeroinflatedpoisson1",
-       control.compute = list(config = TRUE),
-       control.family = list(hyper = list(theta = list(param = c(0, 1 / 1.75^2)))),
-       data = data, verbose = TRUE) %>%
-    INLA::inla.rerun()
-}
-
-surv_adult_mod_func <- function(data,
-                                bv_colname) {
-  hyperpar_var <- list(
-    prec = list(initial = log(1),
-                prior = "pc.prec",
-                # sd, prob larger than sd
-                param = c(sqrt(1), 0.05),
-                fixed = FALSE))
-
-  effects_vec <- c(bv_colname,
-                   paste0("I(", bv_colname, "^2)"),
-                   "age_q1",
-                   "age_q2",
-                   "fhat3",
-                   "f(y_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
-
-  inla_formula <- reformulate(effects_vec, response = "survival")
-
-  inla(inla_formula,
-       family = "binomial",
-       control.compute = list(config = TRUE),
-       control.family = list(link = "logit"),
-       data = data,
-       verbose = TRUE) %>%
-    INLA::inla.rerun()
-}
-
 make_data_parent <- function(gp_data,
                              gp_model,
-                             bv_samp,
                              lrs_data_path,
                              inbreeding,
                              sex_num,
@@ -452,7 +396,6 @@ make_data_parent <- function(gp_data,
     order(gp_model$summary.random$id1$ID)][gp_data$id1]
   gp_data$bv_sd <- gp_model$summary.random$id1$sd[
     order(gp_model$summary.random$id1$ID)][gp_data$id1]
-  gp_data$bv_samp <- bv_samp[order(gp_model$summary.random$id1$ID)][gp_data$id1]
 
   # Remove inds with missing sex
   lrs %<>% dplyr::filter(!is.na(sex))
@@ -482,7 +425,6 @@ make_data_parent <- function(gp_data,
   }
   lrs$bv_mean <- gp_data$bv_mean[match(lrs$parent, gp_data$id_red)]
   lrs$bv_sd <- gp_data$bv_sd[match(lrs$parent, gp_data$id_red)]
-  lrs$bv_samp <- gp_data$bv_samp[match(lrs$ringnr, gp_data$id_red)]
 
   # Add age
   lrs$age <- lrs$year - lrs$hatch_year
@@ -500,7 +442,7 @@ make_data_parent <- function(gp_data,
 
   # # Number of crossover measurements
   lrs$co_n <- gp_data$n[match(lrs$parent, gp_data$id_red)]
-  lrs %>% mutate(co_n = ifelse(is.na(co_n), 0, co_n))
+  lrs %<>% mutate(co_n = ifelse(is.na(co_n), 0, co_n))
   lrs$co_meas <- (lrs$co_n > 0)
 
   age_poly <- poly(lrs$age, degree = 2)
@@ -510,73 +452,12 @@ make_data_parent <- function(gp_data,
   lrs
 }
 
-ars_parent_mod_func <- function(data,
-                                bv_colname) {
-  hyperpar_var <- list(
-    prec = list(initial = log(1),
-                prior = "pc.prec",
-                # sd, prob larger than sd
-                param = c(sqrt(1), 0.05),
-                fixed = FALSE))
-
-  effects_vec <- c(bv_colname,
-                   paste0("I(", bv_colname, "^2)"),
-                   "age_q1",
-                   "age_q2",
-                   "fhat3",
-                   "f(y_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(parent_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
-
-  inla_formula <- reformulate(effects_vec, response = "sum_recruit")
-
-  inla(inla_formula,
-       family = "zeroinflatedpoisson1",
-       control.compute = list(config = TRUE),
-       control.family = list(hyper = list(theta = list(param = c(0, 1 / 1.75^2)))),
-       data = data, verbose = TRUE) %>%
-    INLA::inla.rerun()
-}
-
-surv_parent_mod_func <- function(data,
-                                 bv_colname) {
-  hyperpar_var <- list(
-    prec = list(initial = log(1),
-                prior = "pc.prec",
-                # sd, prob larger than sd
-                param = c(sqrt(1), 0.05),
-                fixed = FALSE))
-
-  effects_vec <- c(bv_colname,
-                   paste0("I(", bv_colname, "^2)"),
-                   "age_q1",
-                   "age_q2",
-                   "fhat3",
-                   "f(y_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(parent_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
-
-  inla_formula <- reformulate(effects_vec, response = "survival")
-
-  inla(inla_formula,
-       family = "binomial",
-       control.compute = list(config = TRUE),
-       control.family = list(link = "logit"),
-       data = data,
-       verbose = TRUE) %>%
-    INLA::inla.rerun()
-}
-
-make_data_nestling <- function(gp_data,
-                               gp_model,
-                               nestling_data_path,
-                               inbreeding,
-                               sex_num,
-                               ped_path) {
+make_data_nest <- function(gp_data,
+                           gp_model,
+                           nestling_data_path,
+                           inbreeding,
+                           sex_num,
+                           ped_path) {
 
   nest <- fread(file = nestling_data_path)
 
@@ -623,10 +504,292 @@ make_data_nestling <- function(gp_data,
 
   # # Number of crossover measurements
   nest$co_n <- gp_data$n[match(nest$parent, gp_data$id_red)]
-  nest %>% mutate(co_n = ifelse(is.na(co_n), 0, co_n))
+  nest %<>% mutate(co_n = ifelse(is.na(co_n), 0, co_n))
   nest$co_meas <- (nest$co_n > 0)
 
-  nest[order(nest$co_meas), ]
+  nest$idx <- seq_len(nrow(nest))
+  nest
+}
+
+ars_adult_mod_func <- function(data,
+                               bv_colname,
+                               bv_samp = NULL,
+                               gp_data = NULL) {
+  hyperpar_var <- list(
+    prec = list(initial = log(1),
+                prior = "pc.prec",
+                # sd, prob larger than sd
+                param = c(sqrt(1), 0.05),
+                fixed = FALSE))
+
+  if (bv_colname == "bv_samp") {
+    if ("parent" %in% colnames(data))
+      data$bv_samp <- bv_samp[match(data$parent, gp_data$id_red)]
+    else
+      data$bv_samp <- bv_samp[match(data$ringnr, gp_data$id_red)]
+  }
+
+  data$bv <- getElement(data, bv_colname)
+  data$bv2 <- (data$bv)^2
+
+  effects_vec <- c("bv",
+                   "bv2",
+                   "age_q1",
+                   "age_q2",
+                   "fhat3",
+                   "f(y_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+
+  inla_formula <- reformulate(effects_vec, response = "sum_recruit")
+
+  inla(inla_formula,
+       family = "zeroinflatedpoisson1",
+       control.compute = list(config = TRUE),
+       control.family = list(hyper = list(theta = list(param = c(0, 1 / 1.75^2)))),
+       data = data, verbose = TRUE) %>%
+    INLA::inla.rerun()
+}
+
+surv_adult_mod_func <- function(data,
+                                bv_colname,
+                                bv_samp = NULL,
+                                gp_data = NULL) {
+  hyperpar_var <- list(
+    prec = list(initial = log(1),
+                prior = "pc.prec",
+                # sd, prob larger than sd
+                param = c(sqrt(1), 0.05),
+                fixed = FALSE))
+
+  if (bv_colname == "bv_samp") {
+    if ("parent" %in% colnames(data))
+      data$bv_samp <- bv_samp[match(data$parent, gp_data$id_red)]
+    else
+      data$bv_samp <- bv_samp[match(data$ringnr, gp_data$id_red)]
+  }
+
+  data$bv <- getElement(data, bv_colname)
+  data$bv2 <- (data$bv)^2
+
+  effects_vec <- c("bv",
+                   "bv2",
+                   "age_q1",
+                   "age_q2",
+                   "fhat3",
+                   "f(y_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+
+  inla_formula <- reformulate(effects_vec, response = "survival")
+
+  inla(inla_formula,
+       family = "binomial",
+       control.compute = list(config = TRUE),
+       control.family = list(link = "logit"),
+       data = data,
+       verbose = TRUE) %>%
+    INLA::inla.rerun()
+}
+
+ars_parent_mod_func <- function(data,
+                                bv_colname,
+                                bv_samp = NULL,
+                                gp_data = NULL) {
+  hyperpar_var <- list(
+    prec = list(initial = log(1),
+                prior = "pc.prec",
+                # sd, prob larger than sd
+                param = c(sqrt(1), 0.05),
+                fixed = FALSE))
+
+  if (bv_colname == "bv_samp") {
+    if ("parent" %in% colnames(data))
+      data$bv_samp <- bv_samp[match(data$parent, gp_data$id_red)]
+    else
+      data$bv_samp <- bv_samp[match(data$ringnr, gp_data$id_red)]
+  }
+
+  data$bv <- getElement(data, bv_colname)
+  data$bv2 <- (data$bv)^2
+
+  effects_vec <- c("bv",
+                   "bv2",
+                   "age_q1",
+                   "age_q2",
+                   "fhat3",
+                   "f(y_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(parent_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+
+  inla_formula <- reformulate(effects_vec, response = "sum_recruit")
+
+  inla(inla_formula,
+       family = "zeroinflatedpoisson1",
+       control.compute = list(config = TRUE),
+       control.family = list(hyper = list(theta = list(param = c(0, 1 / 1.75^2)))),
+       data = data, verbose = TRUE) %>%
+    INLA::inla.rerun()
+}
+
+surv_parent_mod_func <- function(data,
+                                 bv_colname,
+                                 bv_samp = NULL,
+                                 gp_data = NULL) {
+  hyperpar_var <- list(
+    prec = list(initial = log(1),
+                prior = "pc.prec",
+                # sd, prob larger than sd
+                param = c(sqrt(1), 0.05),
+                fixed = FALSE))
+
+  if (bv_colname == "bv_samp") {
+    if ("parent" %in% colnames(data))
+      data$bv_samp <- bv_samp[match(data$parent, gp_data$id_red)]
+    else
+      data$bv_samp <- bv_samp[match(data$ringnr, gp_data$id_red)]
+  }
+
+  data$bv <- getElement(data, bv_colname)
+  data$bv2 <- (data$bv)^2
+
+  effects_vec <- c("bv",
+                   "bv2",
+                   "age_q1",
+                   "age_q2",
+                   "fhat3",
+                   "f(y_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(parent_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+
+  inla_formula <- reformulate(effects_vec, response = "survival")
+
+  inla(inla_formula,
+       family = "binomial",
+       control.compute = list(config = TRUE),
+       control.family = list(link = "logit"),
+       data = data,
+       verbose = TRUE) %>%
+    INLA::inla.rerun()
+}
+
+nest_mod_func <- function(data,
+                          bv_colname,
+                          bv_samp = NULL,
+                          gp_data = NULL) {
+  hyperpar_var <- list(
+    prec = list(initial = log(1),
+                prior = "pc.prec",
+                # sd, prob larger than sd
+                param = c(sqrt(1), 0.05),
+                fixed = FALSE))
+
+  if (bv_colname == "bv_samp") {
+    if ("parent" %in% colnames(data))
+      data$bv_samp <- bv_samp[match(data$parent, gp_data$id_red)]
+    else
+      data$bv_samp <- bv_samp[match(data$ringnr, gp_data$id_red)]
+  }
+
+  data$bv <- getElement(data, bv_colname)
+  data$bv2 <- (data$bv)^2
+
+  effects_vec <- c("bv",
+                   "bv2",
+                   "fhat3",
+                   "f(hy_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(hi_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(parent_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+
+  inla_formula <- reformulate(effects_vec, response = "recruit")
+
+  inla(inla_formula,
+       family = "binomial",
+       control.compute = list(config = TRUE),
+       control.family = list(link = "logit"),
+       data = data,
+       verbose = TRUE) %>%
+    INLA::inla.rerun()
+}
+
+ars_adult_parsamp <- function(s) {
+  c("alpha"= (Intercept),
+    "beta_bv" = bv,
+    "beta_bv2" = bv2,
+    "beta_age_q1" = age_q1,
+    "beta_age_q2" = age_q2,
+    "beta_f" = fhat3,
+    "alpha_zi" = log(theta[1] / (1 - theta[1])),
+    "sigma_ye" = sqrt(1 / theta[2]),
+    "sigma_ll" = sqrt(1 / theta[3]),
+    "sigma_id" = sqrt(1 / theta[4]),
+    "sigma_res" = sqrt(1 / theta[5]))
+}
+
+surv_adult_parsamp <- function(s) {
+  c("alpha"= (Intercept),
+    "beta_bv" = bv,
+    "beta_bv2" = bv2,
+    "beta_age_q1" = age_q1,
+    "beta_age_q2" = age_q2,
+    "beta_f" = fhat3,
+    "sigma_ye" = sqrt(1 / theta[1]),
+    "sigma_ll" = sqrt(1 / theta[2]),
+    "sigma_id" = sqrt(1 / theta[3]),
+    "sigma_res" = sqrt(1 / theta[4]))
+}
+
+ars_parent_parsamp <- function(s) {
+  c("alpha"= (Intercept),
+    "beta_bv" = bv,
+    "beta_bv2" = bv2,
+    "beta_age_q1" = age_q1,
+    "beta_age_q2" = age_q2,
+    "beta_f" = fhat3,
+    "alpha_zi" = log(theta[1] / (1 - theta[1])),
+    "sigma_ye" = sqrt(1 / theta[2]),
+    "sigma_ll" = sqrt(1 / theta[3]),
+    "sigma_id" = sqrt(1 / theta[4]),
+    "sigma_par" = sqrt(1 / theta[5]),
+    "sigma_res" = sqrt(1 / theta[6]))
+}
+
+surv_parent_parsamp <- function(s) {
+  c("alpha"= (Intercept),
+    "beta_bv" = bv,
+    "beta_bv2" = bv2,
+    "beta_age_q1" = age_q1,
+    "beta_age_q2" = age_q2,
+    "beta_f" = fhat3,
+    "sigma_ye" = sqrt(1 / theta[1]),
+    "sigma_ll" = sqrt(1 / theta[2]),
+    "sigma_id" = sqrt(1 / theta[3]),
+    "sigma_par" = sqrt(1 / theta[4]),
+    "sigma_res" = sqrt(1 / theta[5]))
+}
+
+nest_parsamp <- function(s) {
+  c("alpha"= (Intercept),
+    "beta_bv" = bv,
+    "beta_bv2" = bv2,
+    "beta_f" = fhat3,
+    "sigma_hy" = sqrt(1 / theta[1]),
+    "sigma_hi" = sqrt(1 / theta[2]),
+    "sigma_par" = sqrt(1 / theta[3]),
+    "sigma_res" = sqrt(1 / theta[4]))
+}
+
+samp_sampmod <- function(model, func, n_samp = 3) {
+
+  inla.posterior.sample(n = n_samp, result = model, add.names = FALSE) %>%
+    inla.posterior.sample.eval(fun = func, samples = .)
 }
 
 find_inbreeding <- function(bfile,
@@ -967,82 +1130,157 @@ get_bfmi <- function(model) {
   })
 }
 
-make_ars_sim <- function(data,
-                         alpha = -0.08,
-                         beta_bv = 0.1,
-                         beta_bv2 = -0.05,
-                         beta_age = 0.2,
-                         beta_age2 = -0.04,
-                         beta_f = -0.1,
-                         sigma_ye = 0.4,
-                         sigma_ll = 0.4,
-                         sigma_id = 0.6,
-                         phi = 1.7) {
+make_sim_ars_adult <- function(data,
+                               pars) {
 
-  ye <- rnorm(n = data$N_ye, 0, sigma_ye)
-  ll <- rnorm(n = data$N_ll, 0, sigma_ll)
-  id <- rnorm(n = data$N_id, 0, sigma_id)
+  ye <- rnorm(n = max(data$y_num), 0, sd = pars$sigma_ye)
+  ll <- rnorm(n = max(data$ll_num), 0, sd = pars$sigma_ll)
+  id <- rnorm(n = max(data$ringnr_num), 0, sd = pars$sigma_id)
+  idx <- rnorm(n = max(data$idx), 0, sd = pars$sigma_res)
 
-  bv_lat <- rnorm(n = data$N_id, mean = data$bv_mean, sd = data$bv_sd)
+  ye_full <- ye[data$y_num]
+  ll_full <- ll[data$ll_num]
+  id_full <- id[data$ringnr_num]
+  idx_full <- idx[data$idx]
 
-  ye_full = ye[data$ye_idx]
-  ll_full = ll[data$ll_idx]
-  id_full = id[data$id_idx]
-  bv_lat_full = bv_lat[data$id_idx]
-
-  eta <-
-    alpha +
-    beta_bv * bv_lat_full +
-    beta_bv2 * (bv_lat_full)^2 +
-    beta_age * data$age_q1 +
-    beta_age2 * data$age_q2 +
-    beta_f * data$f +
-    ye_full +
-    ll_full +
-    id_full
-
-  mu <- exp(eta)
-  rnbinom(n = data$N, mu = mu, size = phi)
-}
-
-make_surv_sim <- function(data,
-                          alpha = -0.08,
-                          beta_bv = 0.1,
-                          beta_bv2 = -0.05,
-                          beta_age = 0.2,
-                          beta_age2 = -0.04,
-                          beta_f = -0.1,
-                          sigma_ye = 0.4,
-                          sigma_ll = 0.4,
-                          sigma_id = 0.6,
-                          sigma_res = 0.4) {
-
-  ye <- rnorm(n = data$N_ye, 0, sigma_ye)
-  ll <- rnorm(n = data$N_ll, 0, sigma_ll)
-  id <- rnorm(n = data$N_id, 0, sigma_id)
-  res <- rnorm(n = data$N, 0, sd = sigma_res)
-
-  bv_lat <- rnorm(n = data$N_id, mean = data$bv_mean, sd = data$bv_sd)
-
-  ye_full = ye[data$ye_idx]
-  ll_full = ll[data$ll_idx]
-  id_full = id[data$id_idx]
-  bv_lat_full = bv_lat[data$id_idx]
-
-  eta <-
-    alpha +
-    beta_bv * bv_lat_full +
-    beta_bv2 * (bv_lat_full)^2 +
-    beta_age * data$age_q1 +
-    beta_age2 * data$age_q2 +
-    beta_f * data$f +
+  eta <- pars$alpha +
+    pars$beta_bv * data$bv_mean +
+    pars$beta_bv2 * (data$bv_mean)^2 +
+    pars$beta_age_q1 * data$age_q1 +
+    pars$beta_age_q2 * data$age_q2 +
+    pars$beta_f * data$fhat3 +
     ye_full +
     ll_full +
     id_full +
-    res
+    idx_full
 
-  p <- 1 / (1 + exp(-eta))
-  rbinom(n = data$N, p = p, size = 1)
+  pois <- rpois(n = nrow(data), lambda = exp(eta))
+  zeros <- rbinom(n = nrow(data), size = 1, prob = inv_logit(pars$alpha_zi))
+  data$sum_recruit_orig <- data$sum_recruit
+  data$sum_recruit <- pois * (1 - zeros)
+  data
+}
+
+make_sim_surv_adult <- function(data,
+                                pars) {
+
+  ye <- rnorm(n = max(data$y_num), 0, pars$sigma_ye)
+  ll <- rnorm(n = max(data$ll_num), 0, pars$sigma_ll)
+  id <- rnorm(n = max(data$ringnr_num), 0, pars$sigma_id)
+  idx <- rnorm(n = max(data$idx), 0, pars$sigma_res)
+
+  ye_full <- ye[data$y_num]
+  ll_full <- ll[data$ll_num]
+  id_full <- id[data$ringnr_num]
+  idx_full <- idx[data$idx]
+
+  eta <- pars$alpha +
+    pars$beta_bv * data$bv_mean +
+    pars$beta_bv2 * (data$bv_mean)^2 +
+    pars$beta_age_q1 * data$age_q1 +
+    pars$beta_age_q2 * data$age_q2 +
+    pars$beta_f * data$fhat3 +
+    ye_full +
+    ll_full +
+    id_full +
+    idx_full
+
+  data$survival_orig <- data$survival
+  data$survival <- rbinom(n = nrow(data), size = 1, prob = inv_logit(eta))
+  data
+}
+
+make_sim_ars_parent <- function(data,
+                                pars) {
+
+  ye <- rnorm(n = max(data$y_num), 0, pars$sigma_ye)
+  ll <- rnorm(n = max(data$ll_num), 0, pars$sigma_ll)
+  id <- rnorm(n = max(data$ringnr_num), 0, pars$sigma_id)
+  parent <- rnorm(n = max(data$parent_num), 0, pars$sigma_par)
+  idx <- rnorm(n = max(data$idx), 0, pars$sigma_res)
+
+  ye_full <- ye[data$y_num]
+  ll_full <- ll[data$ll_num]
+  id_full <- id[data$ringnr_num]
+  parent_full <- parent[data$parent_num]
+  idx_full <- idx[data$idx]
+
+  eta <- pars$alpha +
+    pars$beta_bv * data$bv_mean +
+    pars$beta_bv2 * (data$bv_mean)^2 +
+    pars$beta_age_q1 * data$age_q1 +
+    pars$beta_age_q2 * data$age_q2 +
+    pars$beta_f * data$fhat3 +
+    ye_full +
+    ll_full +
+    id_full +
+    parent_full +
+    idx_full
+
+  pois <- rpois(n = nrow(data), lambda = exp(eta))
+  zeros <- rbinom(n = nrow(data), size = 1, prob = inv_logit(pars$alpha_zi))
+  data$sum_recruit_orig <- data$sum_recruit
+  data$sum_recruit <- pois * (1 - zeros)
+  data
+}
+
+make_sim_surv_parent <- function(data,
+                                 pars) {
+
+  ye <- rnorm(n = max(data$y_num), 0, pars$sigma_ye)
+  ll <- rnorm(n = max(data$ll_num), 0, pars$sigma_ll)
+  id <- rnorm(n = max(data$ringnr_num), 0, pars$sigma_id)
+  parent <- rnorm(n = max(data$parent_num), 0, pars$sigma_par)
+  idx <- rnorm(n = max(data$idx), 0, pars$sigma_res)
+
+  ye_full <- ye[data$y_num]
+  ll_full <- ll[data$ll_num]
+  id_full <- id[data$ringnr_num]
+  parent_full <- parent[data$parent_num]
+  idx_full <- idx[data$idx]
+
+  eta <- pars$alpha +
+    pars$beta_bv * data$bv_mean +
+    pars$beta_bv2 * (data$bv_mean)^2 +
+    pars$beta_age_q1 * data$age_q1 +
+    pars$beta_age_q2 * data$age_q2 +
+    pars$beta_f * data$fhat3 +
+    ye_full +
+    ll_full +
+    id_full +
+    parent_full +
+    idx_full
+
+  data$survival_orig <- data$survival
+  data$survival <- rbinom(n = nrow(data), size = 1, prob = inv_logit(eta))
+  data
+}
+
+make_sim_nest <- function(data,
+                          pars) {
+
+  hy <- rnorm(n = max(data$hy_num), 0, pars$sigma_hy)
+  hi <- rnorm(n = max(data$hi_num), 0, pars$sigma_hi)
+  parent <- rnorm(n = max(data$parent_num), 0, pars$sigma_par)
+  idx <- rnorm(n = max(data$idx), 0, pars$sigma_res)
+
+  hy_full <- hy[data$hy_num]
+  hi_full <- hi[data$hi_num]
+  parent_full <- parent[data$parent_num]
+  idx_full <- idx[data$idx]
+
+  eta <- pars$alpha +
+    pars$beta_bv * data$bv_mean +
+    pars$beta_bv2 * (data$bv_mean)^2 +
+    pars$beta_f * data$fhat3 +
+    hi_full +
+    hy_full +
+    parent_full +
+    idx_full
+
+  data$recruit_orig <- data$recruit
+  data$recruit <- rbinom(n = nrow(data), size = 1, prob = inv_logit(eta))
+  data
 }
 
 samp_plot_df <- function(x, y, n_samp) {
@@ -1059,11 +1297,12 @@ samp_plot_df <- function(x, y, n_samp) {
 inv_logit <- function(x) 1 / (1 + exp(-x))
 
 make_ars_bv_preds_and_marg <- function(data,
-                                       samps,
+                                       samp,
                                        n_plot = 200) {
-  n_samp <- length(samps$alpha)
+
+  n_samp <- length(samp[[1]])
   avg_age <- mean(data$age)
-  avg_f <- mean(data$f)
+  avg_f <- mean(data$fhat3)
 
   age_poly <- poly(data$age, degree = 2)
   avg_age_q <- predict(age_poly, newdata = mean(data$age))
@@ -1073,24 +1312,17 @@ make_ars_bv_preds_and_marg <- function(data,
   count_pred <- zinf_pred <- array(NA, dim = c(n_samp, n_plot))
   for (i in seq_len(n_samp)) {
     for (j in seq_len(n_plot)) {
-      (samps$alpha[i] +
-         samps$beta_bv[i] * bv[j] +
-         samps$beta_bv2[i] * bv[j]^2 +
-         samps$beta_age_q1[i] * avg_age_q[, 1] +
-         samps$beta_age_q2[i] * avg_age_q[, 2] +
-         samps$beta_f[i] * avg_f) %>%
+      (samp$alpha[i] +
+         samp$beta_bv[i] * bv[j] +
+         samp$beta_bv2[i] * bv[j]^2 +
+         samp$beta_age_q1[i] * avg_age_q[, 1] +
+         samp$beta_age_q2[i] * avg_age_q[, 2] +
+         samp$beta_f[i] * avg_f) %>%
         exp() ->
         count_pred[i, j]
 
-      (samps$alpha_zi[i]# +
-        # samps$beta_zi_bv[i] * bv[j] +
-        # samps$beta_zi_bv2[i] * bv[j]^2 +
-        # samps$beta_zi_age_q1[i] * avg_age_q[, 1] +
-        # samps$beta_zi_age_q2[i] * avg_age_q[, 2] +
-        # samps$beta_zi_f[i] * avg_f
-      ) %>%
-        inv_logit() ->
-        zinf_pred[i, j]
+      zinf_pred[i, j] <- inv_logit(samp$alpha_zi[i])
+
     }
   }
   y_pred <- count_pred * (1 - zinf_pred)
@@ -1099,179 +1331,182 @@ make_ars_bv_preds_and_marg <- function(data,
   df_zinf <- samp_plot_df(y = zinf_pred, x = bv, n_samp = n_samp)
   df_pred <- samp_plot_df(y = y_pred, x = bv, n_samp = n_samp)
 
-  marg_count <- sapply(bv, function(x) samps$beta_bv + 2 * samps$beta_bv2 * x) *
+  marg_count <-
+    sapply(bv, function(x) samp$beta_bv + 2 * samp$beta_bv2 * x) *
     count_pred
   marg_zinf <- matrix(0, nrow = n_samp, ncol = n_plot)
-  # marg_zinf <-  sapply(bv, function(x) samps$beta_zi_bv + 2 * samps$beta_zi_bv2 * x) *
+  # marg_zinf <-  sapply(bv, function(x) samp$beta_zi_bv + 2 * samp$beta_zi_bv2 * x) *
   # zinf_pred *
   # (1 - zinf_pred)
   marg_pred <- sapply(bv, function(x) {
-    samps$beta_bv + # - samps$beta_zi_bv +
-      2 * x * (samps$beta_bv2)# - samps$beta_zi_bv2)
+    samp$beta_bv + # - samp$beta_zi_bv +
+      2 * x * samp$beta_bv2 # - samp$beta_zi_bv2)
   }) * count_pred * (1 - zinf_pred)
 
   df_marg_count <- samp_plot_df(y = marg_count, x = bv, n_samp = n_samp)
   df_marg_zinf <- samp_plot_df(y = marg_zinf, x = bv, n_samp = n_samp)
-  df_marg_pred <- samp_plot_df(y = marg_pred, x = bv, n_samp = n_samp)
+  df_marg <- samp_plot_df(y = marg_pred, x = bv, n_samp = n_samp)
 
-  lst(df_count, df_zinf, df_pred, df_marg_count, df_marg_zinf, df_marg_pred)
+  lst(df_count, df_zinf, df_pred, df_marg_count, df_marg_zinf, df_marg)
 }
 
-make_ars_bv_preds_and_marg_co_n <- function(data,
-                                            samps,
-                                            n_plot = 200) {
-  n_samp <- length(samps$alpha)
-  avg_age <- mean(data$age)
-  avg_f <- mean(data$f)
-  avg_co_n <- mean(data$co_n)
-
-  age_poly <- poly(data$age, degree = 2)
-  avg_age_q <- predict(age_poly, newdata = mean(data$age))
-
-  bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
-
-  count_pred <- zinf_pred <- array(NA, dim = c(n_samp, n_plot))
-  for (i in seq_len(n_samp)) {
-    for (j in seq_len(n_plot)) {
-      (samps$alpha[i] +
-         samps$beta_bv[i] * bv[j] +
-         samps$beta_bv2[i] * bv[j]^2 +
-         samps$beta_age_q1[i] * avg_age_q[, 1] +
-         samps$beta_age_q2[i] * avg_age_q[, 2] +
-         samps$beta_f[i] * avg_f +
-         samps$beta_co_n[i] * avg_co_n) %>%
-        exp() ->
-        count_pred[i, j]
-
-      (samps$alpha_zi[i]# +
-        # samps$beta_zi_bv[i] * bv[j] +
-        # samps$beta_zi_bv2[i] * bv[j]^2 +
-        # samps$beta_zi_age_q1[i] * avg_age_q[, 1] +
-        # samps$beta_zi_age_q2[i] * avg_age_q[, 2] +
-        # samps$beta_zi_f[i] * avg_f
-      ) %>%
-        inv_logit() ->
-        zinf_pred[i, j]
-    }
-  }
-  y_pred <- count_pred * (1 - zinf_pred)
-
-  df_count <- samp_plot_df(y = count_pred, x = bv, n_samp = n_samp)
-  df_zinf <- samp_plot_df(y = zinf_pred, x = bv, n_samp = n_samp)
-  df_pred <- samp_plot_df(y = y_pred, x = bv, n_samp = n_samp)
-
-  marg_count <- sapply(bv, function(x) samps$beta_bv + 2 * samps$beta_bv2 * x) *
-    count_pred
-  marg_zinf <- matrix(0, nrow = n_samp, ncol = n_plot)
-  # marg_zinf <- sapply(bv, function(x) samps$beta_zi_bv + 2 * samps$beta_zi_bv2 * x) *
-  #   zinf_pred *
-  #   (1 - zinf_pred)
-  marg_pred <- sapply(bv, function(x) {
-    samps$beta_bv + # - samps$beta_zi_bv +
-      2 * x * (samps$beta_bv2)# - samps$beta_zi_bv2)
-  }) * count_pred * (1 - zinf_pred)
-
-  df_marg_count <- samp_plot_df(y = marg_count, x = bv, n_samp = n_samp)
-  df_marg_zinf <- samp_plot_df(y = marg_zinf, x = bv, n_samp = n_samp)
-  df_marg_pred <- samp_plot_df(y = marg_pred, x = bv, n_samp = n_samp)
-
-  lst(df_count, df_zinf, df_pred, df_marg_count, df_marg_zinf, df_marg_pred)
-}
+# make_ars_bv_preds_and_marg_co_n <- function(data,
+#                                             samps,
+#                                             n_plot = 200) {
+#   n_samp <- length(samps$alpha)
+#   avg_age <- mean(data$age)
+#   avg_f <- mean(data$f)
+#   avg_co_n <- mean(data$co_n)
+#
+#   age_poly <- poly(data$age, degree = 2)
+#   avg_age_q <- predict(age_poly, newdata = mean(data$age))
+#
+#   bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
+#
+#   count_pred <- zinf_pred <- array(NA, dim = c(n_samp, n_plot))
+#   for (i in seq_len(n_samp)) {
+#     for (j in seq_len(n_plot)) {
+#       (samps$alpha[i] +
+#          samps$beta_bv[i] * bv[j] +
+#          samps$beta_bv2[i] * bv[j]^2 +
+#          samps$beta_age_q1[i] * avg_age_q[, 1] +
+#          samps$beta_age_q2[i] * avg_age_q[, 2] +
+#          samps$beta_f[i] * avg_f +
+#          samps$beta_co_n[i] * avg_co_n) %>%
+#         exp() ->
+#         count_pred[i, j]
+#
+#       (samps$alpha_zi[i]# +
+#         # samps$beta_zi_bv[i] * bv[j] +
+#         # samps$beta_zi_bv2[i] * bv[j]^2 +
+#         # samps$beta_zi_age_q1[i] * avg_age_q[, 1] +
+#         # samps$beta_zi_age_q2[i] * avg_age_q[, 2] +
+#         # samps$beta_zi_f[i] * avg_f
+#       ) %>%
+#         inv_logit() ->
+#         zinf_pred[i, j]
+#     }
+#   }
+#   y_pred <- count_pred * (1 - zinf_pred)
+#
+#   df_count <- samp_plot_df(y = count_pred, x = bv, n_samp = n_samp)
+#   df_zinf <- samp_plot_df(y = zinf_pred, x = bv, n_samp = n_samp)
+#   df_pred <- samp_plot_df(y = y_pred, x = bv, n_samp = n_samp)
+#
+#   marg_count <- sapply(bv, function(x) samps$beta_bv + 2 * samps$beta_bv2 * x) *
+#     count_pred
+#   marg_zinf <- matrix(0, nrow = n_samp, ncol = n_plot)
+#   # marg_zinf <- sapply(bv, function(x) samps$beta_zi_bv + 2 * samps$beta_zi_bv2 * x) *
+#   #   zinf_pred *
+#   #   (1 - zinf_pred)
+#   marg_pred <- sapply(bv, function(x) {
+#     samps$beta_bv + # - samps$beta_zi_bv +
+#       2 * x * (samps$beta_bv2)# - samps$beta_zi_bv2)
+#   }) * count_pred * (1 - zinf_pred)
+#
+#   df_marg_count <- samp_plot_df(y = marg_count, x = bv, n_samp = n_samp)
+#   df_marg_zinf <- samp_plot_df(y = marg_zinf, x = bv, n_samp = n_samp)
+#   df_marg_pred <- samp_plot_df(y = marg_pred, x = bv, n_samp = n_samp)
+#
+#   lst(df_count, df_zinf, df_pred, df_marg_count, df_marg_zinf, df_marg_pred)
+# }
 
 make_surv_bv_preds_and_marg <- function(data,
-                                        samps,
+                                        samp,
                                         n_plot = 200) {
-  n_samp <- length(samps$alpha)
+  n_samp <- length(samp[[1]])
   avg_age <- mean(data$age)
-  avg_f <- mean(data$f)
+  avg_f <- mean(data$fhat3)
 
   age_poly <- poly(data$age, degree = 2)
   avg_age_q <- predict(age_poly, newdata = mean(data$age))
 
   bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
-
   predictor_samples <- array(NA, dim = c(n_samp, n_plot))
+
   for (i in seq_len(n_samp)) {
     for (j in seq_len(n_plot)) {
-      predictor_samples[i, j] <- samps$alpha[i] +
-        samps$beta_bv[i] * bv[j] +
-        samps$beta_bv2[i] * bv[j]^2 +
-        samps$beta_age_q1[i] * avg_age_q[, 1] +
-        samps$beta_age_q2[i] * avg_age_q[, 2] +
-        samps$beta_f[i] * avg_f
+      predictor_samples[i, j] <- samp$alpha[i] +
+        samp$beta_bv[i] * bv[j] +
+        samp$beta_bv2[i] * bv[j]^2 +
+        samp$beta_age_q1[i] * avg_age_q[, 1] +
+        samp$beta_age_q2[i] * avg_age_q[, 2] +
+        samp$beta_f[i] * avg_f
     }
   }
+
   pred_prob_samples <- inv_logit(predictor_samples)
   df_pred <- samp_plot_df(y = pred_prob_samples, x = bv, n_samp = n_samp)
 
   marg_effect <-
-    sapply(bv, function(x) samps$beta_bv + 2 * samps$beta_bv2 * x) *
+    sapply(bv, function(x) samp$beta_bv + 2 * samp$beta_bv2 * x) *
     pred_prob_samples *
     (1 - pred_prob_samples)
+
   df_marg <- samp_plot_df(y = marg_effect, x = bv, n_samp = n_samp)
 
   lst(df_pred, df_marg)
 }
 
-make_surv_bv_preds_and_marg_co_n <- function(data,
-                                             samps,
-                                             n_plot = 200) {
-  n_samp <- length(samps$alpha)
-  avg_age <- mean(data$age)
-  avg_f <- mean(data$f)
-  avg_co_n <- mean(data$co_n)
-
-  age_poly <- poly(data$age, degree = 2)
-  avg_age_q <- predict(age_poly, newdata = mean(data$age))
-
-  bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
-
-  predictor_samples <- array(NA, dim = c(n_samp, n_plot))
-  for (i in seq_len(n_samp)) {
-    for (j in seq_len(n_plot)) {
-      predictor_samples[i, j] <- samps$alpha[i] +
-        samps$beta_bv[i] * bv[j] +
-        samps$beta_bv2[i] * bv[j]^2 +
-        samps$beta_age_q1[i] * avg_age_q[, 1] +
-        samps$beta_age_q2[i] * avg_age_q[, 2] +
-        samps$beta_f[i] * avg_f +
-        samps$beta_co_n[i] * avg_co_n
-    }
-  }
-  pred_prob_samples <- inv_logit(predictor_samples)
-  df_pred <- samp_plot_df(y = pred_prob_samples, x = bv, n_samp = n_samp)
-
-  marg_effect <-
-    sapply(bv, function(x) samps$beta_bv + 2 * samps$beta_bv2 * x) *
-    pred_prob_samples *
-    (1 - pred_prob_samples)
-  df_marg <- samp_plot_df(y = marg_effect, x = bv, n_samp = n_samp)
-
-  lst(df_pred, df_marg)
-}
+# make_surv_bv_preds_and_marg_co_n <- function(data,
+#                                              samps,
+#                                              n_plot = 200) {
+#   n_samp <- length(samps$alpha)
+#   avg_age <- mean(data$age)
+#   avg_f <- mean(data$f)
+#   avg_co_n <- mean(data$co_n)
+#
+#   age_poly <- poly(data$age, degree = 2)
+#   avg_age_q <- predict(age_poly, newdata = mean(data$age))
+#
+#   bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
+#
+#   predictor_samples <- array(NA, dim = c(n_samp, n_plot))
+#   for (i in seq_len(n_samp)) {
+#     for (j in seq_len(n_plot)) {
+#       predictor_samples[i, j] <- samps$alpha[i] +
+#         samps$beta_bv[i] * bv[j] +
+#         samps$beta_bv2[i] * bv[j]^2 +
+#         samps$beta_age_q1[i] * avg_age_q[, 1] +
+#         samps$beta_age_q2[i] * avg_age_q[, 2] +
+#         samps$beta_f[i] * avg_f +
+#         samps$beta_co_n[i] * avg_co_n
+#     }
+#   }
+#   pred_prob_samples <- inv_logit(predictor_samples)
+#   df_pred <- samp_plot_df(y = pred_prob_samples, x = bv, n_samp = n_samp)
+#
+#   marg_effect <-
+#     sapply(bv, function(x) samps$beta_bv + 2 * samps$beta_bv2 * x) *
+#     pred_prob_samples *
+#     (1 - pred_prob_samples)
+#   df_marg <- samp_plot_df(y = marg_effect, x = bv, n_samp = n_samp)
+#
+#   lst(df_pred, df_marg)
+# }
 
 make_nest_bv_preds_and_marg <- function(data,
-                                        samps,
+                                        samp,
                                         n_plot = 200) {
-  n_samp <- length(samps$alpha)
-  avg_f <- mean(data$f)
+  n_samp <- length(samp[[1]])
+  avg_f <- mean(data$fhat3)
 
   bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
 
   predictor_samples <- array(NA, dim = c(n_samp, n_plot))
   for (i in seq_len(n_samp)) {
     for (j in seq_len(n_plot)) {
-      predictor_samples[i, j] <- samps$alpha[i] +
-        samps$beta_bv[i] * bv[j] +
-        samps$beta_bv2[i] * bv[j]^2 +
-        samps$beta_f[i] * avg_f
+      predictor_samples[i, j] <- samp$alpha[i] +
+        samp$beta_bv[i] * bv[j] +
+        samp$beta_bv2[i] * bv[j]^2 +
+        samp$beta_f[i] * avg_f
     }
   }
   pred_prob_samples <- inv_logit(predictor_samples)
   df_pred <- samp_plot_df(y = pred_prob_samples, x = bv, n_samp = n_samp)
 
   marg_effect <-
-    sapply(bv, function(x) samps$beta_bv + 2 * samps$beta_bv2 * x) *
+    sapply(bv, function(x) samp$beta_bv + 2 * samp$beta_bv2 * x) *
     pred_prob_samples *
     (1 - pred_prob_samples)
   df_marg <- samp_plot_df(y = marg_effect, x = bv, n_samp = n_samp)
@@ -1374,43 +1609,7 @@ ggsave_path <- function(filename,
   filename
 }
 
-make_stan_data_adult <- function(data) {
-
-  bv_std_vec <- sapply(X = seq_len(1e3),
-                       FUN = function(i, N, means, sds) rnorm(N, means, sds),
-                       N = nrow(data),
-                       means = data$bv_mean,
-                       sds = data$bv_sd)
-  list(N = nrow(data),
-       sex = data$sex,
-       N_ll = max(data$ll_num),
-       N_ye = max(data$y_num),
-       N_id = max(data$ringnr_num),
-       ye_idx = data$y_num,
-       ll_idx = data$ll_num,
-       id_idx = data$ringnr_num,
-       # Make bv stats same order as ringnr, and give one entry per ind.
-       bv_mean = data$bv_mean[order(data$ringnr_num)][
-         match(unique(data[order(data$ringnr_num)]$ringnr),
-               data[order(data$ringnr_num)]$ringnr)],
-       bv_sd = data$bv_sd[order(data$ringnr_num)][
-         match(unique(data[order(data$ringnr_num)]$ringnr),
-               data[order(data$ringnr_num)]$ringnr)],
-       sum_recruit = data$sum_recruit,
-       sum_recruit_log_mean = log(mean(data$sum_recruit)),
-       survival = data$survival,
-       survival_logit_mean = log(1 / (1 / mean(data$survival) - 1)),
-       age = data$age,
-       age_q1 = poly(data$age, degree = 2)[, 1],
-       age_q2 = poly(data$age, degree = 2)[, 2],
-       f = data$fhat3,
-       bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
-       bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
-       co_n = data$co_n,
-       co_meas = data$co_meas)
-}
-
-make_stan_data_adult_covmat <- function(data, gp_data, covmat) {
+make_stan_data_adult <- function(data, gp_data, covmat) {
 
   # Make bv stats same order as ringnr, and give one entry per ind.
   bv_mean <- data$bv_mean[order(data$ringnr_num)][
@@ -1445,7 +1644,6 @@ make_stan_data_adult_covmat <- function(data, gp_data, covmat) {
        sum_recruit = data$sum_recruit,
        sum_recruit_log_mean = log(mean(data$sum_recruit)),
        survival = data$survival,
-       survival_logit_mean = log(1 / (1 / mean(data$survival) - 1)),
        age = data$age,
        age_q1 = poly(data$age, degree = 2)[, 1],
        age_q2 = poly(data$age, degree = 2)[, 2],
@@ -1453,10 +1651,21 @@ make_stan_data_adult_covmat <- function(data, gp_data, covmat) {
        bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
        bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
        co_n = data$co_n,
-       co_meas = data$co_meas)
+       co_meas = data$co_meas,
+       beta_prior_sd_ars = 0.2,
+       exp_rate_ars = 1 / 0.2,
+       beta_prior_sd_surv = 0.5,
+       exp_rate_surv = 1 / 0.5,
+       beta_zi_prior_sd = 0.5,
+       exp_rate_zi = 1 / 0.5,
+       alpha_zi_prior_mean = log(mean(data$sum_recruit == 0) /
+                                   (1 - mean(data$sum_recruit == 0))),
+       alpha_prior_mean_surv = log(1 / (1 / mean(data$survival) - 1)),
+       alpha_prior_mean_ars = log(mean(data$sum_recruit[data$sum_recruit != 0]))
+  )
 }
 
-make_stan_data_parent_covmat <- function(data, gp_data, covmat) {
+make_stan_data_parent <- function(data, gp_data, covmat) {
 
   # Make bv stats same order as ringnr, and give one entry per ind.
   bv_mean <- data$bv_mean[order(data$parent_num)][
@@ -1505,10 +1714,20 @@ make_stan_data_parent_covmat <- function(data, gp_data, covmat) {
          bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
          bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
          co_n = data$co_n,
-         co_meas = data$co_meas)
+         co_meas = data$co_meas,
+         beta_prior_sd_ars = 0.2,
+         exp_rate_ars = 1 / 0.2,
+         beta_prior_sd_surv = 0.5,
+         exp_rate_surv = 1 / 0.5,
+         beta_zi_prior_sd = 0.5,
+         exp_rate_zi = 1 / 0.5,
+         alpha_zi_prior_mean = log(mean(data$sum_recruit == 0) /
+                                     (1 - mean(data$sum_recruit == 0))),
+         alpha_prior_mean_surv = log(1 / (1 / mean(data$survival) - 1)),
+         alpha_prior_mean_ars = log(mean(data$sum_recruit[data$sum_recruit != 0])))
 }
 
-make_stan_data_nestling_covmat <- function(data, gp_data, covmat) {
+make_stan_data_nest <- function(data, gp_data, covmat) {
 
   # Make bv stats same order as ringnr, and give one entry per parent
   bv_mean <- data$bv_mean[order(data$parent_num)][
@@ -1542,12 +1761,18 @@ make_stan_data_nestling_covmat <- function(data, gp_data, covmat) {
        bv_covmat = bv_covmat,
        bv_covmat_chol = t(chol(bv_covmat)), # pre-multiply this with z-vec
        recruit = data$recruit,
-       recruit_logit_mean = log(1 / (1 / mean(data$recruit) - 1)),
+       alpha_prior_mean_nestling = log(1 / (1 / mean(data$recruit) - 1)),
        f = data$fhat3,
        bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
        bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
        co_n = data$co_n,
-       co_meas = data$co_meas)
+       co_meas = data$co_meas,
+       beta_prior_sd_ars = 0.2,
+       exp_rate_ars = 1 / 0.2,
+       beta_prior_sd_surv = 0.5,
+       exp_rate_surv = 1 / 0.5,
+       beta_zi_prior_sd = 0.5,
+       exp_rate_zi = 1 / 0.5)
 }
 
 do_ars_ppc <- function(y, yrep, ll_i, ye_i, id_i) {
@@ -1621,4 +1846,18 @@ inla_bv_covmat <- function(model, n_samp = 1e4, ncores) {
   # Same order as pheno_data
   covmat[order(model$summary.random$id1$ID),
          order(model$summary.random$id1$ID)]
+}
+
+
+sim_func_ars_adult <- function(data) {
+
+  zip_prob <- 0.3
+
+  ll_levels <- rnorm(n_ll, 0, sd = sqrt(1))
+  y_levels <- rnorm(n_, 0, sd = sqrt(1))
+  id_levels <- rnorm(n_id, 0, sd = sqrt(1))
+  idx_levels <- rnorm(n_id, 0, sd = sqrt(1))
+
+  mu <- 1 + 1 * bv + 1 * bv^2 + 1 * age + 1 * age^2 + 1 * fhat3
+
 }

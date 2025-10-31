@@ -14,10 +14,10 @@ data {
   real bv_mean_std;                  // Constant used to standardize the vector of breeding values
   real bv_sd_std;                    // Constant used to standardize the vector of breeding values
   int<lower=0,upper=1> Y[N];             // Response variable (yearly survival)
-  real<lower=0> exp_rate;                // Rate in exponential priors
+  real<lower=0> exp_rate_surv;                // Rate in exponential priors
   // Parameters for the priors on coefficients:
-  real alpha_prior_mean;
-  real<lower=0> beta_prior_sd;
+  real alpha_prior_mean_surv;
+  real<lower=0> beta_prior_sd_surv;
 }
 
 transformed data {
@@ -64,22 +64,22 @@ parameters {
 }
 
 transformed parameters {
-  real<lower=0> sigma_ye = -log(sigma_ye_raw) / exp_rate;
-  real<lower=0> sigma_ll = -log(sigma_ll_raw) / exp_rate;
-  real<lower=0> sigma_id = -log(sigma_id_raw) / exp_rate;
-  // real<lower=0> sigma_res = -log(sigma_res_raw) / exp_rate;
+  real<lower=0> sigma_ye = -log(sigma_ye_raw) / exp_rate_surv;
+  real<lower=0> sigma_ll = -log(sigma_ll_raw) / exp_rate_surv;
+  real<lower=0> sigma_id = -log(sigma_id_raw) / exp_rate_surv;
+  // real<lower=0> sigma_res = -log(sigma_res_raw) / exp_rate_surv;
   vector[N_ye] ye = z_ye * sigma_ye;                // Levels in year random effect
   vector[N_ll] ll = z_ll * sigma_ll;                // Levels in last locality random effect
   vector[N_id] id = z_id * sigma_id;                // Levels in identity random effect
   // vector[N] res = z_res * sigma_res;             // Levels in residual random effect
 
   // Full bv vector (non-centered parameterization berkson errored GP results)
-  real alpha_std = alpha_prior_mean + beta_prior_sd * z_alpha;
-  real beta_bv_std = beta_prior_sd * z_beta_bv;
-  real beta_bv2_std = beta_prior_sd * z_beta_bv2 / sqrt(2);
-  real beta_age_q1_std = beta_prior_sd * z_beta_age_q1;
-  real beta_age_q2_std = beta_prior_sd * z_beta_age_q2;
-  real beta_f_std = beta_prior_sd * z_beta_f;
+  real alpha_std = alpha_prior_mean_surv + beta_prior_sd_surv * z_alpha;
+  real beta_bv_std = beta_prior_sd_surv * z_beta_bv;
+  real beta_bv2_std = beta_prior_sd_surv * z_beta_bv2 / sqrt(2);
+  real beta_age_q1_std = beta_prior_sd_surv * z_beta_age_q1;
+  real beta_age_q2_std = beta_prior_sd_surv * z_beta_age_q2;
+  real beta_f_std = beta_prior_sd_surv * z_beta_f;
 
   vector[N_id] bv_lat = bv_mean + bv_covmat_chol * z_bv;
 

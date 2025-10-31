@@ -15,12 +15,12 @@ data {
   real bv_sd_std;                    // Constant used to standardize the vector of breeding values
   int<lower=0> Y[N];                 // Response variable (yearly number of offspring)
   // Rate in exponential priors
-  real<lower=0> exp_rate;
+  real<lower=0> exp_rate_ars;
   real<lower=0> exp_rate_zi;
   // real<lower=0> phi_inv_rate;
   // Parameters for the priors on coefficients:
-  real alpha_prior_mean;
-  real<lower=0> beta_prior_sd;
+  real alpha_prior_mean_ars;
+  real<lower=0> beta_prior_sd_ars;
   real alpha_zi_prior_mean;
   real<lower=0> beta_zi_prior_sd;
 }
@@ -89,13 +89,13 @@ parameters {
 
 transformed parameters {
   //  Transform random effect standard deviations from uniform to exponential
-  real<lower=0> sigma_ye = -log(sigma_ye_raw) / exp_rate;
-  real<lower=0> sigma_ll = -log(sigma_ll_raw) / exp_rate;
-  real<lower=0> sigma_id = -log(sigma_id_raw) / exp_rate;
-  // real<lower=0> sigma_ye_zi = -log(sigma_ye_zi_raw) / exp_rate;
-  // real<lower=0> sigma_ll_zi = -log(sigma_ll_zi_raw) / exp_rate;
-  // real<lower=0> sigma_id_zi = -log(sigma_id_zi_raw) / exp_rate;
-  // real<lower=0> sigma_res_zi = -log(sigma_res_zi_raw) / exp_rate;
+  real<lower=0> sigma_ye = -log(sigma_ye_raw) / exp_rate_ars;
+  real<lower=0> sigma_ll = -log(sigma_ll_raw) / exp_rate_ars;
+  real<lower=0> sigma_id = -log(sigma_id_raw) / exp_rate_ars;
+  // real<lower=0> sigma_ye_zi = -log(sigma_ye_zi_raw) / exp_rate_ars;
+  // real<lower=0> sigma_ll_zi = -log(sigma_ll_zi_raw) / exp_rate_ars;
+  // real<lower=0> sigma_id_zi = -log(sigma_id_zi_raw) / exp_rate_ars;
+  // real<lower=0> sigma_res_zi = -log(sigma_res_zi_raw) / exp_rate_ars;
   // Levels in random effects:
   vector[N_ye] ye = z_ye * sigma_ye;
   vector[N_ll] ll = z_ll * sigma_ll;
@@ -110,12 +110,12 @@ transformed parameters {
   // real<lower=0> phi = 1 / phi_inv;
 
   // Count component coefficients
-  real alpha_std = alpha_prior_mean + beta_prior_sd * z_alpha;
-  real beta_bv_std = beta_prior_sd * z_beta_bv;
-  real beta_bv2_std = beta_prior_sd * z_beta_bv2 / sqrt(2);
-  real beta_age_q1_std = beta_prior_sd * z_beta_age_q1;
-  real beta_age_q2_std = beta_prior_sd * z_beta_age_q2;
-  real beta_f_std = beta_prior_sd * z_beta_f;
+  real alpha_std = alpha_prior_mean_ars + beta_prior_sd_ars * z_alpha;
+  real beta_bv_std = beta_prior_sd_ars * z_beta_bv;
+  real beta_bv2_std = beta_prior_sd_ars * z_beta_bv2 / sqrt(2);
+  real beta_age_q1_std = beta_prior_sd_ars * z_beta_age_q1;
+  real beta_age_q2_std = beta_prior_sd_ars * z_beta_age_q2;
+  real beta_f_std = beta_prior_sd_ars * z_beta_f;
   // Standardized zero-inflation regression coefficients
   real alpha_zi_std = alpha_zi_prior_mean + beta_zi_prior_sd * z_alpha_zi;
   // real beta_zi_bv_std = beta_zi_prior_sd * z_beta_zi_bv;
