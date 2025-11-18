@@ -1131,7 +1131,11 @@ get_bfmi <- function(model) {
 }
 
 make_sim_ars_adult <- function(data,
+                               stan_data,
                                pars) {
+
+  bv <- rmvnorm(1, stan_data$bv_mean, stan_data$bv_covmat)[1, ]
+  data$bv_true <- bv[stan_data$id_idx]
 
   ye <- rnorm(n = max(data$y_num), 0, sd = pars$sigma_ye)
   ll <- rnorm(n = max(data$ll_num), 0, sd = pars$sigma_ll)
@@ -1144,8 +1148,8 @@ make_sim_ars_adult <- function(data,
   idx_full <- idx[data$idx]
 
   eta <- pars$alpha +
-    pars$beta_bv * data$bv_mean +
-    pars$beta_bv2 * (data$bv_mean)^2 +
+    pars$beta_bv * data$bv_true +
+    pars$beta_bv2 * (data$bv_true)^2 +
     pars$beta_age_q1 * data$age_q1 +
     pars$beta_age_q2 * data$age_q2 +
     pars$beta_f * data$fhat3 +
@@ -1162,7 +1166,11 @@ make_sim_ars_adult <- function(data,
 }
 
 make_sim_surv_adult <- function(data,
+                                stan_data,
                                 pars) {
+
+  bv <- rmvnorm(1, stan_data$bv_mean, stan_data$bv_covmat)[1, ]
+  data$bv_true <- bv[stan_data$id_idx]
 
   ye <- rnorm(n = max(data$y_num), 0, pars$sigma_ye)
   ll <- rnorm(n = max(data$ll_num), 0, pars$sigma_ll)
@@ -1175,8 +1183,8 @@ make_sim_surv_adult <- function(data,
   idx_full <- idx[data$idx]
 
   eta <- pars$alpha +
-    pars$beta_bv * data$bv_mean +
-    pars$beta_bv2 * (data$bv_mean)^2 +
+    pars$beta_bv * data$bv_true +
+    pars$beta_bv2 * (data$bv_true)^2 +
     pars$beta_age_q1 * data$age_q1 +
     pars$beta_age_q2 * data$age_q2 +
     pars$beta_f * data$fhat3 +
@@ -1191,7 +1199,11 @@ make_sim_surv_adult <- function(data,
 }
 
 make_sim_ars_parent <- function(data,
+                                stan_data,
                                 pars) {
+
+  bv <- rmvnorm(1, stan_data$bv_mean, stan_data$bv_covmat)[1, ]
+  data$bv_true <- bv[stan_data$par_idx]
 
   ye <- rnorm(n = max(data$y_num), 0, pars$sigma_ye)
   ll <- rnorm(n = max(data$ll_num), 0, pars$sigma_ll)
@@ -1206,8 +1218,8 @@ make_sim_ars_parent <- function(data,
   idx_full <- idx[data$idx]
 
   eta <- pars$alpha +
-    pars$beta_bv * data$bv_mean +
-    pars$beta_bv2 * (data$bv_mean)^2 +
+    pars$beta_bv * data$bv_true +
+    pars$beta_bv2 * (data$bv_true)^2 +
     pars$beta_age_q1 * data$age_q1 +
     pars$beta_age_q2 * data$age_q2 +
     pars$beta_f * data$fhat3 +
@@ -1225,7 +1237,11 @@ make_sim_ars_parent <- function(data,
 }
 
 make_sim_surv_parent <- function(data,
+                                 stan_data,
                                  pars) {
+
+  bv <- rmvnorm(1, stan_data$bv_mean, stan_data$bv_covmat)[1, ]
+  data$bv_true <- bv[stan_data$par_idx]
 
   ye <- rnorm(n = max(data$y_num), 0, pars$sigma_ye)
   ll <- rnorm(n = max(data$ll_num), 0, pars$sigma_ll)
@@ -1240,8 +1256,8 @@ make_sim_surv_parent <- function(data,
   idx_full <- idx[data$idx]
 
   eta <- pars$alpha +
-    pars$beta_bv * data$bv_mean +
-    pars$beta_bv2 * (data$bv_mean)^2 +
+    pars$beta_bv * data$bv_true +
+    pars$beta_bv2 * (data$bv_true)^2 +
     pars$beta_age_q1 * data$age_q1 +
     pars$beta_age_q2 * data$age_q2 +
     pars$beta_f * data$fhat3 +
@@ -1257,7 +1273,11 @@ make_sim_surv_parent <- function(data,
 }
 
 make_sim_nest <- function(data,
+                          stan_data,
                           pars) {
+
+  bv <- rmvnorm(1, stan_data$bv_mean, stan_data$bv_covmat)[1, ]
+  data$bv_true <- bv[stan_data$par_idx]
 
   hy <- rnorm(n = max(data$hy_num), 0, pars$sigma_hy)
   hi <- rnorm(n = max(data$hi_num), 0, pars$sigma_hi)
@@ -1270,8 +1290,8 @@ make_sim_nest <- function(data,
   idx_full <- idx[data$idx]
 
   eta <- pars$alpha +
-    pars$beta_bv * data$bv_mean +
-    pars$beta_bv2 * (data$bv_mean)^2 +
+    pars$beta_bv * data$bv_true +
+    pars$beta_bv2 * (data$bv_true)^2 +
     pars$beta_f * data$fhat3 +
     hi_full +
     hy_full +
@@ -1848,16 +1868,32 @@ inla_bv_covmat <- function(model, n_samp = 1e4, ncores) {
          order(model$summary.random$id1$ID)]
 }
 
+make_sim_bv_plot <- function(summ,
+                             sim_data) {
 
-sim_func_ars_adult <- function(data) {
+  y <- summ %>%
+    `[`(grepl(x = rownames(.), pattern = "bv_lat"), "mean")
 
-  zip_prob <- 0.3
+  x <- sim_data %>%
+    (function(dat) {
+      dat <- dat[[1]]
+      dat %>%
+        `$`("bv_true") %>%
+        `[`(order(dat$ringnr_num)) %>%
+        `[`(match(unique(dat[order(dat$ringnr_num)]$ringnr),
+                  dat[order(dat$ringnr_num)]$ringnr))
+    })
 
-  ll_levels <- rnorm(n_ll, 0, sd = sqrt(1))
-  y_levels <- rnorm(n_, 0, sd = sqrt(1))
-  id_levels <- rnorm(n_id, 0, sd = sqrt(1))
-  idx_levels <- rnorm(n_id, 0, sd = sqrt(1))
-
-  mu <- 1 + 1 * bv + 1 * bv^2 + 1 * age + 1 * age^2 + 1 * fhat3
-
+  ggplot(mapping = aes(x = x, y = y)) +
+    geom_point(pch = 16) +
+    xlab("true bv") +
+    ylab ("posterior mean bv") +
+    stat_smooth(formula = y ~ x, method = "lm") +
+    geom_abline(slope = 1, intercept = 0) +
+    theme_minimal() +
+    coord_fixed(ratio = 1) +
+    scale_x_continuous(limits = range(x, y)) +
+    scale_y_continuous(limits = range(x, y)) +
+    theme(panel.border = element_rect(fill = NA),
+          panel.grid.minor = element_blank())
 }
