@@ -1874,15 +1874,27 @@ make_sim_bv_plot <- function(summ,
   y <- summ %>%
     `[`(grepl(x = rownames(.), pattern = "bv_lat"), "mean")
 
-  x <- sim_data %>%
-    (function(dat) {
-      dat <- dat[[1]]
-      dat %>%
-        `$`("bv_true") %>%
-        `[`(order(dat$ringnr_num)) %>%
-        `[`(match(unique(dat[order(dat$ringnr_num)]$ringnr),
-                  dat[order(dat$ringnr_num)]$ringnr))
-    })
+  if ("parent" %in% colnames(sim_data[[1]])) {
+    x <- sim_data %>%
+      (function(dat) {
+        dat <- dat[[1]]
+        dat %>%
+          `$`("bv_true") %>%
+          `[`(order(dat$parent_num)) %>%
+          `[`(match(unique(dat[order(dat$parent_num)]$parent),
+                    dat[order(dat$parent_num)]$parent))
+      })
+  } else {
+    x <- sim_data %>%
+      (function(dat) {
+        dat <- dat[[1]]
+        dat %>%
+          `$`("bv_true") %>%
+          `[`(order(dat$ringnr_num)) %>%
+          `[`(match(unique(dat[order(dat$ringnr_num)]$ringnr),
+                    dat[order(dat$ringnr_num)]$ringnr))
+      })
+  }
 
   ggplot(mapping = aes(x = x, y = y)) +
     geom_point(pch = 16) +

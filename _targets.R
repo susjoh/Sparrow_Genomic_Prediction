@@ -361,8 +361,8 @@ fitmod_map <- tar_map(
   tar_target(
     # We generally find more extreme estimated bvs with the more measurements?
     n_vs_fitness,
-      ggplot(fitness_data,
-             aes(y = get(y_col), x = ifelse(is.na(co_n), 0, co_n))) +
+    ggplot(fitness_data,
+           aes(y = get(y_col), x = ifelse(is.na(co_n), 0, co_n))) +
       geom_point() +
       labs(y = "Fitness",
            x = "Number of crossover count measurements") +
@@ -376,7 +376,7 @@ fitmod_map <- tar_map(
       dplyr::mutate(grp = cut(co_n,
                               unique(quantile(co_n, seq(0, 1, length = 5))),
                               include.lowest = TRUE)) %>%
-    ggplot(aes(y = get(y_col), x = grp, group = grp)) +
+      ggplot(aes(y = get(y_col), x = grp, group = grp)) +
       geom_boxplot() +
       labs(y = "Fitness",
            x = "Number of crossover count measurements"),
@@ -973,8 +973,17 @@ fitmod_map <- tar_map(
     stan_sim_bv_plot,
     make_sim_bv_plot(summ = stan_sim_summ, sim_data = sim_data),
     pattern = map(sim_data, stan_sim_summ)
+  ),
+  tar_target(
+    stan_sim_bv_plot_pdf,
+    ggsave_path(paste0("figs/", mod, "_sim_bv_plot_", sex_lc, ".pdf"),
+                plot = stan_sim_bv_plot[[1]],
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
   )
-  # TODO: version of models using co_n as a predictor (om vi får "utrolige" resultater)
 )
 
 
