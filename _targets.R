@@ -285,7 +285,17 @@ values_fitmod <- tibble(
                      "r/adult_surv_covmat.stan",
                      "r/parent_zinf_ars_covmat.stan",
                      "r/parent_surv_covmat.stan",
-                     "r/nestling_surv_covmat.stan")
+                     "r/nestling_surv_covmat.stan"),
+  stan_file_name_co_n = c("r/zinf_ars_co_n.stan",
+                          "r/adult_surv_co_n.stan",
+                          "r/parent_zinf_ars_co_n.stan",
+                          "r/parent_surv_co_n.stan",
+                          "r/nestling_surv_co_n.stan"),
+  bv_pred_marg_func_co_n = rlang::syms(c("make_ars_bv_preds_and_marg_co_n",
+                                         "make_surv_bv_preds_and_marg_co_n",
+                                         "make_ars_bv_preds_and_marg_co_n",
+                                         "make_surv_bv_preds_and_marg_co_n",
+                                         "make_nest_bv_preds_and_marg_co_n")),
 )
 
 fitmod_map <- tar_map(
@@ -983,6 +993,61 @@ fitmod_map <- tar_map(
                 device = "pdf"),
     format = "file",
     deployment = "main"
+  ),
+  ################ co_n modeller
+  tar_target(
+    stan_file_co_n,
+    stan_file_name_co_n,
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    stan_model_co_n,
+    stan(file = stan_file_co_n,
+         data = c(stan_data, list(Y = getElement(stan_data, y_col))),
+         iter = 4.8e4,
+         warmup = 8e3,
+         chains = 16,
+         cores = 16,
+         # Remove random effects in zero-inflation component
+         pars = c(stan_pars, "beta_co_n", "beta_co_n_std"),
+         control = list(adapt_delta = 0.96),
+         model_name = paste0("stan_", mod, "_", sex_lc, "_co_n"),
+         thin = 1.6e2) # to keep final object reasonably small
+  ),
+  tar_target(
+    stan_samps_co_n,
+    get_samps(model = stan_model_co_n,
+              pars = c(stan_pars, "beta_co_n", "beta_co_n_std"))
+  ),
+  tar_target(
+    stan_post_stats_co_n,
+    summary(stan_model_co_n)$summary
+  ),
+  tar_target(
+    stan_bv_pred_marg_co_n,
+    bv_pred_marg_func_co_n(samp = stan_samps_co_n,
+                           data = fitness_data)
+  ),
+  tar_target(
+    stan_bv_pred_plot_co_n,
+    plot_lines_posterior(df = getElement(stan_bv_pred_marg_co_n, "df_pred"),
+                         xlab = paste0(xlab_start,
+                                       "reeding value for ",
+                                       sex,
+                                       " crossover count"),
+                         ylab = paste0("Predicted ", sex, " ", trait),
+                         title = "")
+  ),
+  tar_target(
+    stan_bv_pred_plot_co_n_pdf,
+    ggsave_path(paste0("figs/stan_", mod, "_bv_pred_", sex_lc, "_co_n.pdf"),
+                plot = stan_bv_pred_plot_co_n,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
   )
 )
 
@@ -1072,56 +1137,6 @@ sex_map <- tar_map(
   #           pheno_data = co_data)
   # ),
   # tar_target(
-  #   stan_adult_ars_ss_covmat_co_n,
-  #   stan(file = stan_file_adult_ars_zinf_covmat_co_n,
-  #        data = c(stan_data_adult_ss_covmat,
-  #                 list(Y = stan_data_adult_ss_covmat$sum_recruit,
-  #                      alpha_prior_mean = log(mean(c(stan_data_adult_ss_covmat$sum_recruit[stan_data_adult_ss_covmat$sum_recruit != 0],
-  #                                                    stan_data_adult_ss_covmat$sum_recruit))),
-  #                      beta_prior_sd = (1 / 6),
-  #                      exp_rate = 1 / (1 / 6),
-  #                      alpha_zi_prior_mean = log(mean(stan_data_adult_ss_covmat$sum_recruit == 0) /
-  #                                                  (1 - mean(stan_data_adult_ss_covmat$sum_recruit == 0))),
-  #                      beta_zi_prior_sd = (1 / 6),
-  #                      exp_rate_zi = 1 / (1 / 5))),
-  #        iter = 4.8e4 * 3,
-  #        warmup = 8e3 * 3,
-  #        chains = 16,
-  #        cores = 16,
-  #        # Remove random effects in zero-inflation component
-  #        pars = c(ars_pars[-(c(21:25, 27:34, 35:37))], "beta_co_n", "beta_co_n_std"),
-  #        control = list(adapt_delta = 0.99),
-  #        model_name = paste0("stan_adult_ars_ss_covmat_", sex_lc),
-  #        thin = 1.6e2 * 3) # to keep final object reasonably small
-  # ),
-  # tar_target(
-  #   stan_adult_surv_ss_covmat_co_n,
-  #   stan(file = stan_file_adult_surv_covmat_co_n,
-  #        data = c(stan_data_adult_ss_covmat,
-  #                 list(Y = stan_data_adult_ss_covmat$survival,
-  #                      alpha_prior_mean = stan_data_adult_ss_covmat$survival_logit_mean,
-  #                      beta_prior_sd = 0.5,
-  #                      exp_rate = sqrt(1 / 0.5^2))),
-  #        iter = 4.8e4,
-  #        warmup = 8e3,
-  #        chains = 16,
-  #        cores = 16,
-  #        control = list(adapt_delta = 0.95),
-  #        pars = c(surv_pars, "beta_co_n", "beta_co_n_std"),
-  #        model_name = paste0("stan_adult_surv_ss_covmat_co_n_", sex_lc),
-  #        thin = 1.6e2) # to keep final object reasonably small
-  # ),
-  # tar_target(
-  #   surv_samps_covmat_co_n,
-  #   get_samps(model = stan_adult_surv_ss_covmat_co_n,
-  #             pars = c(surv_pars, "beta_co_n", "beta_co_n_std"))
-  # ),
-  # tar_target(
-  #   ars_samps_covmat_co_n,
-  #   get_samps(model = stan_adult_ars_ss_covmat_co_n,
-  #             pars = c(ars_pars[-(c(21:25, 27:34, 35:37))], "beta_co_n", "beta_co_n_std"))
-  # ),
-  # tar_target(
   #   surv_samp_pairs_plot,
   #   as.data.frame(surv_samps_covmat)[, c("energy", "ll.1", "ye.1", "id.1",
   #                                        surv_pars[c(1:6, 17:19)])] %>%
@@ -1129,80 +1144,6 @@ sex_map <- tar_map(
   #                   sigma_ye = log(sigma_ye),
   #                   sigma_id = log(sigma_id)) %>%
   #     ggpairs() # aes(color = factor(surv_samps_f$divergent)))
-  # ),
-  # tar_target(
-  #   ars_covmat_co_n_bv_preds_and_marg,
-  #   make_ars_bv_preds_and_marg_co_n(samps = ars_samps_covmat_co_n,
-  #                                   data = stan_data_adult_ss_covmat)
-  # ),
-  # tar_target(
-  #   surv_covmat_co_n_bv_preds_and_marg,
-  #   make_surv_bv_preds_and_marg_co_n(samps = surv_samps_covmat_co_n,
-  #                                    data = stan_data_adult_ss_covmat)
-  # ),
-  # tar_target(
-  #   ars_covmat_co_n_bv_pred_plot,
-  #   plot_lines_posterior(df = ars_covmat_co_n_bv_preds_and_marg$df_pred,
-  #                        xlab = paste0("Breeding value for ",
-  #                                      sex,
-  #                                      " crossover count"),
-  #                        ylab = paste0("Predicted ",
-  #                                      sex,
-  #                                      " annual reproductive success"),
-  #                        title = "",
-  #                        data = stan_data_adult_ss_covmat)
-  # ),
-  # tar_target(
-  #   ars_covmat_co_n_bv_marg_plot,
-  #   plot_lines_posterior(df = ars_covmat_co_n_bv_preds_and_marg$df_marg_pred,
-  #                        xlab = paste0("Breeding value for ",
-  #                                      sex,
-  #                                      " crossover count"),
-  #                        ylab = paste0("Predicted ",
-  #                                      sex,
-  #                                      " annual reproductive success"),
-  #                        title = "",
-  #                        data = stan_data_adult_ss_covmat)
-  # ),
-  # tar_target(
-  #   surv_covmat_co_n_bv_pred_plot,
-  #   plot_lines_posterior(df = surv_covmat_co_n_bv_preds_and_marg$df_pred,
-  #                        xlab = paste0("Breeding value for ",
-  #                                      sex,
-  #                                      " crossover count"),
-  #                        ylab = paste0("Predicted ", sex," annual survival"),
-  #                        title = "",
-  #                        data = stan_data_adult_ss_covmat)
-  # ),
-  # tar_target(
-  #   surv_covmat_co_n_bv_marg_plot,
-  #   plot_lines_posterior(df = surv_covmat_co_n_bv_preds_and_marg$df_marg,
-  #                        xlab = paste0("Breeding value for ",
-  #                                      sex,
-  #                                      " crossover count"),
-  #                        ylab = paste0("Predicted ", sex," annual survival"),
-  #                        title = "",
-  #                        data = stan_data_adult_ss_covmat)
-  # ),
-  # tar_target(
-  #   ars_covmat_co_n_bv_pred_plot_pdf,
-  #   ggsave_path(paste0("figs/ars_covmat_co_n_bv_pred_", sex_lc, ".pdf"),
-  #               plot = ars_covmat_co_n_bv_pred_plot,
-  #               width = 7,
-  #               height = 5,
-  #               device = "pdf"),
-  #   format = "file",
-  #   deployment = "main"
-  # ),
-  # tar_target(
-  #   surv_covmat_co_n_bv_pred_plot_pdf,
-  #   ggsave_path(paste0("figs/surv_covmat_co_n_bv_pred_", sex_lc, ".pdf"),
-  #               plot = surv_covmat_co_n_bv_pred_plot,
-  #               width = 7,
-  #               height = 5,
-  #               device = "pdf"),
-  #   format = "file",
-  #   deployment = "main"
   # ),
   # tar_target(
   #   ars_ppc,
