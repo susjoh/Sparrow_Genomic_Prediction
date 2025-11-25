@@ -25,7 +25,7 @@ controller_slurm <- crew_controller_slurm(
     log_output = "Jobs/%A.log",
     memory_gigabytes_per_cpu = 6,
     cpus_per_task = 16,
-    time_minutes = 60 * 24 * 2, # minutes * hours * days
+    time_minutes = 60 * 24 * 20, # minutes * hours * days
     partition = "CPUQ",
     verbose = TRUE)
 )
@@ -1005,15 +1005,15 @@ fitmod_map <- tar_map(
     stan_model_co_n,
     stan(file = stan_file_co_n,
          data = c(stan_data, list(Y = getElement(stan_data, y_col))),
-         iter = 4.8e4,
-         warmup = 8e3,
+         iter = 1.92e6,
+         warmup = 3.2e5,
          chains = 16,
          cores = 16,
          # Remove random effects in zero-inflation component
          pars = c(stan_pars, "beta_co_n", "beta_co_n_std"),
          control = list(adapt_delta = 0.96),
          model_name = paste0("stan_", mod, "_", sex_lc, "_co_n"),
-         thin = 1.6e2) # to keep final object reasonably small
+         thin = 6.4e3) # to keep final object reasonably small
   ),
   tar_target(
     stan_samps_co_n,
