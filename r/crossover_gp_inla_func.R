@@ -1532,8 +1532,8 @@ make_nest_bv_preds_and_marg <- function(data,
 }
 
 make_nest_bv_preds_and_marg_co_n <- function(data,
-                                        samp,
-                                        n_plot = 200) {
+                                             samp,
+                                             n_plot = 200) {
   n_samp <- length(samp[[1]])
   avg_f <- mean(data$fhat3)
   avg_co_n <- mean(data$co_n)
@@ -1936,4 +1936,53 @@ make_sim_bv_plot <- function(summ,
     scale_y_continuous(limits = range(x, y)) +
     theme(panel.border = element_rect(fill = NA),
           panel.grid.minor = element_blank())
+}
+
+pred_info <- list(coef_name = c("alpha",
+                                "beta_bv",
+                                "beta_bv2",
+                                "beta_age_q1",
+                                "beta_age_q2",
+                                "beta_f"),
+                  action = list((function(dat, np) rep(1, np)),
+                                function(dat, np) seq(min(c(dat$bv_mean)), max(c(dat$bv_mean)), length.out = np),
+                                function(dat, np) seq(min(c(dat$bv_mean)), max(c(dat$bv_mean)), length.out = np)^2,
+                                function(dat, np) (predict(poly(dat$age, degree = 2), newdata = mean(dat$age))[, 1] %>% rep(np)),
+                                function(dat, np) (predict(poly(dat$age, degree = 2), newdata = mean(dat$age))[, 2] %>% rep(np)),
+                                function(dat, np) rep(mean(dat$fhat3), np)),
+                  x_axis_fun = function(dat, np) seq(min(c(dat$bv_mean)), max(c(dat$bv_mean)), length.out = np),
+                  marg_eff_fun = function(x) samp$beta_bv + 2 * samp$beta_bv2 * x)
+
+make_surv_bv_preds_and_marg_testing <- function(data,
+                                                samp,
+                                                pred_info,
+                                                n_plot = 200) {
+  n_samp <- length(samp[[1]])
+  pred_val <- lapply(pred_info$action, function(fun) {
+    fun(dat = data, np = n_plot)
+  })
+  x_axis <- (pred_info$x_axis_fun)(dat = data, np = n_plot)
+  predictor_samples <- array(0, dim = c(n_samp, n_plot))
+
+  for (i in seq_len(n_samp)) {
+    for (j in seq_len(n_plot)) {
+      for (k in seq_along(predictor_info$coef_name)) {
+        predictor_samples[i, j] <- predictor_samples[i, j] +
+          samp[predictor_info$coef_name[k]][[1]][i] *
+          pred_val[[k]][j]
+      }
+    }
+  }
+
+  pred_prob_samples <- inv_logit(predictor_samples)
+  df_pred <- samp_plot_df(y = pred_prob_samples, x = x_axis, n_samp = n_samp)
+
+  marg_effect <-
+    sapply(x_axis, pred_info$marg_eff_fun) *
+    pred_prob_samples *
+    (1 - pred_prob_samples)
+
+  df_marg <- samp_plot_df(y = marg_effect, x = x_axis, n_samp = n_samp)
+
+  lst(df_pred, df_marg)
 }
