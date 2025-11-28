@@ -296,6 +296,11 @@ values_fitmod <- tibble(
                                          "make_ars_bv_preds_and_marg_co_n",
                                          "make_surv_bv_preds_and_marg_co_n",
                                          "make_nest_bv_preds_and_marg_co_n")),
+  pred_marg_func = rlang::syms(c("make_zip_preds_and_marg",
+                                 "make_logit_preds_and_marg",
+                                 "make_zip_preds_and_marg",
+                                 "make_logit_preds_and_marg",
+                                 "make_logit_preds_and_marg"))
 )
 
 fitmod_map <- tar_map(
@@ -805,8 +810,22 @@ fitmod_map <- tar_map(
   ),
   tar_target(
     stan_bv_pred_marg,
-    bv_pred_marg_func(samp = stan_samps,
-                      data = fitness_data)
+    pred_marg_func(samp = stan_samps,
+                   data = fitness_data,
+                   pred_info = list(coef_name = c("alpha",
+                                                  "beta_bv",
+                                                  "beta_bv2",
+                                                  "beta_age_q1",
+                                                  "beta_age_q2",
+                                                  "beta_f"),
+                                    action = list(avg_fun_alpha,
+                                                  pred_fun_bv,
+                                                  pred_fun_bv2,
+                                                  avg_fun_age_q1,
+                                                  avg_fun_age_q2,
+                                                  avg_fun_f),
+                                    x_axis_fun = x_axis_fun_bv,
+                                    marg_eff_fun = marg_eff_fun_bv))
   ),
   tar_target(
     stan_bv_pred_plot,
@@ -851,6 +870,79 @@ fitmod_map <- tar_map(
     format = "file",
     deployment = "main"
   ),
+  tar_target(
+    stan_age_pred_marg,
+    pred_marg_func(samp = stan_samps,
+                   data = fitness_data,
+                   pred_info = list(coef_name = c("alpha",
+                                                  "beta_bv",
+                                                  "beta_bv2",
+                                                  "beta_age_q1",
+                                                  "beta_age_q2",
+                                                  "beta_f"),
+                                    action = list(avg_fun_alpha,
+                                                  avg_fun_bv,
+                                                  avg_fun_bv2,
+                                                  pred_fun_age_q1,
+                                                  pred_fun_age_q2,
+                                                  avg_fun_f),
+                                    x_axis_fun = x_axis_fun_age,
+                                    marg_eff_fun = marg_eff_fun_age))
+  ),
+  tar_target(
+    stan_age_pred_plot,
+    plot_lines_posterior(df = getElement(stan_age_pred_marg, "df_pred"),
+                         xlab = paste0("Age"),
+                         ylab = paste0("Predicted ", sex, " ", trait),
+                         title = "")
+  ),
+  tar_target(
+    stan_age_pred_plot_pdf,
+    ggsave_path(paste0("figs/stan_", mod, "_age_pred_", sex_lc, ".pdf"),
+                plot = stan_age_pred_plot,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    stan_f_pred_marg,
+    pred_marg_func(samp = stan_samps,
+                   data = fitness_data,
+                   pred_info = list(coef_name = c("alpha",
+                                                  "beta_bv",
+                                                  "beta_bv2",
+                                                  "beta_age_q1",
+                                                  "beta_age_q2",
+                                                  "beta_f"),
+                                    action = list(avg_fun_alpha,
+                                                  avg_fun_bv,
+                                                  avg_fun_bv2,
+                                                  avg_fun_age_q1,
+                                                  avg_fun_age_q2,
+                                                  pred_fun_f),
+                                    x_axis_fun = x_axis_fun_f,
+                                    marg_eff_fun = marg_eff_fun_f))
+  ),
+  tar_target(
+    stan_f_pred_plot,
+    plot_lines_posterior(df = getElement(stan_f_pred_marg, "df_pred"),
+                         xlab = paste0("Inbreeding coefficient"),
+                         ylab = paste0("Predicted ", sex, " ", trait),
+                         title = "")
+  ),
+  tar_target(
+    stan_f_pred_plot_pdf,
+    ggsave_path(paste0("figs/stan_", mod, "_f_pred_", sex_lc, ".pdf"),
+                plot = stan_f_pred_plot,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  ##### simulation models
   tar_target(
     stan_model_sim,
     sim_data %>%
@@ -1026,8 +1118,24 @@ fitmod_map <- tar_map(
   ),
   tar_target(
     stan_bv_pred_marg_co_n,
-    bv_pred_marg_func_co_n(samp = stan_samps_co_n,
-                           data = fitness_data)
+    pred_marg_func(samp = stan_samps_co_n,
+                   data = fitness_data,
+                   pred_info = list(coef_name = c("alpha",
+                                                  "beta_bv",
+                                                  "beta_bv2",
+                                                  "beta_age_q1",
+                                                  "beta_age_q2",
+                                                  "beta_f",
+                                                  "beta_co_n"),
+                                    action = list(avg_fun_alpha,
+                                                  pred_fun_bv,
+                                                  pred_fun_bv2,
+                                                  avg_fun_age_q1,
+                                                  avg_fun_age_q2,
+                                                  avg_fun_f,
+                                                  avg_fun_co_n),
+                                    x_axis_fun = x_axis_fun_bv,
+                                    marg_eff_fun = marg_eff_fun_bv))
   ),
   tar_target(
     stan_bv_pred_plot_co_n,
@@ -1048,6 +1156,27 @@ fitmod_map <- tar_map(
                 device = "pdf"),
     format = "file",
     deployment = "main"
+  ),
+  tar_target(
+    stan_co_n_pred_marg_co_n,
+    pred_marg_func(samp = stan_samps_co_n,
+                   data = fitness_data,
+                   pred_info = list(coef_name = c("alpha",
+                                                  "beta_bv",
+                                                  "beta_bv2",
+                                                  "beta_age_q1",
+                                                  "beta_age_q2",
+                                                  "beta_f",
+                                                  "beta_co_n"),
+                                    action = list(avg_fun_alpha,
+                                                  avg_fun_bv,
+                                                  avg_fun_bv2,
+                                                  avg_fun_age_q1,
+                                                  avg_fun_age_q2,
+                                                  avg_fun_f,
+                                                  pred_fun_co_n),
+                                    x_axis_fun = x_axis_fun_co_n,
+                                    marg_eff_fun = marg_eff_fun_co_n))
   )
 )
 
