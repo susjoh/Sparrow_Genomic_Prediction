@@ -1316,221 +1316,6 @@ samp_plot_df <- function(x, y, n_samp) {
 
 inv_logit <- function(x) 1 / (1 + exp(-x))
 
-make_ars_bv_preds_and_marg <- function(data,
-                                       samp,
-                                       n_plot = 200) {
-
-  n_samp <- length(samp[[1]])
-  avg_age <- mean(data$age)
-  avg_f <- mean(data$fhat3)
-
-  age_poly <- poly(data$age, degree = 2)
-  avg_age_q <- predict(age_poly, newdata = mean(data$age))
-
-  bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
-
-  count_pred <- zinf_pred <- array(NA, dim = c(n_samp, n_plot))
-  for (i in seq_len(n_samp)) {
-    for (j in seq_len(n_plot)) {
-      (samp$alpha[i] +
-         samp$beta_bv[i] * bv[j] +
-         samp$beta_bv2[i] * bv[j]^2 +
-         samp$beta_age_q1[i] * avg_age_q[, 1] +
-         samp$beta_age_q2[i] * avg_age_q[, 2] +
-         samp$beta_f[i] * avg_f) %>%
-        exp() ->
-        count_pred[i, j]
-
-      zinf_pred[i, j] <- inv_logit(samp$alpha_zi[i])
-
-    }
-  }
-  y_pred <- count_pred * (1 - zinf_pred)
-
-  df_count <- samp_plot_df(y = count_pred, x = bv, n_samp = n_samp)
-  df_zinf <- samp_plot_df(y = zinf_pred, x = bv, n_samp = n_samp)
-  df_pred <- samp_plot_df(y = y_pred, x = bv, n_samp = n_samp)
-
-  marg_count <-
-    sapply(bv, function(x) samp$beta_bv + 2 * samp$beta_bv2 * x) *
-    count_pred
-  marg_zinf <- matrix(0, nrow = n_samp, ncol = n_plot)
-  # marg_zinf <-  sapply(bv, function(x) samp$beta_zi_bv + 2 * samp$beta_zi_bv2 * x) *
-  # zinf_pred *
-  # (1 - zinf_pred)
-  marg_pred <- sapply(bv, function(x) {
-    samp$beta_bv + # - samp$beta_zi_bv +
-      2 * x * samp$beta_bv2 # - samp$beta_zi_bv2)
-  }) * count_pred * (1 - zinf_pred)
-
-  df_marg_count <- samp_plot_df(y = marg_count, x = bv, n_samp = n_samp)
-  df_marg_zinf <- samp_plot_df(y = marg_zinf, x = bv, n_samp = n_samp)
-  df_marg <- samp_plot_df(y = marg_pred, x = bv, n_samp = n_samp)
-
-  lst(df_count, df_zinf, df_pred, df_marg_count, df_marg_zinf, df_marg)
-}
-
-make_ars_bv_preds_and_marg_co_n <- function(data,
-                                            samp,
-                                            n_plot = 200) {
-
-  n_samp <- length(samp[[1]])
-  avg_age <- mean(data$age)
-  avg_f <- mean(data$fhat3)
-  avg_co_n <- mean(data$co_n)
-
-  age_poly <- poly(data$age, degree = 2)
-  avg_age_q <- predict(age_poly, newdata = mean(data$age))
-
-  bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
-
-  count_pred <- zinf_pred <- array(NA, dim = c(n_samp, n_plot))
-  for (i in seq_len(n_samp)) {
-    for (j in seq_len(n_plot)) {
-      (samp$alpha[i] +
-         samp$beta_bv[i] * bv[j] +
-         samp$beta_bv2[i] * bv[j]^2 +
-         samp$beta_age_q1[i] * avg_age_q[, 1] +
-         samp$beta_age_q2[i] * avg_age_q[, 2] +
-         samp$beta_f[i] * avg_f +
-         samp$beta_co_n[i] * avg_co_n) %>%
-        exp() ->
-        count_pred[i, j]
-
-      zinf_pred[i, j] <- inv_logit(samp$alpha_zi[i])
-
-    }
-  }
-  y_pred <- count_pred * (1 - zinf_pred)
-
-  df_count <- samp_plot_df(y = count_pred, x = bv, n_samp = n_samp)
-  df_zinf <- samp_plot_df(y = zinf_pred, x = bv, n_samp = n_samp)
-  df_pred <- samp_plot_df(y = y_pred, x = bv, n_samp = n_samp)
-
-  marg_count <-
-    sapply(bv, function(x) samp$beta_bv + 2 * samp$beta_bv2 * x) *
-    count_pred
-  marg_zinf <- matrix(0, nrow = n_samp, ncol = n_plot)
-  # marg_zinf <-  sapply(bv, function(x) samp$beta_zi_bv + 2 * samp$beta_zi_bv2 * x) *
-  # zinf_pred *
-  # (1 - zinf_pred)
-  marg_pred <- sapply(bv, function(x) {
-    samp$beta_bv + # - samp$beta_zi_bv +
-      2 * x * samp$beta_bv2 # - samp$beta_zi_bv2)
-  }) * count_pred * (1 - zinf_pred)
-
-  df_marg_count <- samp_plot_df(y = marg_count, x = bv, n_samp = n_samp)
-  df_marg_zinf <- samp_plot_df(y = marg_zinf, x = bv, n_samp = n_samp)
-  df_marg <- samp_plot_df(y = marg_pred, x = bv, n_samp = n_samp)
-
-  lst(df_count, df_zinf, df_pred, df_marg_count, df_marg_zinf, df_marg)
-}
-
-make_surv_bv_preds_and_marg <- function(data,
-                                        samp,
-                                        n_plot = 200) {
-  n_samp <- length(samp[[1]])
-  avg_age <- mean(data$age)
-  avg_f <- mean(data$fhat3)
-
-  age_poly <- poly(data$age, degree = 2)
-  avg_age_q <- predict(age_poly, newdata = mean(data$age))
-
-  bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
-  predictor_samples <- array(NA, dim = c(n_samp, n_plot))
-
-  for (i in seq_len(n_samp)) {
-    for (j in seq_len(n_plot)) {
-      predictor_samples[i, j] <- samp$alpha[i] +
-        samp$beta_bv[i] * bv[j] +
-        samp$beta_bv2[i] * bv[j]^2 +
-        samp$beta_age_q1[i] * avg_age_q[, 1] +
-        samp$beta_age_q2[i] * avg_age_q[, 2] +
-        samp$beta_f[i] * avg_f
-    }
-  }
-
-  pred_prob_samples <- inv_logit(predictor_samples)
-  df_pred <- samp_plot_df(y = pred_prob_samples, x = bv, n_samp = n_samp)
-
-  marg_effect <-
-    sapply(bv, function(x) samp$beta_bv + 2 * samp$beta_bv2 * x) *
-    pred_prob_samples *
-    (1 - pred_prob_samples)
-
-  df_marg <- samp_plot_df(y = marg_effect, x = bv, n_samp = n_samp)
-
-  lst(df_pred, df_marg)
-}
-
-make_surv_bv_preds_and_marg_co_n <- function(data,
-                                             samp,
-                                             n_plot = 200) {
-  n_samp <- length(samp[[1]])
-  avg_age <- mean(data$age)
-  avg_f <- mean(data$fhat3)
-  avg_co_n <- mean(data$co_n)
-
-  age_poly <- poly(data$age, degree = 2)
-  avg_age_q <- predict(age_poly, newdata = mean(data$age))
-
-  bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
-  predictor_samples <- array(NA, dim = c(n_samp, n_plot))
-
-  for (i in seq_len(n_samp)) {
-    for (j in seq_len(n_plot)) {
-      predictor_samples[i, j] <- samp$alpha[i] +
-        samp$beta_bv[i] * bv[j] +
-        samp$beta_bv2[i] * bv[j]^2 +
-        samp$beta_age_q1[i] * avg_age_q[, 1] +
-        samp$beta_age_q2[i] * avg_age_q[, 2] +
-        samp$beta_f[i] * avg_f +
-        samp$beta_co_n[i] * avg_co_n
-    }
-  }
-
-  pred_prob_samples <- inv_logit(predictor_samples)
-  df_pred <- samp_plot_df(y = pred_prob_samples, x = bv, n_samp = n_samp)
-
-  marg_effect <-
-    sapply(bv, function(x) samp$beta_bv + 2 * samp$beta_bv2 * x) *
-    pred_prob_samples *
-    (1 - pred_prob_samples)
-
-  df_marg <- samp_plot_df(y = marg_effect, x = bv, n_samp = n_samp)
-
-  lst(df_pred, df_marg)
-}
-
-make_nest_bv_preds_and_marg <- function(data,
-                                        samp,
-                                        n_plot = 200) {
-  n_samp <- length(samp[[1]])
-  avg_f <- mean(data$fhat3)
-
-  bv <- seq(min(c(data$bv_mean)), max(c(data$bv_mean)), length.out = n_plot)
-
-  predictor_samples <- array(NA, dim = c(n_samp, n_plot))
-  for (i in seq_len(n_samp)) {
-    for (j in seq_len(n_plot)) {
-      predictor_samples[i, j] <- samp$alpha[i] +
-        samp$beta_bv[i] * bv[j] +
-        samp$beta_bv2[i] * bv[j]^2 +
-        samp$beta_f[i] * avg_f
-    }
-  }
-  pred_prob_samples <- inv_logit(predictor_samples)
-  df_pred <- samp_plot_df(y = pred_prob_samples, x = bv, n_samp = n_samp)
-
-  marg_effect <-
-    sapply(bv, function(x) samp$beta_bv + 2 * samp$beta_bv2 * x) *
-    pred_prob_samples *
-    (1 - pred_prob_samples)
-  df_marg <- samp_plot_df(y = marg_effect, x = bv, n_samp = n_samp)
-
-  lst(df_pred, df_marg)
-}
-
 make_nest_bv_preds_and_marg_co_n <- function(data,
                                              samp,
                                              n_plot = 200) {
@@ -1938,51 +1723,142 @@ make_sim_bv_plot <- function(summ,
           panel.grid.minor = element_blank())
 }
 
-pred_info <- list(coef_name = c("alpha",
-                                "beta_bv",
-                                "beta_bv2",
-                                "beta_age_q1",
-                                "beta_age_q2",
-                                "beta_f"),
-                  action = list((function(dat, np) rep(1, np)),
-                                function(dat, np) seq(min(c(dat$bv_mean)), max(c(dat$bv_mean)), length.out = np),
-                                function(dat, np) seq(min(c(dat$bv_mean)), max(c(dat$bv_mean)), length.out = np)^2,
-                                function(dat, np) (predict(poly(dat$age, degree = 2), newdata = mean(dat$age))[, 1] %>% rep(np)),
-                                function(dat, np) (predict(poly(dat$age, degree = 2), newdata = mean(dat$age))[, 2] %>% rep(np)),
-                                function(dat, np) rep(mean(dat$fhat3), np)),
-                  x_axis_fun = function(dat, np) seq(min(c(dat$bv_mean)), max(c(dat$bv_mean)), length.out = np),
-                  marg_eff_fun = function(x) samp$beta_bv + 2 * samp$beta_bv2 * x)
+x_axis_fun_bv <- function(dat, np) seq(min(dat$bv_mean), max(dat$bv_mean), len = np)
+x_axis_fun_age <- function(dat, np) {
+  if (is.null(dat$age))
+    return(rep(0, np))
+  seq(min(dat$age), max(dat$age), len = np)
+}
+x_axis_fun_f <- function(dat, np) seq(min(dat$fhat3), max(dat$fhat3), len = np)
+x_axis_fun_co_n <- function(dat, np) seq(min(dat$co_n), max(dat$co_n), len = np)
 
-make_surv_bv_preds_and_marg_testing <- function(data,
-                                                samp,
-                                                pred_info,
-                                                n_plot = 200) {
+marg_eff_fun_bv <- function(x, dat, samp, ns) samp$beta_bv + 2 * samp$beta_bv2 * x
+marg_eff_fun_age <- function(x, dat, samp, ns) {
+  if (is.null(dat$age))
+    return(rep(0, ns))
+  poly(dat$age, degree = 2) %>% attr("coef") -> cc
+  alpha <- cc$alpha
+  norm2 <- cc$norm2
+  samp$beta_age_q1 / sqrt(norm2[3]) +
+    (2 * x - (alpha[1] + alpha[2])) / sqrt(norm2[4]) * samp$beta_age_q2
+}
+marg_eff_fun_f <- function(x, dat, samp, ns) samp$beta_f
+marg_eff_fun_co_n <- function(x, dat, samp, ns) samp$beta_co_n
+
+avg_fun_alpha <- function(dat, np) rep(1, np)
+avg_fun_bv <- function(dat, np) rep(mean(dat$bv_mean), np)
+avg_fun_bv2 <- function(dat, np) rep(mean(dat$bv_mean), np)^2
+avg_fun_age_q1 <- function(dat, np) {
+  if (is.null(dat$age))
+    return(rep(0, np))
+  predict(poly(dat$age, degree = 2), newdata = mean(dat$age))[, 1] %>% rep(np)
+}
+avg_fun_age_q2 <- function(dat, np) {
+  if (is.null(dat$age))
+    return(rep(0, np))
+  predict(poly(dat$age, degree = 2), newdata = mean(dat$age))[, 2] %>% rep(np)
+}
+avg_fun_f <- function(dat, np) rep(mean(dat$fhat3), np)
+avg_fun_co_n <- function(dat, np) rep(mean(dat$co_n), np)
+
+pred_fun_bv <- function(dat, np) {
+  seq(min(dat$bv_mean), max(dat$bv_mean), length.out = np)
+}
+pred_fun_bv2 <- function(dat, np) {
+  seq(min(dat$bv_mean), max(dat$bv_mean), length.out = np)^2
+}
+pred_fun_age_q1 <- function(dat, np) {
+  if (is.null(dat$age))
+    return(rep(0, np))
+  seq(min(dat$age), max(dat$age), length.out = np) %>%
+    predict(poly(dat$age, degree = 2), newdata = .) %>%
+     `[`(, 1)
+}
+pred_fun_age_q2 <- function(dat, np) {
+  if (is.null(dat$age))
+    return(rep(0, np))
+  seq(min(dat$age), max(dat$age), length.out = np) %>%
+    predict(poly(dat$age, degree = 2), newdata = .) %>%
+    `[`(, 2)
+}
+pred_fun_f <- function(dat, np) seq(min(dat$fhat3), max(dat$fhat3), len = np)
+pred_fun_co_n <- function(dat, np) seq(min(dat$co_n), max(dat$co_n), len = np)
+
+
+make_zip_preds_and_marg <- function(data,
+                                    samp,
+                                    pred_info,
+                                    n_plot = 200) {
+
+  n_samp <- length(samp[[1]])
+
+  pred_val <- lapply(pred_info$action, function(fun) {
+    fun(dat = data, np = n_plot)
+  })
+  x_ax <- (pred_info$x_axis_fun)(dat = data, np = n_plot)
+
+  pred <- zinf_pred <- array(0, dim = c(n_samp, n_plot))
+  for (i in seq_len(n_samp)) {
+    for (j in seq_len(n_plot)) {
+      for (k in seq_along(pred_info$coef_name)) {
+        pred[i, j] <- pred[i, j] +
+          samp[pred_info$coef_name[k]][[1]][i] *
+          pred_val[[k]][j]
+      }
+      zinf_pred[i, j] <- inv_logit(samp$alpha_zi[i])
+    }
+  }
+  count_pred <- exp(pred)
+  y_pred <- count_pred * (1 - zinf_pred)
+
+  df_count <- samp_plot_df(y = count_pred, x = x_ax, n_samp = n_samp)
+  df_zinf <- samp_plot_df(y = zinf_pred, x = x_ax, n_samp = n_samp)
+  df_pred <- samp_plot_df(y = y_pred, x = x_ax, n_samp = n_samp)
+
+  marg_count <- sapply(x_ax, pred_info$marg_eff_fun, dat = data, samp = samp, ns = n_samp) *
+    count_pred
+  marg_zinf <- matrix(0, nrow = n_samp, ncol = n_plot)
+  marg_pred <- marg_count * (1 - zinf_pred)
+
+  df_marg_count <- samp_plot_df(y = marg_count, x = x_ax, n_samp = n_samp)
+  df_marg_zinf <- samp_plot_df(y = marg_zinf, x = x_ax, n_samp = n_samp)
+  df_marg <- samp_plot_df(y = marg_pred, x = x_ax, n_samp = n_samp)
+
+  lst(df_count, df_zinf, df_pred, df_marg_count, df_marg_zinf, df_marg)
+}
+
+make_logit_preds_and_marg <- function(data,
+                                      samp,
+                                      pred_info,
+                                      n_plot = 200) {
   n_samp <- length(samp[[1]])
   pred_val <- lapply(pred_info$action, function(fun) {
     fun(dat = data, np = n_plot)
   })
-  x_axis <- (pred_info$x_axis_fun)(dat = data, np = n_plot)
+  x_ax <- (pred_info$x_axis_fun)(dat = data, np = n_plot)
   predictor_samples <- array(0, dim = c(n_samp, n_plot))
+  if (is.null(data$age))
+    samp["beta_age_q1"] <- samp["beta_age_q2"] <- list(rep(0, n_samp))
 
   for (i in seq_len(n_samp)) {
     for (j in seq_len(n_plot)) {
-      for (k in seq_along(predictor_info$coef_name)) {
+      for (k in seq_along(pred_info$coef_name)) {
         predictor_samples[i, j] <- predictor_samples[i, j] +
-          samp[predictor_info$coef_name[k]][[1]][i] *
+          samp[pred_info$coef_name[k]][[1]][i] *
           pred_val[[k]][j]
       }
     }
   }
 
   pred_prob_samples <- inv_logit(predictor_samples)
-  df_pred <- samp_plot_df(y = pred_prob_samples, x = x_axis, n_samp = n_samp)
+  df_pred <- samp_plot_df(y = pred_prob_samples, x = x_ax, n_samp = n_samp)
 
   marg_effect <-
-    sapply(x_axis, pred_info$marg_eff_fun) *
+    sapply(x_ax, pred_info$marg_eff_fun, dat = data, samp = samp, ns = n_samp) *
     pred_prob_samples *
     (1 - pred_prob_samples)
 
-  df_marg <- samp_plot_df(y = marg_effect, x = x_axis, n_samp = n_samp)
+  df_marg <- samp_plot_df(y = marg_effect, x = x_ax, n_samp = n_samp)
 
   lst(df_pred, df_marg)
 }
