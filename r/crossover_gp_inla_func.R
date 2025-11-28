@@ -757,53 +757,6 @@ plink_pca <- function(analysis_inds,
   }
 }
 
-make_pc_matrix <- function(eigenvec_file,
-                           analysis_inds) {
-
-  # Load PCA results
-  pca <- fread(file = eigenvec_file)
-
-  # Create eigenvector matrix (V)
-  zz <- as.matrix(pca[, -c("FID", "IID")])[match(analysis_inds, pca$IID), ]
-
-  # Standardizing so column 1 has variance 1
-  zz / sqrt(var(zz)[1])
-}
-
-find_num_pc <- function(eigenval_file,
-                        min_var_explained) {
-
-  # Find amount of variance explained by each PC cumulatively
-  eigenvals <- fread(file = eigenval_file)
-  variance_proportion <- cumsum(eigenvals$V1) / sum(eigenvals$V1)
-  enough_variance_explained <- cumsum(variance_proportion > min_var_explained)
-
-  # Number of PCs to explain a given amount of the genomic variation
-  num_pc <- which(enough_variance_explained == 1)
-  # To avoid crashing (?) INLA when using uniform PC scalings:
-  if (num_pc == 1) num_pc <- 2
-
-  var_explained_by_num_pc <- variance_proportion[num_pc]
-
-  lst(min_var_explained, num_pc, var_explained_by_num_pc)
-}
-
-reduce_pc_matrix <- function(full_pc_matrix,
-                             num_pc_obj) {
-  full_pc_matrix[, 1:num_pc_obj$num_pc]
-}
-
-get_exp_acc <- function(p,
-                        h2,
-                        M,
-                        N) {
-
-  # sqrt(p / (1 + M / (N * h2 * p)))
-
-  N * (h2 * p)^2 / (N * h2 * p + M)
-
-}
-
 inla_post_var <- function(prec_marg) {
   inla.tmarginal(function(x) 1 / x, prec_marg) %>%
     inla.zmarginal(., silent = TRUE) %>%
