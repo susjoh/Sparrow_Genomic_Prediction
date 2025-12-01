@@ -1503,3 +1503,28 @@ make_logit_preds_and_marg <- function(data,
 
   lst(df_pred, df_marg)
 }
+
+plot_bv_out_vs_in <- function(stats, dat) {
+  bv_in <- dat$bv_mean
+  bv_in_sd <- dat$bv_sd
+  bv_stats <- stats[grepl(x = rownames(stats), pattern = "bv_lat"), ]
+  bv_out <- bv_stats[, "mean"]
+  bv_out_sd <- bv_stats[, "sd"]
+
+  ggplot(mapping = aes(x = bv_in, y = bv_out)) +
+    geom_point() +
+    stat_smooth(formula = y ~ x, method = "lm") +
+    geom_abline(slope = 1, intercept = 0) +
+    theme_minimal() +
+    coord_fixed(ratio = 1) +
+    xlab("Input breeding value") +
+    ylab("Output breeding value") +
+    scale_x_continuous(limits = range(bv_in, bv_out)) +
+    scale_y_continuous(limits = range(bv_in, bv_out)) +
+    theme(panel.border = element_rect(fill = NA),
+          panel.grid.minor = element_blank()) # +
+    # geom_errorbar(mapping = aes(ymin = bv_out - bv_out_sd,
+    #                             ymax = bv_out + bv_out_sd))
+    # geom_errorbarh(mapping = aes(xmin = bv_in - bv_in_sd,
+    #                              xmax = bv_in + bv_in_sd))
+}

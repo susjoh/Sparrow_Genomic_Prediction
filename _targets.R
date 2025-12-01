@@ -419,6 +419,20 @@ fitmod_map <- tar_map(
     summary(stan_model)$summary
   ),
   tar_target(
+    stan_bv_out_vs_in_plot,
+    plot_bv_out_vs_in(stats = stan_post_stats, dat = stan_data)
+  ),
+  tar_target(
+    stan_bv_out_vs_in_plot_pdf,
+    ggsave_path(paste0("figs/stan_bv_in_vs_out_", mod, "_", sex_lc, ".pdf"),
+                plot = stan_bv_out_vs_in_plot,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
     stan_bv_pred_marg,
     pred_marg_func(samp = stan_samps,
                    data = fitness_data,
