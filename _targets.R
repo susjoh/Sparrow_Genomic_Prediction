@@ -137,16 +137,16 @@ values_fitmod <- tibble(
                           "sigma_id" = 0.42,
                           "sigma_par" = 0.13,
                           "sigma_res" = 0),
-                     list("alpha" = 0.20,
-                          "beta_bv" = 0.026,
-                          "beta_bv2" = -0.047,
-                          "beta_age_q1" = -6.4,
-                          "beta_age_q2" = -2.6,
-                          "beta_f" = 0.63,
-                          "sigma_ye" = 0.25,
-                          "sigma_ll" = 0.064,
-                          "sigma_id" = 0.15,
-                          "sigma_par" = 0,
+                     list("alpha" = 0.63,
+                          "beta_bv" = -0.067,
+                          "beta_bv2" = -1.3,
+                          "beta_age_q1" = -24,
+                          "beta_age_q2" = 2.6,
+                          "beta_f" = -0.90,
+                          "sigma_ye" = 0.33,
+                          "sigma_ll" = 0.19,
+                          "sigma_id" = 0.16,
+                          "sigma_par" = 0.084,
                           "sigma_res" = 0),
                      list("alpha" = -1.3,
                           "beta_bv" = -0.39,
@@ -244,10 +244,12 @@ values_fitmod <- tibble(
                      "ye",
                      "ll",
                      "id",
+                     "par",
                      "bv_lat",
                      "sigma_ll",
                      "sigma_ye",
                      "sigma_id",
+                     "sigma_par",
                      "y_rep"),
                    c("alpha",
                      "beta_bv",
@@ -617,9 +619,9 @@ fitmod_map <- tar_map(
     sapply(names(sim_par_vec),
            function(par) {
              x <- getElement(stan_sim_samps, par) - getElement(sim_par_vec, par)
-             if (length(x) == 0)
+             if (length(x) == 0) {
                x <- rep(0, 10)
-             else
+             } else
                x <- x / abs(getElement(sim_par_vec, par))
              c("mean" = mean(x),
                "mode" = suppressWarnings(posterior.mode(x)),
