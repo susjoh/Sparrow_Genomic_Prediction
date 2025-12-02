@@ -1,6 +1,7 @@
 \documentclass[dvipsnames]{article}
 \input{paper/preamble}
 \begin{document}
+\fontfamily{cmss}\selectfont
 
 %%%% Comment in/out different .tex files to compile/include them or not
 
@@ -83,7 +84,7 @@ List of models, in simple terms
         \item Likelihood: Gaussian
         \item Response: sex-specific crossover count
         \item Fixed effects: Total coverage
-        \item Random effects: Breeding value, hatch year, hatch island, identity
+        \item Random effects: Breeding value, hatch year, hatch island, identity, residual
     \end{itemize}
     \item Sex-specific adult ARS vs own breeding value for sex-specific crossover count \begin{itemize}
         \item Likelihood: zero-inflated poisson
