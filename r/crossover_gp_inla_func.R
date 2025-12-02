@@ -1249,7 +1249,13 @@ make_stan_data_nest <- function(data, gp_data, covmat) {
        exp_rate_zi = 1 / 0.5)
 }
 
-do_ars_ppc <- function(y, yrep, ll_i, ye_i, id_i) {
+ppc_ars <- function(dat, samp) {
+
+  y <- dat$sum_recruit
+  ll_i <- dat$ll_idx
+  ye_i <- dat$ye_idx
+  id_i <- dat$id_idx
+  yrep <- samp$y_rep
 
   lst(mean = ppc_stat(y, yrep),
       sd = ppc_stat(y, yrep, stat = "sd"),
@@ -1290,20 +1296,39 @@ do_ars_ppc <- function(y, yrep, ll_i, ye_i, id_i) {
       p_twos = mean((apply(yrep, 2, function(y) mean(y == 2))) > mean(y == 2)))
 }
 
-do_surv_ppc <- function(y, yrep, co_n, co_meas, ll_i, ye_i, id_i) {
+ppc_surv <- function(dat, samp) {
+
+  y <- dat$survival
+  yrep <- samp$y_rep
+  ll_i <- dat$ll_idx
+  ye_i <- dat$ye_idx
+  id_i <- dat$id_idx
 
   lst(bar = ppc_bars(y, yrep),
       bar_ll = ppc_bars_grouped(y, yrep, group = ll_i),
       bar_ye = ppc_bars_grouped(y, yrep, group = ye_i),
-      # bar_co_meas = ppc_bars_grouped(y, yrep, group = co_meas),
-      # bar_co_n = ppc_bars_grouped(y, yrep, group = co_n),
       bar_longlife = ppc_bars_grouped(
         y, yrep, group = factor(tapply(y, factor(id_i), length)[id_i] > 2)),
       sd = ppc_stat(y, yrep, stat = "sd"),
       sd_ll = ppc_stat_grouped(y, yrep, group = ll_i, stat = "sd"),
       sd_ye = ppc_stat_grouped(y, yrep, group = ye_i, stat = "sd"),
-      # sd_co_meas = ppc_stat_grouped(y, yrep, group = co_meas, stat = "sd"),
-      # sd_co_n = ppc_stat_grouped(y, yrep, group = co_n, stat = "sd"),
+      p_mean = mean(colMeans(yrep) > mean(y)),
+      p_sd = mean(apply(yrep, 2, sd) > sd(y)))
+}
+
+ppc_nest <- function(dat, samp) {
+
+  y <- dat$recruit
+  yrep <- samp$y_rep
+  hi_i <- dat$hi_idx
+  hy_i <- dat$hy_idx
+
+  lst(bar = ppc_bars(y, yrep),
+      bar_hi = ppc_bars_grouped(y, yrep, group = hi_i),
+      bar_hy = ppc_bars_grouped(y, yrep, group = hy_i),
+      sd = ppc_stat(y, yrep, stat = "sd"),
+      sd_hi = ppc_stat_grouped(y, yrep, group = hi_i, stat = "sd"),
+      sd_hy = ppc_stat_grouped(y, yrep, group = hy_i, stat = "sd"),
       p_mean = mean(colMeans(yrep) > mean(y)),
       p_sd = mean(apply(yrep, 2, sd) > sd(y)))
 }

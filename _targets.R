@@ -282,7 +282,12 @@ values_fitmod <- tibble(
                                  "make_logit_preds_and_marg",
                                  "make_zip_preds_and_marg",
                                  "make_logit_preds_and_marg",
-                                 "make_logit_preds_and_marg"))
+                                 "make_logit_preds_and_marg")),
+  ppc_fun = rlang::syms(c("ppc_ars",
+                          "ppc_surv",
+                          "ppc_ars",
+                          "ppc_surv",
+                          "ppc_nest"))
 )
 
 fitmod_map <- tar_map(
@@ -568,6 +573,11 @@ fitmod_map <- tar_map(
     format = "file",
     deployment = "main"
   ),
+  tar_target(
+    stan_ppc,
+    ppc_fun(dat = stan_data,
+            samp = stan_samps)
+  ),
   ##### simulation models
   tar_target(
     stan_model_sim,
@@ -803,6 +813,23 @@ fitmod_map <- tar_map(
                                                   pred_fun_co_n),
                                     x_axis_fun = x_axis_fun_co_n,
                                     marg_eff_fun = marg_eff_fun_co_n))
+  ),
+  tar_target(
+    stan_co_n_pred_plot_co_n,
+    plot_lines_posterior(df = getElement(stan_co_n_pred_marg_co_n, "df_pred"),
+                         xlab = "Number of crossover count measurements",
+                         ylab = paste0("Predicted ", sex, " ", trait),
+                         title = "")
+  ),
+  tar_target(
+    stan_co_n_pred_plot_co_n_pdf,
+    ggsave_path(paste0("figs/stan_", mod, "_co_n_pred_", sex_lc, "_co_n.pdf"),
+                plot = stan_co_n_pred_plot_co_n,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
   )
 )
 
@@ -900,37 +927,6 @@ sex_map <- tar_map(
   #                   sigma_id = log(sigma_id)) %>%
   #     ggpairs() # aes(color = factor(surv_samps_f$divergent)))
   # ),
-  # tar_target(
-  #   ars_ppc,
-  #   do_ars_ppc(y = stan_data_adult_ss$sum_recruit,
-  #              yrep = ars_samps$y_rep,
-  #              ll_i = stan_data_adult_ss$ll_idx,
-  #              ye_i = stan_data_adult_ss$ye_idx,
-  #              id_i = stan_data_adult_ss$id_idx)
-  # ),
-  # tar_target(
-  #   ars_covmat_ppc,
-  #   do_ars_ppc(y = stan_data_adult_ss_covmat$sum_recruit,
-  #              yrep = ars_samps_covmat$y_rep,
-  #              ll_i = stan_data_adult_ss_covmat$ll_idx,
-  #              ye_i = stan_data_adult_ss_covmat$ye_idx,
-  #              id_i = stan_data_adult_ss_covmat$id_idx)
-  # ),
-  # tar_target(
-  #   ars_covmat_ppc_pl,
-  #   ars_covmat_ppc,
-  #   pattern = map(ars_covmat_ppc)
-  # ),
-  # tar_target(
-  #   surv_ppc,
-  #   do_surv_ppc(y = stan_data_adult_ss$survival,
-  #               yrep = surv_samps$y_rep,
-  #               # co_n = replace_na(data_adult_ss$co_n, 0),
-  #               # co_meas = data_adult_ss$co_meas,
-  #               ll_i = stan_data_adult_ss$ll_idx,
-  #               ye_i = stan_data_adult_ss$ye_idx,
-  #               id_i = stan_data_adult_ss$id_idx)
-  # )
 )
 
 list(
