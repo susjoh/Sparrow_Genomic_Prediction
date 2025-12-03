@@ -1152,5 +1152,69 @@ list(
     stan_sim_error_arstest %>%
       sapply(function(mat) mat["lower", ] * mat["upper", ] > 0) %>%
       rowMeans()
+  ),
+  tar_target(
+    stanbv_pred_plot_ars,
+    ggarrange(stan_bv_pred_plot_ars_adult_f +
+                xlab("ACC breeding value") +
+                rremove("ylab"),
+              stan_bv_pred_plot_ars_adult_m +
+                xlab("ACC breeding value") +
+                rremove("ylab"),
+              stan_bv_pred_plot_ars_parent_f +
+                xlab("Parental ACC breeding value") +
+                rremove("ylab"),
+              stan_bv_pred_plot_ars_parent_m +
+                xlab("Parental ACC breeding value") +
+                rremove("ylab"), # One-digit yaxis here causes misalignment
+              common.legend = TRUE,
+              legend = "right",
+              ncol = 2,
+              nrow = 2,
+              labels = c("Female", "Male", "", ""),
+              hjust = c(-1.5, -2.5, 0, 0)
+              # vjust = 1.5
+              ) %>%
+      annotate_figure(left = textGrob(
+        "Predicted ARS",
+        rot = 90,
+        vjust = 1,
+        hjust = 0.45,
+        gp = gpar(cex = 1)))
+  ),
+  tar_target(
+    stanbv_pred_plot_surv,
+    ggarrange(stan_bv_pred_plot_surv_adult_f +
+                xlab("ACC breeding value") +
+                rremove("ylab"),
+              stan_bv_pred_plot_surv_adult_m +
+                xlab("ACC breeding value") +
+                rremove("ylab"),
+              stan_bv_pred_plot_surv_parent_f +
+                xlab("Parental ACC breeding value") +
+                rremove("ylab"),
+              stan_bv_pred_plot_surv_parent_m +
+                xlab("Parental ACC breeding value") +
+                rremove("ylab"),
+              stan_bv_pred_plot_nest_f +
+                xlab("Parental ACC breeding value") +
+                rremove("ylab"),
+              stan_bv_pred_plot_nest_m +
+                xlab("Parental ACC breeding value") +
+                rremove("ylab"),
+              common.legend = TRUE,
+              legend = "right",
+              ncol = 2,
+              nrow = 3,
+              labels = c("Female", "Male", "", ""),
+              hjust = c(-1.5, -2.5, 0, 0)
+              # vjust = 1.5
+    ) %>%
+      annotate_figure(left = textGrob(
+        "Predicted AS",
+        rot = 90,
+        vjust = 1,
+        hjust = 0.45,
+        gp = gpar(cex = 1)))
   )
 )
