@@ -1006,24 +1006,6 @@ list(
     ),
     deployment = "main"
   ),
-  tar_target(
-    figureuruurue,
-    list(post_stats_sim_rel_error_ars_adult_f,
-         post_stats_sim_rel_error_ars_adult_m,
-         post_stats_sim_rel_error_surv_adult_f,
-         post_stats_sim_rel_error_surv_adult_m,
-         post_stats_sim_rel_error_ars_parent_f,
-         post_stats_sim_rel_error_ars_parent_m,
-         post_stats_sim_rel_error_surv_parent_f,
-         post_stats_sim_rel_error_surv_parent_m,
-         post_stats_sim_rel_error_nest_f,
-         post_stats_sim_rel_error_nest_m) %>%
-      bind_rows(.id = "model") %>%
-      ggplot(data = .) +
-      geom_boxplot(aes(y = value, group = name)) +
-      facet_grid(samp_type ~ model),
-    deployment = "main"
-  ),
   # tar_target(
   #   stan_file_adult_surv_covmat_co_n,
   #   "r/adult_surv_covmat_co_n.stan",
