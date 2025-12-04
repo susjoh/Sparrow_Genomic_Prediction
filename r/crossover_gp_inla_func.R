@@ -1047,7 +1047,7 @@ plot_lines_posterior <- function(df,
     guides(color = guide_legend(
       override.aes = list(
         # Match transparency for samples, full for others
-        alpha = c(1, 1, 0.03),
+        alpha = c(1, 1, 0.1),
         # Make legend dashed looked like in plot
         linewidth = lw * c(0.5, 1, 0.5))),
       linetype = guide_legend(override.aes = list(
@@ -1055,7 +1055,11 @@ plot_lines_posterior <- function(df,
         linetype = c("dashed", "solid", "solid")))) +
     theme(legend.position = c(leg.x, 0.9),
           panel.grid = element_blank(),
-          panel.border = element_rect(fill = NA)) +
+          panel.border = element_rect(fill = NA),
+          legend.background = element_blank(),
+          legend.box.background = element_rect(colour = "black"),
+          legend.spacing.y = unit(0, "mm"),
+          legend.title = element_blank()) +
     scale_x_continuous(expand = c(0, 0))
 
   if (!is.null(data)) {

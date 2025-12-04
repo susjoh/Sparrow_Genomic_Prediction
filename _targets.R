@@ -25,7 +25,7 @@ controller_slurm <- crew_controller_slurm(
     log_output = "Jobs/%A.log",
     memory_gigabytes_per_cpu = 6,
     cpus_per_task = 16,
-    time_minutes = 60 * 24 * 20, # minutes * hours * days
+    time_minutes = 60 * 24 * 2, # minutes * hours * days
     partition = "CPUQ",
     verbose = TRUE)
 )
@@ -49,6 +49,7 @@ tar_option_set(
                "tidyr",
                "mvtnorm",
                "ggpubr",
+               "grid",
                "MCMCglmm",
                "HDInterval",
                "rstan",
@@ -1154,7 +1155,7 @@ list(
       rowMeans()
   ),
   tar_target(
-    stanbv_pred_plot_ars,
+    stan_bv_pred_plot_ars2x2,
     ggarrange(stan_bv_pred_plot_ars_adult_f +
                 xlab("ACC breeding value") +
                 rremove("ylab"),
@@ -1166,38 +1167,53 @@ list(
                 rremove("ylab"),
               stan_bv_pred_plot_ars_parent_m +
                 xlab("Parental ACC breeding value") +
+                scale_y_continuous(labels = function(x) sprintf("%.1f", x)) +
                 rremove("ylab"), # One-digit yaxis here causes misalignment
               common.legend = TRUE,
               legend = "right",
               ncol = 2,
               nrow = 2,
               labels = c("Female", "Male", "", ""),
-              hjust = c(-1.5, -2.5, 0, 0)
-              # vjust = 1.5
-              ) %>%
+              hjust = c(-1.75, -3, 0, 0)) %>%
       annotate_figure(left = textGrob(
-        "Predicted ARS",
+        paste0("Predicted ARS",
+               "                                             ",
+               "Predicted ARS"),
         rot = 90,
         vjust = 1,
         hjust = 0.45,
         gp = gpar(cex = 1)))
   ),
   tar_target(
-    stanbv_pred_plot_surv,
+    stan_bv_pred_plot_ars2x2_pdf,
+    ggsave_path("figs/stan_bv_pred_plot_ars2x2.pdf",
+                plot = stan_bv_pred_plot_ars2x2,
+                width = 7.5,
+                height = 6.5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    stan_bv_pred_plot_surv3x2,
     ggarrange(stan_bv_pred_plot_surv_adult_f +
                 xlab("ACC breeding value") +
+                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
                 rremove("ylab"),
               stan_bv_pred_plot_surv_adult_m +
                 xlab("ACC breeding value") +
+                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
                 rremove("ylab"),
               stan_bv_pred_plot_surv_parent_f +
                 xlab("Parental ACC breeding value") +
+                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
                 rremove("ylab"),
               stan_bv_pred_plot_surv_parent_m +
                 xlab("Parental ACC breeding value") +
                 rremove("ylab"),
               stan_bv_pred_plot_nest_f +
                 xlab("Parental ACC breeding value") +
+                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
                 rremove("ylab"),
               stan_bv_pred_plot_nest_m +
                 xlab("Parental ACC breeding value") +
@@ -1207,14 +1223,25 @@ list(
               ncol = 2,
               nrow = 3,
               labels = c("Female", "Male", "", ""),
-              hjust = c(-1.5, -2.5, 0, 0)
-              # vjust = 1.5
-    ) %>%
+              hjust = c(-1.75, -3, 0, 0)) %>%
       annotate_figure(left = textGrob(
-        "Predicted AS",
+        paste0("Nestling survival",
+               "                                              ",
+               "Adult AS",
+               "                                                      ",
+               "Adult AS"),
         rot = 90,
         vjust = 1,
-        hjust = 0.45,
         gp = gpar(cex = 1)))
+  ),
+  tar_target(
+    stan_bv_pred_plot_surv3x2_pdf,
+    ggsave_path("figs/stan_bv_pred_plot_surv3x2.pdf",
+                plot = stan_bv_pred_plot_surv3x2,
+                width = 7.5,
+                height = 9.5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
   )
 )
