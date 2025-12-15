@@ -1351,6 +1351,26 @@ inla_bv_covmat <- function(model, n_samp = 1e4, ncores) {
          order(model$summary.random$id1$ID)]
 }
 
+test_mvnorm <- function(model, n_samp = 5e3, ncores = 8) {
+
+  INLA::inla.posterior.sample(n = n_samp,
+                              result = model,
+                              add.names = FALSE,
+                              num.threads = ncores) %>%
+    INLA::inla.posterior.sample.eval(fun = function() id1) %>%
+    t() -> samps
+
+  # Any linear combination is normal iff mult. var. norm.
+  n_test <- 1e2
+  test_res <- list()
+  for (i in seq_len(n_test)) {
+    a <- rnorm(n = ncol(samps)) # lin. comb. weights
+    (samps %*% a) %>% as.numeric() %>% shapiro.test() -> res
+    test_res <- c(test_res, res)
+  }
+  test_res
+}
+
 make_sim_bv_plot <- function(summ,
                              sim_data) {
 
@@ -1442,7 +1462,7 @@ pred_fun_age_q1 <- function(dat, np) {
     return(rep(0, np))
   seq(min(dat$age), max(dat$age), length.out = np) %>%
     predict(poly(dat$age, degree = 2), newdata = .) %>%
-     `[`(, 1)
+    `[`(, 1)
 }
 pred_fun_age_q2 <- function(dat, np) {
   if (is.null(dat$age))
@@ -1552,8 +1572,8 @@ plot_bv_out_vs_in <- function(stats, dat) {
     scale_y_continuous(limits = range(bv_in, bv_out)) +
     theme(panel.border = element_rect(fill = NA),
           panel.grid.minor = element_blank()) # +
-    # geom_errorbar(mapping = aes(ymin = bv_out - bv_out_sd,
-    #                             ymax = bv_out + bv_out_sd))
-    # geom_errorbarh(mapping = aes(xmin = bv_in - bv_in_sd,
-    #                              xmax = bv_in + bv_in_sd))
+  # geom_errorbar(mapping = aes(ymin = bv_out - bv_out_sd,
+  #                             ymax = bv_out + bv_out_sd))
+  # geom_errorbarh(mapping = aes(xmin = bv_in - bv_in_sd,
+  #                              xmax = bv_in + bv_in_sd))
 }

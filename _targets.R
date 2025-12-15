@@ -390,6 +390,10 @@ fitmod_map <- tar_map(
     batches = 20
   ),
   tar_target(
+    mvn_test,
+    test_mvnorm(model = co_gp)
+  ),
+  tar_target(
     bv_covmat,
     inla_bv_covmat(model = co_gp, n_samp = 1e4, ncores = 16)
   ),
