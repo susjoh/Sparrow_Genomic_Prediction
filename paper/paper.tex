@@ -50,14 +50,34 @@ All data in this study was collected from a meta-population of house sparrows in
 
 \subsection*{Data}
 
+\subsection*{Outline of analysis}
+
+% Describe the general workflow here, before describing the details of each step in the subsections below.
+\begin{itemize}
+    \item Motivate why GP \begin{itemize}
+        \item The method for measuring ACC produces one measurement per genotyped parnet/offspring pair.
+        \item Thus, missing CO measurements for non-successful breeders.
+        \item But: can GP them
+    \end{itemize}
+    \item Outline GP
+    \item Briefly describe feeding forward uncertainty
+    \item Outline fitness models
+\end{itemize}
+
 \subsection*{Genomic Prediction}
 
 Given measurements of the crossover count $y_{ij}$ of individual $i$ (estimated from offspring $j$) we model
 \begin{equation*}
-    y_{ij} = \alpha + \beta_\text{coverage} \cdot \text{coverage}_{ij} + g_i + \text{hy}_i + \text{hi}_i + \text{id}_i + \varepsilon_{ij}
+    y_{ij} = \mu + \beta_\text{coverage} \cdot x_{\text{coverage},ij} + g_i + z_{\text{hy},i} + z_{\text{hi},i} + z_{\text{id},i} + z_{\varepsilon,ij}\ ,
 \end{equation*}
+where $\mu$ is an intercept, $\beta_\text{coverage}$ is the regression coefficient for total coverage $x_{\text{coverage},ij}$, $g_i$ is a structured random effect corresponding to the genetic value, and $z_{\text{hy},i}$, $z_{\text{hi},i}$, $z_{\text{id},i}$, and $z_{\varepsilon,ij}$ are unstructured random effects corresponding to hatch year, (known or presumed) hatch island, permanent environmental effects and residual environmental effects, respectively.
 
-Although the crossover count $y_{ij}$ is a count we treat it as a continuous Gaussian
+\begin{itemize}
+    \item Describe model equation
+    \item Describe GRM
+\end{itemize}
+
+The crossover count $y_{ij}$ is a count trait, but we treat it as continuous Gaussian.
 
 priors on random effects: $PC(var = \hat{\sigma}^2_y / 2, 0.05)$ 
 
@@ -71,7 +91,7 @@ Fitting the GP model results in marginal posterior distributions for each breedi
 We investigate the impact of the breeding values for sex-specific breeding values on fitness components.
 
 % Sentences Susan asked for:
-The Bayesian genomic prediction model gives us a full posterior for each individual breeding value $g_i$. 
+The Bayesian GP models give us full joint posteriors for the breeding value vector $\bm g$.
 In the fitness models, we can therefore incorporate the measurement error in these breeding value by sampling breeding values from these posterior distributions. 
 Rather than treating the breeding values as having fixed, known values, we sample each breeding value $g_i$ in each MCMC iteration, and regress on these samples (and their square) in the logistic regression. 
 (This is equivalent to assuming a Berkson measurement error model for the 
@@ -138,6 +158,7 @@ List of models, in simple terms
         \end{itemize}
     \end{itemize}
 \end{itemize}
+
 \clearpage
 
 \subsubsection*{Annual survival}
@@ -156,30 +177,16 @@ For individual $i$ in year $j$ we model the survival as a logistic GLMM, written
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.91\linewidth]{figs/surv_bv_pred_f.pdf}
+    \includegraphics[width=\linewidth]{figs/stan_bv_pred_plot_ars2x2.pdf}
     \caption{...}
-    \label{fig-surv_bv_f}
+    \label{fig-ars_bv}
 \end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.91\linewidth]{figs/surv_bv_pred_m.pdf}
+    \includegraphics[width=\linewidth]{figs/stan_bv_pred_plot_surv3x2.pdf}
     \caption{...}
-    \label{fig-surv_bv_m}
-\end{figure}
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.91\linewidth]{figs/ars_bv_pred_f.pdf}
-    \caption{...}
-    \label{fig-ars_bv_f}
-\end{figure}
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.91\linewidth]{figs/ars_bv_pred_m.pdf}
-    \caption{...}
-    \label{fig-ars_bv_m}
+    \label{fig-surv_bv}
 \end{figure}
 
 \section*{Discussion}
