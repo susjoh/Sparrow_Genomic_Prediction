@@ -306,6 +306,14 @@ fitmod_map <- tar_map(
                  sex_keep = sex_keep)
   ),
   tar_target(
+    cv_test_sets,
+    co_data_gp %>%
+      dplyr::filter(!is.na(n)) %>%
+      `$`(id_red) %>%
+      unique() %>%
+      make_cv_test_sets(num_folds = 10)
+  ),
+  tar_target(
     co_grm_files,
     make_grm(analysis_inds = unique(getElement(co_data_gp, "ringnr")),
              bfile = gsub(x = geno_data_paths[1], ".bed", ""),
@@ -328,6 +336,29 @@ fitmod_map <- tar_map(
            effects_vec = inla_effects_gp_vector_grm_all,
            y = paste0("co_count_", sex_lc),
            comp_conf = TRUE)
+  ),
+  tar_target(
+    co_gp_cv,
+    run_gp_cv(pheno_data = co_data_gp,
+              inverse_relatedness_matrix = getElement(co_grm_obj, "inv_grm"),
+              effects_vec = inla_effects_gp_vector_grm_all,
+              y = paste0("co_count_", sex_lc),
+              comp_conf = TRUE,
+              test_set = cv_test_sets),
+    pattern = map(cv_test_sets)
+  ),
+  tar_target(
+    co_gp_cv_acc,
+    cv_acc_fun(model = co_gp_cv,
+               pheno_data = co_data_gp %>% dplyr::filter(!is.na(n)),
+               test_set = cv_test_sets,
+               y = paste0("co_count_", sex_lc)),
+    pattern = map(co_gp_cv, cv_test_sets)
+  ),
+  tar_target(
+    co_gp_cv_mean_acc,
+    co_gp_cv_acc %>% as.data.frame() %>% t() %>% apply(2, mean),
+    deployment = "main"
   ),
   tar_target(
     fitness_data,

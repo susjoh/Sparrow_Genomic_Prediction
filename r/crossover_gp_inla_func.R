@@ -672,6 +672,30 @@ run_gp <- function(pheno_data,
     inla.rerun()
 }
 
+run_gp_cv <- function(pheno_data,
+                      inverse_relatedness_matrix,
+                      effects_vec,
+                      y,
+                      comp_conf,
+                      test_set) {
+  pheno_data %>%
+    dplyr::filter(!is.na(n)) %>%
+    cbind(., y_cv = ifelse(.$id_red %in% test_set,
+                           NA, #masking test sets
+                           getElement(., y))) ->
+    pheno_data
+
+  inverse_relatedness_matrix %>%
+    `[`(colnames(inverse_relatedness_matrix) %in% pheno_data$id1,
+        colnames(inverse_relatedness_matrix) %in% pheno_data$id1) -> grm
+
+  run_gp(pheno_data = pheno_data,
+         inverse_relatedness_matrix = grm,
+         effects_vec = effects_vec,
+         y = "y_cv",
+         comp_conf = comp_conf)
+}
+
 inla_posterior_variances <- function(prec_marginal) {
   sigma_marg <- inla.tmarginal(function(x) 1 / x, prec_marginal)
   inla.zmarginal(sigma_marg, silent = TRUE)
@@ -1576,4 +1600,42 @@ plot_bv_out_vs_in <- function(stats, dat) {
   #                             ymax = bv_out + bv_out_sd))
   # geom_errorbarh(mapping = aes(xmin = bv_in - bv_in_sd,
   #                              xmax = bv_in + bv_in_sd))
+}
+
+make_cv_test_sets <- function(analysis_inds,
+                              num_folds = 10) {
+  n <- length(analysis_inds)
+
+  # Split individuals into n folds
+  scrambled <- sample(n)
+  folds <- cut(seq_len(n), num_folds)
+  levels(folds) <- seq_len(num_folds)
+
+  # Create list of test individuals in each fold
+  lapply(1:num_folds, function(fo) {
+    x <- analysis_inds[sort(scrambled[folds == fo])]
+    attributes(x) <- list(fo = fo)
+    x
+  })
+}
+
+cv_acc_fun <- function(model, pheno_data, test_set, y) {
+
+  pred_bv <- model$summary.random$id1$mean[order(model$summary.random$id1$ID)]
+  # GP accuracy, with repeated breeding values
+  pheno_data$pred_bv_rep <- pred_bv[pheno_data$id1]
+
+  pheno_data %>%
+    dplyr::filter(id_red %in% test_set) %>%
+    with(cor(get(y), pred_bv_rep)) -> acc_unscaled
+
+  # Assume va is similar in overall sample and just in test set
+  INLA::inla.tmarginal(function(x) 1 / x,
+                       model$marginals.hyperpar$`Precision for id1`) %>%
+    INLA::inla.mmarginal() ->
+    va
+
+  lambda <- sqrt(va / var(getElement(pheno_data, y)))
+
+  c("acc_unscaled" = acc_unscaled, "acc" = acc_unscaled / lambda)
 }
