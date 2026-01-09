@@ -45,11 +45,13 @@ Rationale and background - Susan
 \subsection*{House sparrow dataset}
 % THIS IS AN ALMOST DIRECT LIFTOVER FROM THE MBE PAPER
 
-All data in this study was collected from a meta-population of house sparrows inhabiting an 18-island archipelago off the Helgeland coast in Northern Norway (midpoint of 66$^\circ$32`N, 12$^\circ$32`E and covering 1600km\textsuperscript{2}). This metapopulation has been subject to an individual-based long-term study since 1993 \citep{Jensen2004-wt}. Birds are routinely captured and individually marked from the beginning of May to the middle of August and for approximately one month in the autumn using mist nets (adults and fledged juveniles), or as fledglings in accessible nests during the breeding season. A small (25 $\mu$ l) blood sample is collected from the brachial vein for DNA from every captured bird. Individual hatch year was determined as either (a) the first year recorded for nestlings or fledged juveniles captured in the summer and autumn, or (b) the year prior to first year recorded for birds first captured as female adults before June 1 or as males before August 1, or (c) a range including the year first recorded and the year prior for birds first captured as adult females after June 1 or adult males after August 1; hatch island is also recorded alongside hatch year \citep{ranke2021spatial, Saatoglu2021-ya}. Sampling was conducted in strict accordance with permits from the Norwegian Food Safety Authority and the Ringing Centre at Stavanger Museum, Norway.
+% All data in this study was collected from a meta-population of house sparrows inhabiting an 18-island archipelago off the Helgeland coast in Northern Norway (midpoint of 66$^\circ$32`N, 12$^\circ$32`E and covering 1600km\textsuperscript{2}). This metapopulation has been subject to an individual-based long-term study since 1993 \citep{Jensen2004-wt}. Birds are routinely captured and individually marked from the beginning of May to the middle of August and for approximately one month in the autumn using mist nets (adults and fledged juveniles), or as fledglings in accessible nests during the breeding season. A small (25 $\mu$ l) blood sample is collected from the brachial vein for DNA from every captured bird. Individual hatch year was determined as either (a) the first year recorded for nestlings or fledged juveniles captured in the summer and autumn, or (b) the year prior to first year recorded for birds first captured as female adults before June 1 or as males before August 1, or (c) a range including the year first recorded and the year prior for birds first captured as adult females after June 1 or adult males after August 1; hatch island is also recorded alongside hatch year \citep{ranke2021spatial, Saatoglu2021-ya}. Sampling was conducted in strict accordance with permits from the Norwegian Food Safety Authority and the Ringing Centre at Stavanger Museum, Norway.
 
 \subsection*{ACC measurements}
 
-% Describe how ACC measurements were gained
+% Describe how ACC measurements were obtained
+
+% Describe fitness data
 
 \subsection*{Outline of analysis}
 
@@ -60,6 +62,8 @@ Individuals that were reproductively unsuccessful are therefore systematically u
 As a workaround to this sampling bias we use GP to predict genetic values of ACC for \textit{all} genotyped individuals, including non-breeders.
 These predicted genetic values, rather than the unevenly sampled ACC measurements, can then be regressed against the survival and reproductive traits to investigate fitness effects of ACC.
 As outlined below, we used a Bayesian GP model to estimate and predict sex-specific ACC genetic values, and relate these genetic values to fitness components, while appropriately accounting for the uncertainty in our genetic value estimates.
+
+% Sample size table
 
 \subsection*{Genomic Prediction}
 
@@ -73,6 +77,7 @@ where $\mu$ is an intercept, $\beta_\text{coverage}$ is the regression coefficie
 The genetic values $g_i$ form a structured random effect, such that the vector $\bm g = \left[g_1, g_2, \ldots, g_N\right]$ follows the distribution $\N{\bm{0}}{\sigma_{\text{G}}^2 \mathbf{G}}$, where $\sigma_{\text{G}}^2$ is the additive genetic variance and $\mathbf{G}$ is a pre-computed genomic relatedness matrix estimated with the first of the formulas given by \citet{vanraden2008efficient}.
 We placed independent normal priors $\N{0}{10^3}$ on fixed effect coefficients, and penalized complexity priors PC$\left(\hat \sigma / \sqrt{2}, 0.05\right)$ on the random effect variances \citep{simpson2017penalising}, $\hat\sigma$ being the sample standard deviation of $y_{ij}$.
 Fitting the GP model produced a joint posterior distribution for the entries of the genetic value vector $\bm g$, which we used in the following fitness analyses.
+We fitted separate GP models corresponding to each fitness model described in the following.
 
 \subsection*{Fitness analyses}
 
@@ -206,9 +211,16 @@ Rather than treating the genetic values as having fixed, known values, we update
 
 \begin{figure}
     \centering
-    \includegraphics[width=\linewidth]{figs/stan_bv_pred_plot_surv3x2.pdf}
+    \includegraphics[width=\linewidth]{figs/stan_bv_pred_plot_surv2x2.pdf}
     \caption{...}
     \label{fig-surv_bv}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{figs/stan_bv_pred_plot_nest13x2.pdf}
+    \caption{...}
+    \label{fig-nest_bv}
 \end{figure}
 
 \section*{Discussion}
