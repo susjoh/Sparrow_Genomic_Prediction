@@ -1218,7 +1218,7 @@ list(
     deployment = "main"
   ),
   tar_target(
-    stan_bv_pred_plot_surv3x2,
+    stan_bv_pred_plot_surv2x2,
     ggarrange(stan_bv_pred_plot_surv_adult_f +
                 xlab("ACC breeding value") +
                 scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
@@ -1234,7 +1234,33 @@ list(
               stan_bv_pred_plot_surv_parent_m +
                 xlab("Parental ACC breeding value") +
                 rremove("ylab"),
-              stan_bv_pred_plot_nest_f +
+              common.legend = TRUE,
+              legend = "right",
+              ncol = 2,
+              nrow = 2,
+              labels = c("Female", "Male", "", ""),
+              hjust = c(-1.75, -3, 0, 0)) %>%
+      annotate_figure(left = textGrob(
+        paste0("Adult AS",
+               "                                                      ",
+               "Adult AS"),
+        rot = 90,
+        vjust = 1,
+        gp = gpar(cex = 1)))
+  ),
+  tar_target(
+    stan_bv_pred_plot_surv2x2_pdf,
+    ggsave_path("figs/stan_bv_pred_plot_surv2x2.pdf",
+                plot = stan_bv_pred_plot_surv2x2,
+                width = 7.5,
+                height = 6.5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    stan_bv_pred_plot_nest1x2,
+    ggarrange(stan_bv_pred_plot_nest_f +
                 xlab("Parental ACC breeding value") +
                 scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
                 rremove("ylab"),
@@ -1244,25 +1270,21 @@ list(
               common.legend = TRUE,
               legend = "right",
               ncol = 2,
-              nrow = 3,
+              nrow = 1,
               labels = c("Female", "Male", "", ""),
               hjust = c(-1.75, -3, 0, 0)) %>%
       annotate_figure(left = textGrob(
-        paste0("Nestling survival",
-               "                                              ",
-               "Adult AS",
-               "                                                      ",
-               "Adult AS"),
+        paste0("Nestling survival"),
         rot = 90,
         vjust = 1,
         gp = gpar(cex = 1)))
   ),
   tar_target(
-    stan_bv_pred_plot_surv3x2_pdf,
-    ggsave_path("figs/stan_bv_pred_plot_surv3x2.pdf",
-                plot = stan_bv_pred_plot_surv3x2,
+    stan_bv_pred_plot_nest1x2_pdf,
+    ggsave_path("figs/stan_bv_pred_plot_nest1x2.pdf",
+                plot = stan_bv_pred_plot_nest1x2,
                 width = 7.5,
-                height = 9.5,
+                height = 3.5,
                 device = "pdf"),
     format = "file",
     deployment = "main"

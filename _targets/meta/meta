@@ -3311,6 +3311,12 @@ co_gp_cv_acc_ars_parent_m_ee10e6a3015a07a8|branch|1a5f7dcb5c5db9b8|e738d1ec4a124
 co_gp_cv_acc_ars_parent_m_cee1a6420bcc2fdb|branch|b695670866abcec2|e738d1ec4a124944|fca9941afeec3048|512820682||t20461.6603356481s|s139b|139|qs|local|list|co_gp_cv_acc_ars_parent_m||0.15||
 co_gp_cv_acc_ars_parent_m|pattern|b035450376373413|e738d1ec4a124944||1035177976||||1390|qs|local|list||co_gp_cv_acc_ars_parent_m_3ff221a528a29c27*co_gp_cv_acc_ars_parent_m_390d4e33f14b58a2*co_gp_cv_acc_ars_parent_m_b4544ae7f244c187*co_gp_cv_acc_ars_parent_m_8ada6e31d0e51d84*co_gp_cv_acc_ars_parent_m_cee1a6420bcc2fdb*co_gp_cv_acc_ars_parent_m_87555d126db19b47*co_gp_cv_acc_ars_parent_m_ee10e6a3015a07a8*co_gp_cv_acc_ars_parent_m_9e5a31539fff242c*co_gp_cv_acc_ars_parent_m_6a6c346f28f44b00*co_gp_cv_acc_ars_parent_m_b588fb09de288323|1.42||
 co_gp_cv_mean_acc_ars_parent_m|stem|ac6ac9552ecafdc7|f57182bbe084a890|7343b5028a801c1f|612618342||t20461.6603356481s|s139b|139|qs|local|list|||0.001||
+co_gp_cv_mean_acc_fitmod_f|stem|1f7067df665b4578|363639fb31719d7b|cd9383b3dde99aa4|1425225397||t20462.5146875s|s335b|335|qs|local|list|||0.006||
+co_gp_cv_mean_acc_fitmod_m|stem|8878e296d940c69f|f6c4f676b8175a61|f82ef80db8219b06|-700534627||t20462.5146875s|s335b|335|qs|local|list|||0.002||
+co_gp_cv_mean_acc_fitmod_sex|stem|b9fb1a600f17eac0|ebd9d654837c44f0|e49a5fe37ddb5341|132754494||t20462.5146875s|s450b|450|qs|local|list|||0.002||
+stan_bv_pred_plot_nest1x2|stem|0648b473f273191f|b839c80fc79214e9|2e03d8e29128a0f4|395763981||t20462.6143402778s|s60655376b|60655376|qs|local|list|||22.569||
+stan_bv_pred_plot_nest1x2_pdf|stem|5a1ef28bd192a08c|2ae050f84fe1c190|ff6b180fc281d9e5|-1969509801|figs/stan_bv_pred_plot_nest1x2.pdf|t20462.6144907407s|s7265020b|7265020|file|local|list|||9.341||
+stan_bv_pred_plot_surv2x2|stem|5d041ead749a9a17|d1a281084c570429|877d03ef5f346e12|866226317||t20462.614537037s|s118040633b|118040633|qs|local|list|||34.571||
 make_data_adult|function|db0306c3adf5c860
 make_cv_test_sets|function|b3037abec3270df7
 make_co_data_cv|function|79d5347c3d891613
@@ -3341,7 +3347,7 @@ pred_fun_bv2|function|4b4b81a21cdc48f0
 get_10fcv_acc|function|6c0cc39b2f3ea217
 x_axis_fun_bv|function|62f07a38c9d33067
 values_fitmod|object|b48a782ec87c6c4f
-controller_local|object|143520b78441ee0a
+controller_local|object|6ed7ad975c46f78d
 co_data_rename_cols|function|4f032c639c848952
 cv_acc_fun|function|5159f9a2ed2b3f64
 prep_co_data|function|84bf74cd56147af2
@@ -3369,7 +3375,7 @@ plink_path|object|3ad68512d925a789
 x_axis_fun_age|function|acc2b9d503150e7f
 plot_bv_out_vs_in|function|76eba24eeffae301
 pred_fun_age_q1|function|f4d1a04bfb915bd3
-controller_slurm|object|83687789c4ca2d94
+controller_slurm|object|05f2dd76287bfb98
 pred_fun_age_q2|function|bf9a2170dc7f58c9
 make_nestling_gp_data|function|0f3259a59f48231a
 pred_fun_bv|function|820fad7ba0197cc2
@@ -3384,6 +3390,4 @@ make_sim_surv_parent|function|7db7dccc9e0a7fc4
 make_zip_preds_and_marg|function|8019a543fbf8c28a
 make_logit_preds_and_marg|function|3f4f29361d8981d2
 run_gp_cv|function|ebdbd407a6c1c903
-co_gp_cv_mean_acc_fitmod_f|stem|1f7067df665b4578|363639fb31719d7b|cd9383b3dde99aa4|1425225397||t20462.5146875s|s335b|335|qs|local|list|||0.006||
-co_gp_cv_mean_acc_fitmod_m|stem|8878e296d940c69f|f6c4f676b8175a61|f82ef80db8219b06|-700534627||t20462.5146875s|s335b|335|qs|local|list|||0.002||
-co_gp_cv_mean_acc_fitmod_sex|stem|b9fb1a600f17eac0|ebd9d654837c44f0|e49a5fe37ddb5341|132754494||t20462.5146875s|s450b|450|qs|local|list|||0.002||
+stan_bv_pred_plot_surv2x2_pdf|stem|03c42b2e8a024ca0|97344fe9ebc791ff|374bab9abd45c1d8|1490829758|figs/stan_bv_pred_plot_surv2x2.pdf|t20462.6254282407s|s14192990b|14192990|file|local|list|||18.875||
