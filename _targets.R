@@ -925,6 +925,15 @@ sex_map <- tar_map(
     ggplot(data = co_data_rand, aes(x = co_count, y = n)) +
       geom_point() +
       geom_smooth(method = "lm")
+  ),
+  tar_combine(
+    co_gp_cv_mean_acc_fitmod,
+    fitmod_map[["co_gp_cv_mean_acc"]],
+    command = dplyr::bind_rows(!!!.x, .id = "fitmod") %>%
+      dplyr::mutate(fitmod = gsub(pattern = "co_gp_cv_mean_acc_",
+                                  replacement = "",
+                                  x = fitmod)),
+    deployment = "main"
   )
   # tar_target(
   #   co_gam, # genomic animal model for sex-specific crossover rate
@@ -932,27 +941,6 @@ sex_map <- tar_map(
   #          inverse_relatedness_matrix = co_grm_obj$inv_grm,
   #          effects_vec = inla_effects_gp_vector_grm_all,
   #          y = paste0("co_count_", sex_lc))
-  # ),
-  # tar_target(
-  #   co_10fcv, # genomic animal model for sex-specific crossover rate
-  #   run_gp(pheno_data = co_data_cv,
-  #          inverse_relatedness_matrix = co_grm_obj$inv_grm,
-  #          effects_vec = inla_effects_gp_vector_grm_all,
-  #          y = paste0("co_count_", sex_lc, "_test")),
-  #   pattern = map(co_data_cv)
-  # ),
-  # tar_target(
-  #   co_10fcv_bvacc, # genomic animal model for sex-specific crossover rate
-  #   get_10fcv_acc(data = co_data_cv,
-  #                 model = co_10fcv,
-  #                 y_str = paste0("co_count_", sex_lc)),
-  #   pattern = map(co_data_cv, co_10fcv),
-  #   iteration = "vector"
-  # ),
-  # tar_target(
-  #   co_gam_cv, # genomic animal model for sex-specific crossover rate
-  #   inla_cv(model = co_gam,
-  #           pheno_data = co_data)
   # ),
   # tar_target(
   #   surv_samp_pairs_plot,
@@ -1277,6 +1265,15 @@ list(
                 height = 9.5,
                 device = "pdf"),
     format = "file",
+    deployment = "main"
+  ),
+  tar_combine(
+    co_gp_cv_mean_acc_fitmod_sex,
+    sex_map[["co_gp_cv_mean_acc_fitmod"]],
+    command = dplyr::bind_rows(!!!.x, .id = "sex") %>%
+      dplyr::mutate(sex = gsub(pattern = "co_gp_cv_mean_acc_fitmod_",
+                               replacement = "",
+                               x = sex)),
     deployment = "main"
   )
 )
