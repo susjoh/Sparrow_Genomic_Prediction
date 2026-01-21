@@ -370,6 +370,35 @@ fitmod_map <- tar_map(
                 ped_path = pedigree_path)
   ),
   tar_target(
+    num_co_meas_plot,
+    dplyr::filter(fitness_data, !duplicated(ringnr)) %>%
+      ggplot(aes(x = co_n)) +
+      geom_histogram(bins = 42) +
+      labs(y = "Count",
+           x = "Number of ACC measurements"),
+    deployment = "main"
+  ),
+  tar_target(
+    # We generally find more extreme estimated bvs with the more measurements?
+    bv_absmean_vs_co_meas_plot,
+    dplyr::filter(fitness_data, !duplicated(ringnr)) %>%
+      ggplot(aes(y = abs(bv_mean), group = (co_n != 0), x = (co_n != 0))) +
+      geom_boxplot() +
+      labs(y = "Absolute estimated breeding value",
+           x = "Phenotyped for ACC or not"),
+    deployment = "main"
+  ),
+  tar_target(
+    # We generally find more extreme estimated bvs with the more measurements?
+    bv_sd_vs_co_meas_plot,
+    dplyr::filter(fitness_data, !duplicated(ringnr)) %>%
+      ggplot(aes(y = bv_sd, group = (co_n != 0), x = (co_n != 0))) +
+      geom_boxplot() +
+      labs(y = "S.d. of breeding value",
+           x = "Phenotyped for ACC or not"),
+    deployment = "main"
+  ),
+  tar_target(
     # We generally find more extreme estimated bvs with the more measurements?
     bv_vs_n_meas_plot,
     dplyr::filter(fitness_data, !duplicated(ringnr)) %>%
@@ -1218,6 +1247,66 @@ list(
     deployment = "main"
   ),
   tar_target(
+    stan_age_pred_plot_ars2x2,
+    ggarrange(stan_age_pred_plot_ars_adult_f +
+                xlab("Age") +
+                rremove("ylab"),
+              stan_age_pred_plot_ars_adult_m +
+                xlab("Age") +
+                rremove("ylab"),
+              stan_age_pred_plot_ars_parent_f +
+                xlab("Age") +
+                rremove("ylab"),
+              stan_age_pred_plot_ars_parent_m +
+                xlab("Age") +
+                scale_y_continuous(labels = function(x) sprintf("%.1f", x)) +
+                rremove("ylab"), # One-digit yaxis here causes misalignment
+              common.legend = TRUE,
+              legend = "right",
+              ncol = 2,
+              nrow = 2,
+              labels = c("Female", "Male", "", ""),
+              hjust = c(-1.75, -3, 0, 0)) %>%
+      annotate_figure(left = textGrob(
+        paste0("Predicted ARS",
+               "                                             ",
+               "Predicted ARS"),
+        rot = 90,
+        vjust = 1,
+        hjust = 0.45,
+        gp = gpar(cex = 1)))
+  ),
+  tar_target(
+    stan_f_pred_plot_ars2x2,
+    ggarrange(stan_f_pred_plot_ars_adult_f +
+                xlab("Inbreeding coefficient") +
+                rremove("ylab"),
+              stan_f_pred_plot_ars_adult_m +
+                xlab("Inbreeding coefficient") +
+                rremove("ylab"),
+              stan_f_pred_plot_ars_parent_f +
+                xlab("Parental inbreeding coefficient") +
+                rremove("ylab"),
+              stan_f_pred_plot_ars_parent_m +
+                xlab("Parental inbreeding coefficient") +
+                scale_y_continuous(labels = function(x) sprintf("%.1f", x)) +
+                rremove("ylab"), # One-digit yaxis here causes misalignment
+              common.legend = TRUE,
+              legend = "right",
+              ncol = 2,
+              nrow = 2,
+              labels = c("Female", "Male", "", ""),
+              hjust = c(-1.75, -3, 0, 0)) %>%
+      annotate_figure(left = textGrob(
+        paste0("Predicted ARS",
+               "                                             ",
+               "Predicted ARS"),
+        rot = 90,
+        vjust = 1,
+        hjust = 0.45,
+        gp = gpar(cex = 1)))
+  ),
+  tar_target(
     stan_bv_pred_plot_surv2x2,
     ggarrange(stan_bv_pred_plot_surv_adult_f +
                 xlab("ACC breeding value") +
@@ -1233,6 +1322,68 @@ list(
                 rremove("ylab"),
               stan_bv_pred_plot_surv_parent_m +
                 xlab("Parental ACC breeding value") +
+                rremove("ylab"),
+              common.legend = TRUE,
+              legend = "right",
+              ncol = 2,
+              nrow = 2,
+              labels = c("Female", "Male", "", ""),
+              hjust = c(-1.75, -3, 0, 0)) %>%
+      annotate_figure(left = textGrob(
+        paste0("Adult AS",
+               "                                                      ",
+               "Adult AS"),
+        rot = 90,
+        vjust = 1,
+        gp = gpar(cex = 1)))
+  ),
+  tar_target(
+    stan_age_pred_plot_surv2x2,
+    ggarrange(stan_age_pred_plot_surv_adult_f +
+                xlab("Age") +
+                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
+                rremove("ylab"),
+              stan_age_pred_plot_surv_adult_m +
+                xlab("Age") +
+                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
+                rremove("ylab"),
+              stan_age_pred_plot_surv_parent_f +
+                xlab("Age") +
+                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
+                rremove("ylab"),
+              stan_age_pred_plot_surv_parent_m +
+                xlab("Age") +
+                rremove("ylab"),
+              common.legend = TRUE,
+              legend = "right",
+              ncol = 2,
+              nrow = 2,
+              labels = c("Female", "Male", "", ""),
+              hjust = c(-1.75, -3, 0, 0)) %>%
+      annotate_figure(left = textGrob(
+        paste0("Adult AS",
+               "                                                      ",
+               "Adult AS"),
+        rot = 90,
+        vjust = 1,
+        gp = gpar(cex = 1)))
+  ),
+  tar_target(
+    stan_f_pred_plot_surv2x2,
+    ggarrange(stan_f_pred_plot_surv_adult_f +
+                xlab("Inbreeding coefficient") +
+                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
+                rremove("ylab"),
+              stan_f_pred_plot_surv_adult_m +
+                xlab("Inbreeding coefficient") +
+                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
+                rremove("ylab"),
+              stan_f_pred_plot_surv_parent_f +
+                xlab("Parental inbreeding coefficient") +
+                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
+                rremove("ylab"),
+              stan_f_pred_plot_surv_parent_m +
+                xlab("Parental inbreeding coefficient") +
                 rremove("ylab"),
               common.legend = TRUE,
               legend = "right",
@@ -1266,6 +1417,27 @@ list(
                 rremove("ylab"),
               stan_bv_pred_plot_nest_m +
                 xlab("Parental ACC breeding value") +
+                rremove("ylab"),
+              common.legend = TRUE,
+              legend = "right",
+              ncol = 2,
+              nrow = 1,
+              labels = c("Female", "Male", "", ""),
+              hjust = c(-1.75, -3, 0, 0)) %>%
+      annotate_figure(left = textGrob(
+        paste0("Nestling survival"),
+        rot = 90,
+        vjust = 1,
+        gp = gpar(cex = 1)))
+  ),
+  tar_target(
+    stan_f_pred_plot_nest1x2,
+    ggarrange(stan_f_pred_plot_nest_f +
+                xlab("Parental inbreeding coefficient") +
+                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
+                rremove("ylab"),
+              stan_f_pred_plot_nest_m +
+                xlab("Parental inbreeding coefficient") +
                 rremove("ylab"),
               common.legend = TRUE,
               legend = "right",
