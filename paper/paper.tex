@@ -63,16 +63,74 @@ As a workaround to this sampling bias we use GP to predict genetic values of ACC
 These predicted genetic values, rather than the unevenly sampled ACC measurements, can then be regressed against the survival and reproductive traits to investigate fitness effects of ACC.
 As outlined below, we used a Bayesian GP model to estimate and predict sex-specific ACC genetic values, and relate these genetic values to fitness components, while appropriately accounting for the uncertainty in our genetic value estimates.
 
-% Sample size table
+\begin{table*}[!hb]
+    \centering
+    \ra{1.3}
+    \begin{tabular}{@{}lccccc@{}}
+        \toprule
+        & \multicolumn{5}{c}{Fitness}\\ 
+        \cmidrule{2-6}
+        Model & ARS, adult & ARS, parental & AS, adult & AS, parental & NS  \\
+        \midrule
+
+        GP ACC pheno &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ \\
+
+        GP ACC pred &
+        $XXX$ &
+        $XXX$ &
+        $XXX$ &
+        $XXX$ &
+        $XXX$  \\
+
+        GP ACC total &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ \\
+
+        \cmidrule{2-6}
+        Fitness pheno &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ \\
+
+        Fitness pred &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ \\
+
+        Fitness total &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ &
+        $XXX$ $(XXX)$ \\
+
+        \bottomrule 
+    \end{tabular}
+    \caption{Sample sizes}
+    \label{tab-gp-ss}
+\end{table*}
 
 \subsection*{Genomic Prediction}
 
 We performed GP of ACC with a Bayesian linear mixed with a Gaussian likelihood, fitted in \texttt{R-INLA} \citep{rue2009approximate}.
 While ACC is a count trait, its rates were high enough that assuming a continuous Gaussian likelihood was a reasonable modelling assumption.
 Given ACC measurements $y_{ij}$ of individual $i$ estimated from offspring $j$, we modelled
-\begin{equation*}
+\begin{equation}
     y_{ij} = \mu + \beta_\text{coverage} \cdot x_{\text{coverage},ij} + g_i + z_{\text{hy},i} + z_{\text{hi},i} + z_{\text{id},i} + z_{\varepsilon,ij}\ ,
-\end{equation*}
+    \label{eq-gp}
+\end{equation}
 where $\mu$ is an intercept, $\beta_\text{coverage}$ is the regression coefficient for total coverage $x_{\text{coverage},ij}$, and $z_{\text{hy},i}$, $z_{\text{hi},i}$, $z_{\text{id},i}$, and $z_{\varepsilon,ij}$ are unstructured random effects corresponding to hatch year, (known or presumed) hatch island, permanent environmental effects and residual environmental effects, respectively.
 The genetic values $g_i$ form a structured random effect, such that the vector $\bm g = \left[g_1, g_2, \ldots, g_N\right]$ follows the distribution $\N{\bm{0}}{\sigma_{\text{G}}^2 \mathbf{G}}$, where $\sigma_{\text{G}}^2$ is the additive genetic variance and $\mathbf{G}$ is a pre-computed genomic relatedness matrix estimated with the first of the formulas given by \citet{vanraden2008efficient}.
 We placed independent normal priors $\N{0}{10^3}$ on fixed effect coefficients, and penalized complexity priors PC$\left(\hat \sigma / \sqrt{2}, 0.05\right)$ on the random effect variances \citep{simpson2017penalising}, $\hat\sigma$ being the sample standard deviation of $y_{ij}$.
@@ -133,7 +191,7 @@ The parental model for ARS was similar to the adult model, except we instead use
 + \beta_{g^2}\, g_{p(i)}^2
 + \beta_a\, a_{ij}
 + \beta_{a^2}\, a_{ij}^2
-+ \beta_f\, f_i
++ \beta_f\, f_{p(i)}
 + \text{ye}_{ij}
 + \text{isl}_i
 + \text{id}_i
@@ -188,7 +246,7 @@ priors: ...
 \subsubsection*{Measurement error in $g_i$}
 
 % First: justify why we need to do this. "Uncertainty propagation". Then explain.
-Fitting the Bayesian GP model \eqref{xxx} gave us full joint posteriors for the genetic value vector $\bm g$.
+Fitting the Bayesian GP model \eqref{eq-gp} gave us full joint posteriors for the genetic value vector $\bm g$.
 In the fitness models, we could therefore incorporate the measurement error in these genetic value by sampling genetic values from these posterior distributions.
 Rather than treating the genetic values as having fixed, known values, we update the genetic values in each MCMC iteration.
 % The joint posterior of $\bm g$ is approximately multivariate Gaussian (can show in supplementary).
@@ -218,7 +276,7 @@ Rather than treating the genetic values as having fixed, known values, we update
 
 \begin{figure}
     \centering
-    \includegraphics[width=\linewidth]{figs/stan_bv_pred_plot_nest13x2.pdf}
+    \includegraphics[width=\linewidth]{figs/stan_bv_pred_plot_nest1x2.pdf}
     \caption{...}
     \label{fig-nest_bv}
 \end{figure}
