@@ -1,6 +1,8 @@
 data {
   int<lower=0> N;                        // Number of observations
   vector[N] f;                           // Inbreeding
+  vector[N] hatch_doy;                   // Hatch day of year
+  vector[N] first_dna_age;               // Age at DNA sampling
   int<lower=0> N_hy;                     // Number of levels in year random effect
   int<lower=0,upper=N_hy> hy_idx[N];
   int<lower=0> N_hi;                     // Number of levels in last locality random effect
@@ -25,6 +27,21 @@ transformed data {
   vector[N] f_std = (f - mean_f) / sd_f;
   real f_const = mean_f / sd_f; // Constant used in gen. quant. block
 
+  real mean_hatch_doy = mean(hatch_doy);
+  real sd_hatch_doy = sd(hatch_doy);
+  vector[N] hatch_doy_std = (hatch_doy - mean_hatch_doy) / sd_hatch_doy;
+  // Constant used in gen. quant. block
+  real hatch_doy_const1 = mean_hatch_doy / sd_hatch_doy;
+  real hatch_doy_const2 = square(hatch_doy_const1);
+  real hatch_doy_const3 = square(sd_hatch_doy);
+  real hatch_doy_const4 = 2 * mean_hatch_doy / hatch_doy_const3;
+
+  // Center/scale predictors
+  real mean_first_dna_age = mean(first_dna_age);
+  real sd_first_dna_age = sd(first_dna_age);
+  vector[N] first_dna_age_std = (first_dna_age - mean_first_dna_age) / sd_first_dna_age;
+  real first_dna_age_const = mean_first_dna_age / sd_first_dna_age; // Constant used in gen. quant. block
+
   // Constants need for gen. quant. block
   real bv_std_const1 = bv_mean_std / bv_sd_std;
   real bv_std_const2 = square(bv_std_const1);
@@ -32,7 +49,7 @@ transformed data {
   real bv_std_const4 = 2 * bv_mean_std / bv_std_const3;
 
   // Matrix containing fixed predictors
-  matrix[N, 2] fixed_pred_mat = append_col(rep_vector(1, N), f_std);
+  matrix[N, 5] fixed_pred_mat = append_col(rep_vector(1, N), append_col(f_std, append_col(hatch_doy_std, append_col(square(hatch_doy_std), first_dna_age_std))));
 }
 
 parameters {
@@ -45,6 +62,9 @@ parameters {
   real z_beta_bv;
   real z_beta_bv2;
   real z_beta_f;
+  real z_beta_hatch_doy;
+  real z_beta_hatch_doy2;
+  real z_beta_first_dna_age;
   real<lower=0,upper=1> sigma_hy_raw;
   real<lower=0,upper=1> sigma_hi_raw;
   real<lower=0,upper=1> sigma_par_raw;
@@ -66,16 +86,19 @@ transformed parameters {
   real beta_bv_std = beta_prior_sd_surv * z_beta_bv;
   real beta_bv2_std = beta_prior_sd_surv * z_beta_bv2 / sqrt(2);
   real beta_f_std = beta_prior_sd_surv * z_beta_f;
+  real beta_hatch_doy_std = beta_prior_sd_surv * z_beta_hatch_doy;
+  real beta_hatch_doy_std2 = beta_prior_sd_surv * z_beta_hatch_doy2;
+  real beta_first_dna_age_std = beta_prior_sd_surv * z_beta_first_dna_age;
 
   vector[N_par] bv_lat = bv_mean + bv_covmat_chol * z_bv;
 
   // Auxilliary variables
   // Vector of regression coefficients
-  vector[4] beta_vec = [alpha_std, beta_f_std, beta_bv_std, beta_bv2_std]';
+  vector[7] beta_vec = [alpha_std, beta_f_std, beta_hatch_doy_std, beta_hatch_doy_std2, beta_first_dna_age_std, beta_bv_std, beta_bv2_std]';
   // Random intercepts
   vector[N] rand_inter;
   // Predictor matrix
-  matrix[N, 4] x_mat;
+  matrix[N, 7] x_mat;
   vector[N] bv_lat_full;
   for (i in 1:N) {
     bv_lat_full[i] = (bv_lat[par_idx[i]] - bv_mean_std) / bv_sd_std;
@@ -104,6 +127,9 @@ model {
   z_beta_bv ~ std_normal();
   z_beta_bv2 ~ std_normal();
   z_beta_f ~ std_normal();
+  z_beta_hatch_doy ~ std_normal();
+  z_beta_hatch_doy2 ~ std_normal();
+  z_beta_first_dna_age ~ std_normal();
 
   // Likelihood
   Y ~ bernoulli_logit_glm(x_mat, rand_inter, beta_vec);
@@ -113,11 +139,17 @@ generated quantities {
   real alpha = alpha_std
   - beta_bv_std * bv_std_const1
   + beta_bv2_std * bv_std_const2
-  - beta_f_std * f_const;
+  - beta_hatch_doy_std * hatch_doy_const1
+  + beta_hatch_doy_std2 * hatch_doy_const2
+  - beta_f_std * f_const
+  - beta_first_dna_age_std * first_dna_age_const;
 
   real beta_bv = beta_bv_std / bv_sd_std - beta_bv2_std * bv_std_const4;
   real beta_bv2 = beta_bv2_std / bv_std_const3;
+  real beta_hatch_doy = beta_hatch_doy_std / sd_hatch_doy - beta_hatch_doy_std2 * hatch_doy_const4;
+  real beta_hatch_doy2 = beta_hatch_doy_std2 / hatch_doy_const3;
   real beta_f = beta_f_std / sd_f;
+  real beta_first_dna_age = beta_first_dna_age_std / sd_first_dna_age;
 
   // Posterior predictions
   int y_rep[N]; // Posterior predictive samples

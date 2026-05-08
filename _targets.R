@@ -25,7 +25,7 @@ controller_slurm <- crew_controller_slurm(
     log_output = "Jobs/%A.log",
     memory_gigabytes_per_cpu = 6,
     cpus_per_task = 16,
-    time_minutes = 60 * 24 * 2, # minutes * hours * days
+    time_minutes = 60 * 24 * 1, # minutes * hours * days
     partition = "CPUQ",
     verbose = TRUE)
 )
@@ -79,11 +79,11 @@ values_fitmod <- tibble(
           "ars_parent",
           "surv_parent",
           "nest"),
-  gp_data_func = rlang::syms(c("make_adult_gp_data",
-                               "make_adult_gp_data",
-                               "make_parent_gp_data",
-                               "make_parent_gp_data",
-                               "make_nestling_gp_data")),
+  gp_data_func = rlang::syms(c("make_gp_data_adult",
+                               "make_gp_data_adult",
+                               "make_gp_data_parent",
+                               "make_gp_data_parent",
+                               "make_gp_data_nest")),
   fitness_data_path = rlang::syms(c("lrs_data_path",
                                     "lrs_data_path",
                                     "lrs_data_path",
@@ -168,12 +168,6 @@ values_fitmod <- tibble(
                      "beta_age_q1",
                      "beta_age_q2",
                      "beta_f",
-                     "alpha_std",
-                     "beta_bv_std",
-                     "beta_bv2_std",
-                     "beta_age_q1_std",
-                     "beta_age_q2_std",
-                     "beta_f_std",
                      "ye",
                      "ll",
                      "id",
@@ -182,7 +176,6 @@ values_fitmod <- tibble(
                      "sigma_ye",
                      "sigma_id",
                      "alpha_zi",
-                     "alpha_zi_std",
                      "theta",
                      "y_rep"),
                    c("alpha",
@@ -191,12 +184,6 @@ values_fitmod <- tibble(
                      "beta_age_q1",
                      "beta_age_q2",
                      "beta_f",
-                     "alpha_std",
-                     "beta_bv_std",
-                     "beta_bv2_std",
-                     "beta_age_q1_std",
-                     "beta_age_q2_std",
-                     "beta_f_std",
                      "ye",
                      "ll",
                      "id",
@@ -211,12 +198,6 @@ values_fitmod <- tibble(
                      "beta_age_q1",
                      "beta_age_q2",
                      "beta_f",
-                     "alpha_std",
-                     "beta_bv_std",
-                     "beta_bv2_std",
-                     "beta_age_q1_std",
-                     "beta_age_q2_std",
-                     "beta_f_std",
                      "ye",
                      "ll",
                      "id",
@@ -227,7 +208,6 @@ values_fitmod <- tibble(
                      "sigma_id",
                      "sigma_par",
                      "alpha_zi",
-                     "alpha_zi_std",
                      "theta",
                      "y_rep"),
                    c("alpha",
@@ -236,12 +216,6 @@ values_fitmod <- tibble(
                      "beta_age_q1",
                      "beta_age_q2",
                      "beta_f",
-                     "alpha_std",
-                     "beta_bv_std",
-                     "beta_bv2_std",
-                     "beta_age_q1_std",
-                     "beta_age_q2_std",
-                     "beta_f_std",
                      "ye",
                      "ll",
                      "id",
@@ -256,10 +230,9 @@ values_fitmod <- tibble(
                      "beta_bv",
                      "beta_bv2",
                      "beta_f",
-                     "alpha_std",
-                     "beta_bv_std",
-                     "beta_bv2_std",
-                     "beta_f_std",
+                     "beta_hatch_doy",
+                     "beta_hatch_doy2",
+                     "beta_first_dna_age",
                      "hy",
                      "hi",
                      "par",
@@ -299,11 +272,12 @@ fitmod_map <- tar_map(
     gp_data_func(pheno_data = co_data,
                  lrs_path = lrs_data_path,
                  lrs_path2 = lrs_data_path2,
-                 nestling_path = nestling_data_path,
+                 nestling_path = nestling_data_path[1],
                  fam_path = geno_data_paths[3],
                  ped_path = pedigree_path,
                  sex_num = sex_num_lrs,
-                 sex_keep = sex_keep)
+                 sex_keep = sex_keep,
+                 froh_file = froh_file)
   ),
   tar_target(
     cv_test_sets,
@@ -343,7 +317,7 @@ fitmod_map <- tar_map(
               inverse_relatedness_matrix = getElement(co_grm_obj, "inv_grm"),
               effects_vec = inla_effects_gp_vector_grm_all,
               y = paste0("co_count_", sex_lc),
-              comp_conf = TRUE,
+              comp_conf = FALSE,
               test_set = cv_test_sets),
     pattern = map(cv_test_sets)
   ),
@@ -366,7 +340,7 @@ fitmod_map <- tar_map(
                 gp_model = co_gp,
                 fitness_data_path,
                 sex_num = sex_num_lrs,
-                inbreeding = inbreeding,
+                froh_file = froh_file,
                 ped_path = pedigree_path)
   ),
   tar_target(
@@ -513,13 +487,19 @@ fitmod_map <- tar_map(
                                                   "beta_bv2",
                                                   "beta_age_q1",
                                                   "beta_age_q2",
-                                                  "beta_f"),
+                                                  "beta_f",
+                                                  "beta_hatch_doy",
+                                                  "beta_hatch_doy2",
+                                                  "beta_first_dna_age"),
                                     action = list(avg_fun_alpha,
                                                   pred_fun_bv,
                                                   pred_fun_bv2,
                                                   avg_fun_age_q1,
                                                   avg_fun_age_q2,
-                                                  avg_fun_f),
+                                                  avg_fun_f,
+                                                  avg_fun_hatch_doy,
+                                                  avg_fun_hatch_doy2,
+                                                  avg_fun_first_dna_age),
                                     x_axis_fun = x_axis_fun_bv,
                                     marg_eff_fun = marg_eff_fun_bv))
   ),
@@ -575,13 +555,19 @@ fitmod_map <- tar_map(
                                                   "beta_bv2",
                                                   "beta_age_q1",
                                                   "beta_age_q2",
-                                                  "beta_f"),
+                                                  "beta_f",
+                                                  "beta_hatch_doy",
+                                                  "beta_hatch_doy2",
+                                                  "beta_first_dna_age"),
                                     action = list(avg_fun_alpha,
                                                   avg_fun_bv,
                                                   avg_fun_bv2,
                                                   pred_fun_age_q1,
                                                   pred_fun_age_q2,
-                                                  avg_fun_f),
+                                                  avg_fun_f,
+                                                  avg_fun_hatch_doy,
+                                                  avg_fun_hatch_doy2,
+                                                  avg_fun_first_dna_age),
                                     x_axis_fun = x_axis_fun_age,
                                     marg_eff_fun = marg_eff_fun_age))
   ),
@@ -611,13 +597,19 @@ fitmod_map <- tar_map(
                                                   "beta_bv2",
                                                   "beta_age_q1",
                                                   "beta_age_q2",
-                                                  "beta_f"),
+                                                  "beta_f",
+                                                  "beta_hatch_doy",
+                                                  "beta_hatch_doy2",
+                                                  "beta_first_dna_age"),
                                     action = list(avg_fun_alpha,
                                                   avg_fun_bv,
                                                   avg_fun_bv2,
                                                   avg_fun_age_q1,
                                                   avg_fun_age_q2,
-                                                  pred_fun_f),
+                                                  pred_fun_f,
+                                                  avg_fun_hatch_doy,
+                                                  avg_fun_hatch_doy2,
+                                                  avg_fun_first_dna_age),
                                     x_axis_fun = x_axis_fun_f,
                                     marg_eff_fun = marg_eff_fun_f))
   ),
@@ -632,6 +624,90 @@ fitmod_map <- tar_map(
     stan_f_pred_plot_pdf,
     ggsave_path(paste0("figs/stan_", mod, "_f_pred_", sex_lc, ".pdf"),
                 plot = stan_f_pred_plot,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    stan_hatch_doy_pred_marg,
+    pred_marg_func(samp = stan_samps,
+                   data = fitness_data,
+                   pred_info = list(coef_name = c("alpha",
+                                                  "beta_bv",
+                                                  "beta_bv2",
+                                                  "beta_age_q1",
+                                                  "beta_age_q2",
+                                                  "beta_f",
+                                                  "beta_hatch_doy",
+                                                  "beta_hatch_doy2",
+                                                  "beta_first_dna_age"),
+                                    action = list(avg_fun_alpha,
+                                                  avg_fun_bv,
+                                                  avg_fun_bv2,
+                                                  avg_fun_age_q1,
+                                                  avg_fun_age_q2,
+                                                  avg_fun_f,
+                                                  pred_fun_hatch_doy,
+                                                  pred_fun_hatch_doy2,
+                                                  avg_fun_first_dna_age),
+                                    x_axis_fun = x_axis_fun_hatch_doy,
+                                    marg_eff_fun = marg_eff_fun_hatch_doy))
+  ),
+  tar_target(
+    stan_hatch_doy_pred_plot,
+    plot_lines_posterior(df = getElement(stan_hatch_doy_pred_marg, "df_pred"),
+                         xlab = paste0("Hatch day of year"),
+                         ylab = paste0("Predicted ", sex, " ", trait),
+                         title = "")
+  ),
+  tar_target(
+    stan_hatch_doy_pred_plot_pdf,
+    ggsave_path(paste0("figs/stan_", mod, "_hatch_doy_pred_", sex_lc, ".pdf"),
+                plot = stan_hatch_doy_pred_plot,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    stan_first_dna_age_pred_marg,
+    pred_marg_func(samp = stan_samps,
+                   data = fitness_data,
+                   pred_info = list(coef_name = c("alpha",
+                                                  "beta_bv",
+                                                  "beta_bv2",
+                                                  "beta_age_q1",
+                                                  "beta_age_q2",
+                                                  "beta_f",
+                                                  "beta_hatch_doy",
+                                                  "beta_hatch_doy2",
+                                                  "beta_first_dna_age"),
+                                    action = list(avg_fun_alpha,
+                                                  avg_fun_bv,
+                                                  avg_fun_bv2,
+                                                  avg_fun_age_q1,
+                                                  avg_fun_age_q2,
+                                                  avg_fun_f,
+                                                  avg_fun_hatch_doy,
+                                                  avg_fun_hatch_doy2,
+                                                  pred_fun_first_dna_age),
+                                    x_axis_fun = x_axis_fun_first_dna_age,
+                                    marg_eff_fun = marg_eff_fun_first_dna_age))
+  ),
+  tar_target(
+    stan_first_dna_age_pred_plot,
+    plot_lines_posterior(df = getElement(stan_first_dna_age_pred_marg, "df_pred"),
+                         xlab = paste0("Age at first DNA sampling (days)"),
+                         ylab = paste0("Predicted ", sex, " ", trait),
+                         title = "")
+  ),
+  tar_target(
+    stan_first_dna_age_pred_plot_pdf,
+    ggsave_path(paste0("figs/stan_", mod, "_first_dna_age_pred_", sex_lc, ".pdf"),
+                plot = stan_first_dna_age_pred_plot,
                 width = 7,
                 height = 5,
                 device = "pdf"),
@@ -984,27 +1060,31 @@ sex_map <- tar_map(
 
 list(
   sex_map,
-  tar_target(
-    recomb_data_path,
-    "data/20240910_Sparrow_Recomb_Data.txt",
-    format = "file",
-    deployment = "main"
-  ),
+  # tar_target(
+  #   recomb_data_path,
+  #   "data/20240910_Sparrow_Recomb_Data.txt",
+  #   format = "file",
+  #   deployment = "main"
+  # ),
   tar_target(
     recomb_data_path2,
-    co_data_rename_cols("data/20250706_Sparrow_YAPP/2_recsumm_Crossover_Count_per_individual_post_QC.txt"),
+    co_data_rename_cols(
+      paste0("data/20260427_Sparrow_YAPP/",
+             "2_recsumm_Crossover_Count_per_individual_post_QC.txt")),
     format = "file",
     deployment = "main"
   ),
   tar_target(
     geno_data_paths,
-    paste0("data/70K_200K_maf_geno_mind_v5.", c("bed", "bim", "fam")),
+    paste0("data/20260427_Sparrow_57K_SUPER/20260427_Sparrow_57K_SUPER.",
+           c("bed", "bim", "fam")),
     format = "file",
     deployment = "main"
   ),
   tar_target(
     nestling_data_path,
-    "data/Nestlingdata_20240312_fix.csv",
+    c("data/Nestlingdata_20240312_fix.csv", # fitness date
+      "data/nestling_hatchdate_age_clutch_21-01-2026_HB.txt"), # hatch data
     format = "file",
     deployment = "main"
   ),
@@ -1028,7 +1108,8 @@ list(
   ),
   tar_target(
     pedigree_path,
-    "data/20230317_Sparrow_Pedigree.txt",
+    paste0("data/combined_200k_70k_sparrow_genotype_data/pedigrees/",
+           "2024-03-04_pedigree/helge_ped_err0.0027_adj_04-03-2024.txt"),
     format = "file",
     deployment = "main"
   ),
@@ -1039,6 +1120,8 @@ list(
       "1",
       # Total coverage effect
       "total_coverage_scaled",
+      # # Inbreeding coefficient
+      "froh",
       ################# Random effects:
       # Year effect (iid random effect)
       "f(hatch_year, model = \"iid\", hyper = prior$hyperpar_var)",
@@ -1072,12 +1155,8 @@ list(
   #   deployment = "main"
   # ),
   tar_target(
-    inbreeding,
-    find_inbreeding(gsub(x = geno_data_paths[1], ".bed", ""),
-                    ncores = 4,
-                    mem = 4 * 6000,
-                    # Path to plink program:
-                    plink_path = plink_path),
+    froh_file,
+    "data/20260121-FROH2.5_helgeland.txt",
     format = "file"
   ),
   tar_target(
@@ -1085,7 +1164,9 @@ list(
     sim_data_ars_adult_m %>%
       `[[`(., 1) %>%
       (function(df) {df$bv_mean <- df$bv_true; df}) %>%
-      make_stan_data_adult(data = ., gp_data = co_data_gp_ars_adult_m, bv_covmat_ars_adult_m) %>%
+      make_stan_data_adult(data = .,
+                           gp_data = co_data_gp_ars_adult_m,
+                           bv_covmat_ars_adult_m) %>%
       stan(file = "r/zinf_ars_truetest.stan",
            data = c(., list(Y = getElement(., "sum_recruit"))),
            iter = 4.8e4,
@@ -1165,17 +1246,18 @@ list(
                       "sigma_id" = 0.30,
                       "sigma_res" = 0)),
            function(par) {
-             x <- getElement(stan_sim_samps_arstest, par) - getElement(list("alpha" = 0.26,
-                                                                            "beta_bv" = -0.16,
-                                                                            "beta_bv2" = -1.2,
-                                                                            "beta_age_q1" = 9.4,
-                                                                            "beta_age_q2" = -14,
-                                                                            "beta_f" = -2.3,
-                                                                            "alpha_zi" = -0.80,
-                                                                            "sigma_ye" = 0.28,
-                                                                            "sigma_ll" = 0.18,
-                                                                            "sigma_id" = 0.30,
-                                                                            "sigma_res" = 0), par)
+             x <- getElement(stan_sim_samps_arstest, par) -
+               getElement(list("alpha" = 0.26,
+                               "beta_bv" = -0.16,
+                               "beta_bv2" = -1.2,
+                               "beta_age_q1" = 9.4,
+                               "beta_age_q2" = -14,
+                               "beta_f" = -2.3,
+                               "alpha_zi" = -0.80,
+                               "sigma_ye" = 0.28,
+                               "sigma_ll" = 0.18,
+                               "sigma_id" = 0.30,
+                               "sigma_res" = 0), par)
              if (length(x) == 0)
                x <- rep(0, 10)
              else

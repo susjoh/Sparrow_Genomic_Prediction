@@ -126,25 +126,27 @@ prep_co_data <- function(recomb_data_path,
   pheno_data
 }
 
-make_adult_gp_data <- function(pheno_data,
+make_gp_data_adult <- function(pheno_data,
                                lrs_path,
                                lrs_path2,
                                nestling_path,
                                ped_path,
                                fam_path,
                                sex_num,
-                               sex_keep) {
+                               sex_keep,
+                               froh_file) {
 
   geno_inds <- fread(file = fam_path, select = 2)$V2
   geno_inds_red <- gsub(x = geno_inds, pattern = "_.+", "")
   dupes <- duplicated(geno_inds_red)
 
+  # Fitness data (the inds. we potentially want to predict for)
   lrs <- fread(file = lrs_path)
   # remove last loc. outside of main islands
   lrs <- lrs[lrs$last_locality %in%
                c(20, 22, 23, 24, 26, 27, 28, 34, 35, 38, 331, 332),
              c("ringnr", "sex", "hatch_year", "first_locality")]
-  # Only need a single row per ind now
+  # Only need a single row per ind at the moment
   lrs <- lrs[!duplicated(lrs$ringnr), ]
   # Remove non-genotyped inds
   lrs <- lrs[lrs$ringnr %in% geno_inds_red, ]
@@ -174,18 +176,25 @@ make_adult_gp_data <- function(pheno_data,
                                        length = nrow(lrs),
                                        by = 1)
   # Merge
-  plyr::rbind.fill(pheno_data, lrs)
+  dat <- plyr::rbind.fill(pheno_data, lrs)
+
+  # Add inbreeding info
+  froh <- fread(file = froh_file)
+  dat$froh <- froh$FROH2.5[match(dat$id_red, froh$FID)]
+
+  dat
 }
 
 # Sex-GP on inds with offspring with fitness measures
-make_parent_gp_data <- function(pheno_data,
+make_gp_data_parent <- function(pheno_data,
                                 lrs_path,
                                 lrs_path2,
                                 nestling_path,
                                 fam_path,
                                 ped_path,
                                 sex_num,
-                                sex_keep) {
+                                sex_keep,
+                                froh_file) {
 
   geno_inds <- fread(file = fam_path, select = 2)$V2
   geno_inds_red <- gsub(x = geno_inds, pattern = "_.+", "")
@@ -243,19 +252,27 @@ make_parent_gp_data <- function(pheno_data,
   gp_inds_df$hatch_year <- as.factor(gp_inds_df$hatch_year)
   gp_inds_df$id1 <- gp_inds_df$id2 <- gp_inds_df$id3 <-
     seq(from = max(pheno_data$id1) + 1,  length = nrow(gp_inds_df), by = 1)
+
   # Merge
-  plyr::rbind.fill(pheno_data, gp_inds_df)
+  dat <- plyr::rbind.fill(pheno_data, gp_inds_df)
+
+  # Add inbreeding info
+  froh <- fread(file = froh_file)
+  dat$froh <- froh$FROH2.5[match(dat$id_red, froh$FID)]
+
+  dat
 }
 
 # Sex-GP on inds with offspring with fitness measures
-make_nestling_gp_data <- function(pheno_data,
-                                  lrs_path,
-                                  lrs_path2,
-                                  nestling_path,
-                                  fam_path,
-                                  ped_path,
-                                  sex_num,
-                                  sex_keep) {
+make_gp_data_nest <- function(pheno_data,
+                              lrs_path,
+                              lrs_path2,
+                              nestling_path,
+                              fam_path,
+                              ped_path,
+                              sex_num,
+                              sex_keep,
+                              froh_file) {
 
   geno_inds <- fread(file = fam_path, select = 2)$V2
   geno_inds_red <- gsub(x = geno_inds, pattern = "_.+", "")
@@ -316,13 +333,19 @@ make_nestling_gp_data <- function(pheno_data,
   gp_inds_df$id1 <- gp_inds_df$id2 <- gp_inds_df$id3 <-
     seq(from = max(pheno_data$id1) + 1,  length = nrow(gp_inds_df), by = 1)
   # Merge
-  plyr::rbind.fill(pheno_data, gp_inds_df)
+  dat <- plyr::rbind.fill(pheno_data, gp_inds_df)
+
+  # Add inbreeding info
+  froh <- fread(file = froh_file)
+  dat$froh <- froh$FROH2.5[match(dat$id_red, froh$FID)]
+
+  dat
 }
 
 make_data_adult <- function(gp_data,
                             gp_model,
                             lrs_data_path,
-                            inbreeding,
+                            froh_file,
                             sex_num,
                             ped_path = NULL) {
 
@@ -358,9 +381,8 @@ make_data_adult <- function(gp_data,
   lrs$hy_num <- match(lrs$hatch_year, unique(lrs$hatch_year))
 
   # Add inbreeding info
-  ibc <- fread(file = inbreeding)
-  gp_data$fhat3 <- ibc$Fhat3[match(gp_data$ringnr, ibc$IID)]
-  lrs$fhat3 <- gp_data$fhat3[match(lrs$ringnr, gp_data$id_red)]
+  froh <- fread(file = froh_file)
+  lrs$froh <- froh$FROH2.5[match(lrs$ringnr, froh$FID)]
 
   # Number of crossover measurements
   lrs$co_n <- gp_data$n[match(lrs$ringnr, gp_data$id_red)]
@@ -377,7 +399,7 @@ make_data_adult <- function(gp_data,
 make_data_parent <- function(gp_data,
                              gp_model,
                              lrs_data_path,
-                             inbreeding,
+                             froh_file,
                              sex_num,
                              ped_path) {
 
@@ -436,9 +458,8 @@ make_data_parent <- function(gp_data,
   lrs$hy_num <- match(lrs$hatch_year, unique(lrs$hatch_year))
 
   # Add inbreeding info
-  ibc <- fread(file = inbreeding)
-  gp_data$fhat3 <- ibc$Fhat3[match(gp_data$ringnr, ibc$IID)]
-  lrs$fhat3 <- gp_data$fhat3[match(lrs$parent, gp_data$id_red)]
+  froh <- fread(file = froh_file)
+  lrs$froh <- froh$FROH2.5[match(lrs$ringnr, froh$FID)]
 
   # # Number of crossover measurements
   lrs$co_n <- gp_data$n[match(lrs$parent, gp_data$id_red)]
@@ -455,11 +476,11 @@ make_data_parent <- function(gp_data,
 make_data_nest <- function(gp_data,
                            gp_model,
                            nestling_data_path,
-                           inbreeding,
+                           froh_file,
                            sex_num,
                            ped_path) {
 
-  nest <- fread(file = nestling_data_path)
+  nest <- fread(file = nestling_data_path[1])
 
   pedigree <- read.table(file = ped_path, header = TRUE)
   pedigree$id_red <- gsub(x = pedigree$id, pattern = "_.+", "")
@@ -498,53 +519,32 @@ make_data_nest <- function(gp_data,
   nest$hy_num <- match(nest$hatch_year, unique(nest$hatch_year))
 
   # Add inbreeding info
-  ibc <- fread(file = inbreeding)
-  gp_data$fhat3 <- ibc$Fhat3[match(gp_data$ringnr, ibc$IID)]
-  nest$fhat3 <- gp_data$fhat3[match(nest$parent, gp_data$id_red)]
+  froh <- fread(file = froh_file)
+  nest$froh <- froh$FROH2.5[match(nest$ringnr, froh$FID)]
 
   # # Number of crossover measurements
   nest$co_n <- gp_data$n[match(nest$parent, gp_data$id_red)]
   nest %<>% mutate(co_n = ifelse(is.na(co_n), 0, co_n))
   nest$co_meas <- (nest$co_n > 0)
 
+  # Add index
   nest$idx <- seq_len(nrow(nest))
+
+  # Add date info
+  nest_hatch <- fread(file = nestling_data_path[2])
+  nest$hatch_doy <- nest_hatch$hatch_doy[match(nest$ringnr, nest_hatch$ringnr)]
+  nest$chick_age <- nest_hatch$chick_age[match(nest$ringnr, nest_hatch$ringnr)]
+  nest$first_dna_age <- nest_hatch$first_dna_age[match(nest$ringnr,
+                                                       nest_hatch$ringnr)]
+  # And standardized versions
+  nest$hatch_doy_scale <- scale(nest$hatch_doy)
+  nest$chick_age_scale <- scale(nest$chick_age)
+  nest$first_dna_age_scale <- scale(nest$first_dna_age)
+
   nest
 }
 
-find_inbreeding <- function(bfile,
-                            mem,
-                            ncores,
-                            plink_path) {
-
-  # LD pruning
-  exit_code <- system2(plink_path,
-                       paste0("--bfile ", bfile, " ",
-                              "--chr-set 32 ",
-                              "--memory ", mem, " ",
-                              "--indep 50 5 2 ",
-                              "--threads ", ncores, " ",
-                              "--out ", bfile))
-  if (exit_code != 0) {
-    stop("Error in plink")
-  }
-  # Calc inbreeding
-  exit_code <- system2(plink_path,
-                       paste0("--bfile ", bfile, " ",
-                              "--chr-set 32 ",
-                              "--memory ", mem, " ",
-                              "--exclude ", bfile, ".prune.out ",
-                              "--ibc ",
-                              "--threads ", ncores, " ",
-                              "--out ", bfile))
-  if (exit_code != 0) {
-    stop("Error in plink")
-  }
-
-  paste0(bfile, ".ibc")
-}
-
 #### Some functions for genomic prediction
-
 make_grm <- function(analysis_inds,
                      bfile,
                      ncores,
@@ -566,6 +566,7 @@ make_grm <- function(analysis_inds,
                        paste0("--bfile ", bfile, " ",
                               "--keep ", dir, "/keep.txt ",
                               "--chr-set 32 ",
+                              "--allow-extra-chr ",
                               "--memory ", mem, " ",
                               "--maf 0.001 ",
                               "--freq ",
@@ -748,39 +749,6 @@ inla_cv <- function(model,
   )
 }
 
-# Does PCA
-plink_pca <- function(analysis_inds,
-                      bfile,
-                      ncores,
-                      mem,
-                      plink_path,
-                      dir) {
-
-  max_num_pc <- length(analysis_inds)
-
-  dir.create(dir, showWarnings = FALSE)
-  # Create file containing ringnr of inds to include
-  write.table(data.frame(1, analysis_inds),
-              file = paste0(dir, "/keep.txt"),
-              quote = FALSE,
-              row.names = FALSE,
-              col.names = FALSE)
-
-  exit_code <- system2(
-    plink_path,
-    paste0("--bfile ", bfile, " ",
-           "--pca ", max_num_pc, " \'header\' ", # Do PCA
-           "--keep ", dir, "/keep.txt ", # Include only the inds. in keep.txt
-           "--chr-set 32 ", # Sparrow chromosomes
-           "--memory ", mem, " ",
-           "--threads ", ncores, " ",
-           "--out ", dir, "/pca"))
-
-  if (exit_code != 0) {
-    stop("Error in plink")
-  }
-}
-
 inla_post_var <- function(prec_marg) {
   inla.tmarginal(function(x) 1 / x, prec_marg) %>%
     inla.zmarginal(., silent = TRUE) %>%
@@ -848,7 +816,7 @@ make_sim_ars_adult <- function(data,
     pars$beta_bv2 * (data$bv_true)^2 +
     pars$beta_age_q1 * data$age_q1 +
     pars$beta_age_q2 * data$age_q2 +
-    pars$beta_f * data$fhat3 +
+    pars$beta_f * data$froh +
     ye_full +
     ll_full +
     id_full +
@@ -883,7 +851,7 @@ make_sim_surv_adult <- function(data,
     pars$beta_bv2 * (data$bv_true)^2 +
     pars$beta_age_q1 * data$age_q1 +
     pars$beta_age_q2 * data$age_q2 +
-    pars$beta_f * data$fhat3 +
+    pars$beta_f * data$froh +
     ye_full +
     ll_full +
     id_full +
@@ -918,7 +886,7 @@ make_sim_ars_parent <- function(data,
     pars$beta_bv2 * (data$bv_true)^2 +
     pars$beta_age_q1 * data$age_q1 +
     pars$beta_age_q2 * data$age_q2 +
-    pars$beta_f * data$fhat3 +
+    pars$beta_f * data$froh +
     ye_full +
     ll_full +
     id_full +
@@ -956,7 +924,7 @@ make_sim_surv_parent <- function(data,
     pars$beta_bv2 * (data$bv_true)^2 +
     pars$beta_age_q1 * data$age_q1 +
     pars$beta_age_q2 * data$age_q2 +
-    pars$beta_f * data$fhat3 +
+    pars$beta_f * data$froh +
     ye_full +
     ll_full +
     id_full +
@@ -988,7 +956,7 @@ make_sim_nest <- function(data,
   eta <- pars$alpha +
     pars$beta_bv * data$bv_true +
     pars$beta_bv2 * (data$bv_true)^2 +
-    pars$beta_f * data$fhat3 +
+    pars$beta_f * data$froh +
     hi_full +
     hy_full +
     parent_full +
@@ -1149,7 +1117,7 @@ make_stan_data_adult <- function(data, gp_data, covmat) {
        age = data$age,
        age_q1 = poly(data$age, degree = 2)[, 1],
        age_q2 = poly(data$age, degree = 2)[, 2],
-       f = data$fhat3,
+       f = data$froh,
        bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
        bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
        co_n = data$co_n,
@@ -1212,7 +1180,7 @@ make_stan_data_parent <- function(data, gp_data, covmat) {
          age = data$age,
          age_q1 = poly(data$age, degree = 2)[, 1],
          age_q2 = poly(data$age, degree = 2)[, 2],
-         f = data$fhat3,
+         f = data$froh,
          bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
          bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
          co_n = data$co_n,
@@ -1264,10 +1232,13 @@ make_stan_data_nest <- function(data, gp_data, covmat) {
        bv_covmat_chol = t(chol(bv_covmat)), # pre-multiply this with z-vec
        recruit = data$recruit,
        alpha_prior_mean_nestling = log(1 / (1 / mean(data$recruit) - 1)),
-       f = data$fhat3,
+       f = data$froh,
        bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
        bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
        co_n = data$co_n,
+       hatch_doy = data$hatch_doy,
+       chick_age = data$chick_age,
+       first_dna_age = data$first_dna_age,
        co_meas = data$co_meas,
        beta_prior_sd_ars = 0.2,
        exp_rate_ars = 1 / 0.2,
@@ -1443,7 +1414,17 @@ x_axis_fun_age <- function(dat, np) {
     return(rep(0, np))
   seq(min(dat$age), max(dat$age), len = np)
 }
-x_axis_fun_f <- function(dat, np) seq(min(dat$fhat3), max(dat$fhat3), len = np)
+x_axis_fun_f <- function(dat, np) seq(min(dat$froh), max(dat$froh), len = np)
+x_axis_fun_hatch_doy <- function(dat, np) {
+  if (is.null(dat$hatch_doy))
+    return(rep(0, np))
+  seq(min(dat$hatch_doy), max(dat$hatch_doy), len = np)
+}
+x_axis_fun_first_dna_age <- function(dat, np) {
+  if (is.null(dat$first_dna_age))
+    return(rep(0, np))
+  seq(min(dat$first_dna_age), max(dat$first_dna_age), len = np)
+}
 x_axis_fun_co_n <- function(dat, np) seq(min(dat$co_n), max(dat$co_n), len = np)
 
 marg_eff_fun_bv <- function(x, dat, samp, ns) samp$beta_bv + 2 * samp$beta_bv2 * x
@@ -1457,6 +1438,16 @@ marg_eff_fun_age <- function(x, dat, samp, ns) {
     (2 * x - (alpha[1] + alpha[2])) / sqrt(norm2[4]) * samp$beta_age_q2
 }
 marg_eff_fun_f <- function(x, dat, samp, ns) samp$beta_f
+marg_eff_fun_hatch_doy <- function(x, dat, samp, ns) {
+  if (is.null(dat$hatch_doy))
+    return(rep(0, ns))
+  samp$beta_hatch_doy + 2 * samp$beta_hatch_doy2 * x
+}
+marg_eff_fun_first_dna_age <- function(x, dat, samp, ns) {
+  if (is.null(dat$first_dna_age))
+    return(rep(0, ns))
+  samp$beta_first_dna_age
+}
 marg_eff_fun_co_n <- function(x, dat, samp, ns) samp$beta_co_n
 
 avg_fun_alpha <- function(dat, np) rep(1, np)
@@ -1472,7 +1463,22 @@ avg_fun_age_q2 <- function(dat, np) {
     return(rep(0, np))
   predict(poly(dat$age, degree = 2), newdata = mean(dat$age))[, 2] %>% rep(np)
 }
-avg_fun_f <- function(dat, np) rep(mean(dat$fhat3), np)
+avg_fun_f <- function(dat, np) rep(mean(dat$froh), np)
+avg_fun_hatch_doy <- function(dat, np) {
+  if (is.null(dat$hatch_doy))
+    return(rep(0, np))
+  rep(mean(dat$hatch_doy), np)
+}
+avg_fun_hatch_doy2 <- function(dat, np) {
+  if (is.null(dat$hatch_doy))
+    return(rep(0, np))
+  rep(mean(dat$hatch_doy), np)^2
+}
+avg_fun_first_dna_age <- function(dat, np) {
+  if (is.null(dat$first_dna_age))
+    return(rep(0, np))
+  rep(mean(dat$first_dna_age), np)
+}
 avg_fun_co_n <- function(dat, np) rep(mean(dat$co_n), np)
 
 pred_fun_bv <- function(dat, np) {
@@ -1495,7 +1501,22 @@ pred_fun_age_q2 <- function(dat, np) {
     predict(poly(dat$age, degree = 2), newdata = .) %>%
     `[`(, 2)
 }
-pred_fun_f <- function(dat, np) seq(min(dat$fhat3), max(dat$fhat3), len = np)
+pred_fun_f <- function(dat, np) seq(min(dat$froh), max(dat$froh), len = np)
+pred_fun_hatch_doy <- function(dat, np) {
+  if (is.null(dat$hatch_doy))
+    return(rep(0, np))
+  seq(min(dat$hatch_doy), max(dat$hatch_doy), len = np)
+}
+pred_fun_hatch_doy2 <- function(dat, np) {
+  if (is.null(dat$hatch_doy))
+    return(rep(0, np))
+  seq(min(dat$hatch_doy), max(dat$hatch_doy), len = np)^2
+}
+pred_fun_first_dna_age <- function(dat, np) {
+  if (is.null(dat$first_dna_age))
+    return(rep(0, np))
+  seq(min(dat$first_dna_age), max(dat$first_dna_age), len = np)
+}
 pred_fun_co_n <- function(dat, np) seq(min(dat$co_n), max(dat$co_n), len = np)
 
 
@@ -1512,6 +1533,12 @@ make_zip_preds_and_marg <- function(data,
   x_ax <- (pred_info$x_axis_fun)(dat = data, np = n_plot)
 
   pred <- zinf_pred <- array(0, dim = c(n_samp, n_plot))
+
+  if (is.null(data$hatch_doy))
+    samp["beta_hatch_doy"] <- samp["beta_hatch_doy2"] <- list(rep(0, n_samp))
+  if (is.null(data$first_dna_age))
+    samp["beta_first_dna_age"] <- list(rep(0, n_samp))
+
   for (i in seq_len(n_samp)) {
     for (j in seq_len(n_plot)) {
       for (k in seq_along(pred_info$coef_name)) {
@@ -1553,6 +1580,10 @@ make_logit_preds_and_marg <- function(data,
   predictor_samples <- array(0, dim = c(n_samp, n_plot))
   if (is.null(data$age))
     samp["beta_age_q1"] <- samp["beta_age_q2"] <- list(rep(0, n_samp))
+  if (is.null(data$hatch_doy))
+    samp["beta_hatch_doy"] <- samp["beta_hatch_doy2"] <- list(rep(0, n_samp))
+  if (is.null(data$first_dna_age))
+    samp["beta_first_dna_age"] <- list(rep(0, n_samp))
 
   for (i in seq_len(n_samp)) {
     for (j in seq_len(n_plot)) {
