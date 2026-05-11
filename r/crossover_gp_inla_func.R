@@ -396,6 +396,54 @@ make_data_adult <- function(gp_data,
   lrs
 }
 
+make_data_adult_dir <- function(lrs_data_path,
+                                froh_file,
+                                sex_num,
+                                co_dat_path) {
+
+  lrs <- fread(file = lrs_data_path)
+  lrs <- lrs[lrs$last_locality %in%
+               c(20, 22, 23, 24, 26, 27, 28, 34, 35, 38, 331, 332)]
+
+  co_dat <- fread(file = co_dat_path, data.table = FALSE)
+  co_dat$parent_red <- gsub(x = co_dat$parent, pattern = "_.+", "")
+  # TODO: should we include missex, HET, etc, for both parents and offspring?
+
+  # Keep lrs entries where ringnrs are in co_dat
+  lrs %<>% dplyr::filter(ringnr %in% co_dat$parent_red)
+
+  # Remove inds with missing sex
+  lrs %<>% dplyr::filter(!is.na(sex))
+  # Sex filtering
+  if (sex_num != "all") {
+    lrs %<>%
+      dplyr::filter(sex != 1.5) %>%
+      mutate(sex = round(sex)) %>%
+      filter(sex %in% sex_num)
+  }
+
+  lrs$parent_n_kids <- co_dat$parent_n_kids[match(lrs$ringr, co_dat$parent_red)]
+  # TODO: figure out how one would do this model. Probably measurement error
+  # model for the co_counts, but then square again requires stan...
+
+  lrs$age <- lrs$year - lrs$hatch_year
+
+  lrs$ringnr_num <- match(lrs$ringnr, unique(lrs$ringnr))
+  lrs$ll_num <- match(lrs$last_locality, unique(lrs$last_locality))
+  lrs$y_num <- match(lrs$year, unique(lrs$year))
+  lrs$hy_num <- match(lrs$hatch_year, unique(lrs$hatch_year))
+
+  # Add inbreeding info
+  froh <- fread(file = froh_file)
+  lrs$froh <- froh$FROH2.5[match(lrs$ringnr, froh$FID)]
+
+  age_poly <- poly(lrs$age, degree = 2)
+  lrs <- cbind(lrs, age_q1 = age_poly[, 1], age_q2 = age_poly[, 2])
+
+  lrs$idx <- seq_len(nrow(lrs))
+  lrs
+}
+
 make_data_parent <- function(gp_data,
                              gp_model,
                              lrs_data_path,
@@ -439,11 +487,16 @@ make_data_parent <- function(gp_data,
   }
   lrs %<>% dplyr::filter(ringnr %in% pedigree$id_red)
 
-  # add parent's BV stats
+  # Add parental information
+  lrs$dam <- pedigree$dam[match(lrs$ringnr, pedigree$id_red)]
+  lrs$dam_red <- pedigree$dam_red[match(lrs$ringnr, pedigree$id_red)]
+  lrs$sire <- pedigree$sire[match(lrs$ringnr, pedigree$id_red)]
+  lrs$sire_red <- pedigree$sire_red[match(lrs$ringnr, pedigree$id_red)]
+  # add same-sex parent's BV stats
   if (sex_num == 2) {
-    lrs$parent <- pedigree$dam_red[match(lrs$ringnr, pedigree$id_red)]
+    lrs$parent <- lrs$dam_red
   } else if (sex_num == 1) {
-    lrs$parent <- pedigree$sire_red[match(lrs$ringnr, pedigree$id_red)]
+    lrs$parent <- lrs$sire_red
   }
   lrs$bv_mean <- gp_data$bv_mean[match(lrs$parent, gp_data$id_red)]
   lrs$bv_sd <- gp_data$bv_sd[match(lrs$parent, gp_data$id_red)]
@@ -451,8 +504,11 @@ make_data_parent <- function(gp_data,
   # Add age
   lrs$age <- lrs$year - lrs$hatch_year
 
+  # Make numerical groups for random effect coding
   lrs$ringnr_num <- match(lrs$ringnr, unique(lrs$ringnr))
   lrs$parent_num <- match(lrs$parent, unique(lrs$parent))
+  lrs$dam_num <- match(lrs$dam, unique(lrs$dam))
+  lrs$sire_num <- match(lrs$sire, unique(lrs$sire))
   lrs$ll_num <- match(lrs$last_locality, unique(lrs$last_locality))
   lrs$y_num <- match(lrs$year, unique(lrs$year))
   lrs$hy_num <- match(lrs$hatch_year, unique(lrs$hatch_year))
@@ -465,6 +521,66 @@ make_data_parent <- function(gp_data,
   lrs$co_n <- gp_data$n[match(lrs$parent, gp_data$id_red)]
   lrs %<>% mutate(co_n = ifelse(is.na(co_n), 0, co_n))
   lrs$co_meas <- (lrs$co_n > 0)
+
+  age_poly <- poly(lrs$age, degree = 2)
+  lrs <- cbind(lrs, age_q1 = age_poly[, 1], age_q2 = age_poly[, 2])
+
+  lrs$idx <- seq_len(nrow(lrs))
+  lrs
+}
+
+make_data_parent_dir <- function(lrs_data_path,
+                                 froh_file,
+                                 sex_num,
+                                 co_dat_path) {
+
+  lrs <- fread(file = lrs_data_path)
+  lrs <- lrs[lrs$last_locality %in%
+               c(20, 22, 23, 24, 26, 27, 28, 34, 35, 38, 331, 332)]
+
+  co_dat <- fread(file = co_dat_path, data.table = FALSE)
+  # TODO: should we include missex, HET, etc, for both parents and offspring?
+  co_dat$offspring_red <- gsub(x = co_dat$offspring, pattern = "_.+", "")
+  co_dat$parent_red <- gsub(x = co_dat$parent, pattern = "_.+", "")
+  co_dat_f <- dplyr::filter(co_dat, sex == "F")
+  co_dat_m <- dplyr::filter(co_dat, sex == "M")
+
+  # Remove inds with missing sex
+  lrs %<>% dplyr::filter(!is.na(sex))
+  # Sex filtering
+  if (sex_num != "all") {
+    lrs %<>%
+      dplyr::filter(sex != 1.5) %>%
+      mutate(sex = round(sex)) %>%
+      filter(sex %in% sex_num)
+  }
+
+  # Keep lrs entries where ringnrs are in co_dat
+  lrs %<>% dplyr::filter(ringnr %in% co_dat$offspring_red)
+
+
+  # Add parental information
+  lrs$dam <- co_dat$parent[match(lrs$ringnr, co_dat_f$offspring_red)]
+  lrs$sire <- co_dat$parent[match(lrs$ringnr, co_dat_m$offspring_red)]
+  lrs$dam_red <- co_dat$parent_red[match(lrs$ringnr, co_dat_f$offspring_red)]
+  lrs$sire_red <- co_dat$parent_red[match(lrs$ringnr, co_dat_m$offspring_red)]
+  lrs$co_count_dam <- co_dat$co_count[match(lrs$ringnr, co_dat_f$offspring_red)]
+  lrs$co_count_sire <- co_dat$co_count[match(lrs$ringnr, co_dat_m$offspring_red)]
+
+  # Add age
+  lrs$age <- lrs$year - lrs$hatch_year
+
+  # Make numerical groups for random effect coding
+  lrs$ringnr_num <- match(lrs$ringnr, unique(lrs$ringnr))
+  lrs$dam_num <- match(lrs$dam, unique(lrs$dam))
+  lrs$sire_num <- match(lrs$sire, unique(lrs$sire))
+  lrs$ll_num <- match(lrs$last_locality, unique(lrs$last_locality))
+  lrs$y_num <- match(lrs$year, unique(lrs$year))
+  lrs$hy_num <- match(lrs$hatch_year, unique(lrs$hatch_year))
+
+  # Add inbreeding info
+  froh <- fread(file = froh_file)
+  lrs$froh <- froh$FROH2.5[match(lrs$ringnr, froh$FID)]
 
   age_poly <- poly(lrs$age, degree = 2)
   lrs <- cbind(lrs, age_q1 = age_poly[, 1], age_q2 = age_poly[, 2])
@@ -504,17 +620,25 @@ make_data_nest <- function(gp_data,
   }
   nest %<>% dplyr::filter(ringnr %in% pedigree$id_red)
 
-  # add parent's BV stats
+  # Add parental information
+  nest$dam <- pedigree$dam[match(nest$ringnr, pedigree$id_red)]
+  nest$dam_red <- pedigree$dam_red[match(nest$ringnr, pedigree$id_red)]
+  nest$sire <- pedigree$sire[match(nest$ringnr, pedigree$id_red)]
+  nest$sire_red <- pedigree$sire_red[match(nest$ringnr, pedigree$id_red)]
+  # add same-sex parent's BV stats
   if (sex_num == 2) {
-    nest$parent <- pedigree$dam_red[match(nest$ringnr, pedigree$id_red)]
+    nest$parent <- nest$dam_red
   } else if (sex_num == 1) {
-    nest$parent <- pedigree$sire_red[match(nest$ringnr, pedigree$id_red)]
+    nest$parent <- nest$sire_red
   }
   nest$bv_mean <- gp_data$bv_mean[match(nest$parent, gp_data$id_red)]
   nest$bv_sd <- gp_data$bv_sd[match(nest$parent, gp_data$id_red)]
 
+  # Make numerical groups for random effect coding
   nest$ringnr_num <- match(nest$ringnr, unique(nest$ringnr))
   nest$parent_num <- match(nest$parent, unique(nest$parent))
+  nest$dam_num <- match(nest$dam, unique(nest$dam))
+  nest$sire_num <- match(nest$sire, unique(nest$sire))
   nest$hi_num <- match(nest$hatch_island, unique(nest$hatch_island))
   nest$hy_num <- match(nest$hatch_year, unique(nest$hatch_year))
 
@@ -526,6 +650,59 @@ make_data_nest <- function(gp_data,
   nest$co_n <- gp_data$n[match(nest$parent, gp_data$id_red)]
   nest %<>% mutate(co_n = ifelse(is.na(co_n), 0, co_n))
   nest$co_meas <- (nest$co_n > 0)
+
+  # Add index
+  nest$idx <- seq_len(nrow(nest))
+
+  # Add date info
+  nest_hatch <- fread(file = nestling_data_path[2])
+  nest$hatch_doy <- nest_hatch$hatch_doy[match(nest$ringnr, nest_hatch$ringnr)]
+  nest$chick_age <- nest_hatch$chick_age[match(nest$ringnr, nest_hatch$ringnr)]
+  nest$first_dna_age <- nest_hatch$first_dna_age[match(nest$ringnr,
+                                                       nest_hatch$ringnr)]
+  # And standardized versions
+  nest$hatch_doy_scale <- scale(nest$hatch_doy)
+  nest$chick_age_scale <- scale(nest$chick_age)
+  nest$first_dna_age_scale <- scale(nest$first_dna_age)
+
+  nest
+}
+
+make_data_nest_dir <- function(nestling_data_path,
+                               froh_file,
+                               sex_num,
+                               co_dat_path) {
+
+  nest <- fread(file = nestling_data_path[1])
+
+  co_dat <- fread(file = co_dat_path, data.table = FALSE)
+  # TODO: should we include missex, HET, etc, for both parents and offspring?
+  co_dat$offspring_red <- gsub(x = co_dat$offspring, pattern = "_.+", "")
+  co_dat$parent_red <- gsub(x = co_dat$parent, pattern = "_.+", "")
+  co_dat_f <- dplyr::filter(co_dat, sex == "F")
+  co_dat_m <- dplyr::filter(co_dat, sex == "M")
+
+  # Keep nest entries where ringnrs are in co_dat
+  nest %<>% dplyr::filter(ringnr %in% co_dat$offspring_red)
+
+  # Add parental information
+  nest$dam <- co_dat$parent[match(nest$ringnr, co_dat_f$offspring_red)]
+  nest$sire <- co_dat$parent[match(nest$ringnr, co_dat_m$offspring_red)]
+  nest$dam_red <- co_dat$parent_red[match(nest$ringnr, co_dat_f$offspring_red)]
+  nest$sire_red <- co_dat$parent_red[match(nest$ringnr, co_dat_m$offspring_red)]
+  nest$co_count_dam <- co_dat$co_count[match(nest$ringnr, co_dat_f$offspring_red)]
+  nest$co_count_sire <- co_dat$co_count[match(nest$ringnr, co_dat_m$offspring_red)]
+
+  # Make numerical groups for random effect coding
+  nest$ringnr_num <- match(nest$ringnr, unique(nest$ringnr))
+  nest$dam_num <- match(nest$dam, unique(nest$dam))
+  nest$sire_num <- match(nest$sire, unique(nest$sire))
+  nest$hi_num <- match(nest$hatch_island, unique(nest$hatch_island))
+  nest$hy_num <- match(nest$hatch_year, unique(nest$hatch_year))
+
+  # Add inbreeding info
+  froh <- fread(file = froh_file)
+  nest$froh <- froh$FROH2.5[match(nest$ringnr, froh$FID)]
 
   # Add index
   nest$idx <- seq_len(nrow(nest))
@@ -1670,3 +1847,105 @@ cv_acc_fun <- function(model, pheno_data, test_set, y) {
 
   c("acc_unscaled" = acc_unscaled, "acc" = acc_unscaled / lambda)
 }
+
+dirfit_func_ars <- function(data) {
+  hyperpar_var <- list(
+    prec = list(initial = log(1),
+                prior = "pc.prec",
+                # sd, prob larger than sd
+                param = c(sqrt(1), 0.05),
+                fixed = FALSE))
+
+  effects_vec <- c("1",
+                   "co_count_sire",
+                   "I(co_count_sire^2)",
+                   "co_count_dam",
+                   "I(co_count_dam^2)",
+                   "age_q1",
+                   "age_q2",
+                   "froh",
+                   "f(y_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+
+  inla_formula <- reformulate(effects_vec, response = "sum_recruit")
+
+  inla(inla_formula,
+       family = "zeroinflatedpoisson1",
+       control.compute = list(config = TRUE),
+       control.family = list(hyper = list(theta = list(param = c(0, 1 / 1.75^2)))),
+       data = data, verbose = TRUE) %>%
+    INLA::inla.rerun()
+}
+
+dirfit_func_as <- function(data) {
+  hyperpar_var <- list(
+    prec = list(initial = log(1),
+                prior = "pc.prec",
+                # sd, prob larger than sd
+                param = c(sqrt(1), 0.05),
+                fixed = FALSE))
+
+  effects_vec <- c("1",
+                   "co_count_sire",
+                   "I(co_count_sire^2)",
+                   "co_count_dam",
+                   "I(co_count_dam^2)",
+                   "age_q1",
+                   "age_q2",
+                   "froh",
+                   "f(y_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+
+  inla_formula <- reformulate(effects_vec, response = "survival")
+
+  inla(inla_formula,
+       family = "binomial",
+       control.compute = list(config = TRUE),
+       control.family = list(link = "logit"),
+       data = data,
+       verbose = TRUE) %>%
+    INLA::inla.rerun()
+}
+
+dirfit_func_ns <- function(data) {
+  hyperpar_var <- list(
+    prec = list(initial = log(1),
+                prior = "pc.prec",
+                # sd, prob larger than sd
+                param = c(sqrt(1), 0.05),
+                fixed = FALSE))
+
+  effects_vec <- c("1",
+                   "co_count_sire",
+                   "I(co_count_sire^2)",
+                   "co_count_dam",
+                   "I(co_count_dam^2)",
+                   "froh",
+                   "hatch_doy_scale",
+                   "I(hatch_doy_scale^2)",
+                   "first_dna_age",
+                   "f(hy_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(hi_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+
+  inla_formula <- reformulate(effects_vec, response = "recruit")
+
+  inla(inla_formula,
+       family = "binomial",
+       control.compute = list(config = FALSE),
+       control.family = list(link = "logit"),
+       data = data,
+       verbose = TRUE) %>%
+    INLA::inla.rerun()
+}
+

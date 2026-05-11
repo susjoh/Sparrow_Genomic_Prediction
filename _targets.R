@@ -974,6 +974,35 @@ fitmod_map <- tar_map(
   )
 )
 
+################# Models for direct impact of co on offspring fitness ########
+
+values_dirfit <- tibble(
+  dirfit = c("ars", "as", "ns"),
+  fitness_data_path_dir = rlang::syms(c("lrs_data_path",
+                                        "lrs_data_path",
+                                        "nestling_data_path")),
+  fitness_data_dir_func = rlang::syms(c("make_data_parent_dir",
+                                        "make_data_parent_dir",
+                                        "make_data_nest_dir")),
+  dirfit_func = rlang::syms(c("dirfit_func_ars",
+                              "dirfit_func_as",
+                              "dirfit_func_ns")))
+
+dirfit_map <- tar_map(
+  values = values_dirfit,
+  names = "dirfit",
+  tar_target(
+    fitness_data_dir,
+    fitness_data_dir_func(fitness_data_path_dir,
+                          froh_file = froh_file,
+                          sex_num = sex_num_lrs,
+                          co_dat_path = recomb_data_path2)
+  ),
+  tar_target(
+    direct_fitness,
+    dirfit_func(data = fitness_data_dir)
+  )
+)
 
 values_sex <- tibble(
   sex = c("female", "male"),
@@ -986,6 +1015,7 @@ sex_map <- tar_map(
   values = values_sex,
   names = "sex_lc",
   fitmod_map,
+  dirfit_map,
   tar_target(
     co_data, # All measurements of co count
     prep_co_data(recomb_data_path2,
