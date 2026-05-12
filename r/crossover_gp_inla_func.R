@@ -565,7 +565,9 @@ make_data_parent_dir <- function(lrs_data_path,
   lrs$dam_red <- co_dat$parent_red[match(lrs$ringnr, co_dat_f$offspring_red)]
   lrs$sire_red <- co_dat$parent_red[match(lrs$ringnr, co_dat_m$offspring_red)]
   lrs$co_count_dam <- co_dat$co_count[match(lrs$ringnr, co_dat_f$offspring_red)]
+  lrs$co_count_dam_scale <- scale(lrs$co_count_dam)
   lrs$co_count_sire <- co_dat$co_count[match(lrs$ringnr, co_dat_m$offspring_red)]
+  lrs$co_count_sire_scale <- scale(lrs$co_count_sire)
 
   # Add age
   lrs$age <- lrs$year - lrs$hatch_year
@@ -573,7 +575,9 @@ make_data_parent_dir <- function(lrs_data_path,
   # Make numerical groups for random effect coding
   lrs$ringnr_num <- match(lrs$ringnr, unique(lrs$ringnr))
   lrs$dam_num <- match(lrs$dam, unique(lrs$dam))
+  lrs$dam_num[is.na(lrs$dam)] <- NA
   lrs$sire_num <- match(lrs$sire, unique(lrs$sire))
+  lrs$sire_num[is.na(lrs$sire)] <- NA
   lrs$ll_num <- match(lrs$last_locality, unique(lrs$last_locality))
   lrs$y_num <- match(lrs$year, unique(lrs$year))
   lrs$hy_num <- match(lrs$hatch_year, unique(lrs$hatch_year))
@@ -691,12 +695,16 @@ make_data_nest_dir <- function(nestling_data_path,
   nest$dam_red <- co_dat$parent_red[match(nest$ringnr, co_dat_f$offspring_red)]
   nest$sire_red <- co_dat$parent_red[match(nest$ringnr, co_dat_m$offspring_red)]
   nest$co_count_dam <- co_dat$co_count[match(nest$ringnr, co_dat_f$offspring_red)]
+  nest$co_count_dam_scale <- scale(nest$co_count_dam)
   nest$co_count_sire <- co_dat$co_count[match(nest$ringnr, co_dat_m$offspring_red)]
+  nest$co_count_sire_scale <- scale(nest$co_count_sire)
 
   # Make numerical groups for random effect coding
   nest$ringnr_num <- match(nest$ringnr, unique(nest$ringnr))
   nest$dam_num <- match(nest$dam, unique(nest$dam))
+  nest$dam_num[is.na(nest$dam)] <- NA
   nest$sire_num <- match(nest$sire, unique(nest$sire))
+  nest$sire_num[is.na(nest$sire)] <- NA
   nest$hi_num <- match(nest$hatch_island, unique(nest$hatch_island))
   nest$hy_num <- match(nest$hatch_year, unique(nest$hatch_year))
 
@@ -1857,10 +1865,10 @@ dirfit_func_ars <- function(data) {
                 fixed = FALSE))
 
   effects_vec <- c("1",
-                   "co_count_sire",
-                   "I(co_count_sire^2)",
-                   "co_count_dam",
-                   "I(co_count_dam^2)",
+                   "co_count_sire_scale",
+                   "I(co_count_sire_scale^2)",
+                   "co_count_dam_scale",
+                   "I(co_count_dam_scale^2)",
                    "age_q1",
                    "age_q2",
                    "froh",
@@ -1890,10 +1898,10 @@ dirfit_func_as <- function(data) {
                 fixed = FALSE))
 
   effects_vec <- c("1",
-                   "co_count_sire",
-                   "I(co_count_sire^2)",
-                   "co_count_dam",
-                   "I(co_count_dam^2)",
+                   "co_count_sire_scale",
+                   "I(co_count_sire_scale^2)",
+                   "co_count_dam_scale",
+                   "I(co_count_dam_scale^2)",
                    "age_q1",
                    "age_q2",
                    "froh",
@@ -1924,10 +1932,10 @@ dirfit_func_ns <- function(data) {
                 fixed = FALSE))
 
   effects_vec <- c("1",
-                   "co_count_sire",
-                   "I(co_count_sire^2)",
-                   "co_count_dam",
-                   "I(co_count_dam^2)",
+                   "co_count_sire_scale",
+                   "I(co_count_sire_scale^2)",
+                   "co_count_dam_scale",
+                   "I(co_count_dam_scale^2)",
                    "froh",
                    "hatch_doy_scale",
                    "I(hatch_doy_scale^2)",
@@ -1942,7 +1950,7 @@ dirfit_func_ns <- function(data) {
 
   inla(inla_formula,
        family = "binomial",
-       control.compute = list(config = FALSE),
+       control.compute = list(config = TRUE),
        control.family = list(link = "logit"),
        data = data,
        verbose = TRUE) %>%
