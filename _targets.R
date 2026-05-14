@@ -986,7 +986,19 @@ values_dirfit <- tibble(
                                         "make_data_nest_dir")),
   dirfit_func = rlang::syms(c("dirfit_func_ars",
                               "dirfit_func_as",
-                              "dirfit_func_ns")))
+                              "dirfit_func_ns")),
+  dirfit_samps_func = rlang::syms(c("get_dirfit_samps_ars_as",
+                                    "get_dirfit_samps_ars_as",
+                                    "get_dirfit_samps_ns")),
+  eval_func = rlang::syms(c("eval_func_ars",
+                            "eval_func_as",
+                            "eval_func_ns")),
+  pred_marg_func_dirfit = rlang::syms(c("make_zip_preds_and_marg",
+                                        "make_logit_preds_and_marg",
+                                        "make_logit_preds_and_marg")),
+  trait = c("annual reproductive success",
+            "annual survival",
+            "nestling survival"))
 
 dirfit_map <- tar_map(
   values = values_dirfit,
@@ -1001,6 +1013,108 @@ dirfit_map <- tar_map(
   tar_target(
     direct_fitness,
     dirfit_func(data = fitness_data_dir)
+  ),
+  tar_target(
+    dirfit_samps,
+    dirfit_samps_func(model = direct_fitness,
+                      data = fitness_data_dir,
+                      eval_func = eval_func)
+  ),
+  tar_target(
+    dirfit_co_count_sire_pred_marg,
+    pred_marg_func_dirfit(
+      samp = dirfit_samps,
+      data = fitness_data_dir,
+      pred_info = list(coef_name = c("alpha",
+                                     "beta_co_count_sire",
+                                     "beta_co_count_sire2",
+                                     "beta_co_count_dam",
+                                     "beta_co_count_dam2",
+                                     "beta_age_q1",
+                                     "beta_age_q2",
+                                     "beta_f",
+                                     "beta_hatch_doy",
+                                     "beta_hatch_doy2",
+                                     "beta_first_dna_age"),
+                       action = list(avg_fun_alpha,
+                                     pred_fun_co_count_sire,
+                                     pred_fun_co_count_sire2,
+                                     avg_fun_co_count_dam,
+                                     avg_fun_co_count_dam2,
+                                     avg_fun_age_q1,
+                                     avg_fun_age_q2,
+                                     avg_fun_f,
+                                     avg_fun_hatch_doy,
+                                     avg_fun_hatch_doy2,
+                                     avg_fun_first_dna_age),
+                       x_axis_fun = x_axis_fun_co_count_sire,
+                       marg_eff_fun = marg_eff_fun_co_count_sire))
+  ),
+  tar_target(
+    dirfit_co_count_sire_pred_plot,
+    plot_lines_posterior(df = getElement(dirfit_co_count_sire_pred_marg,
+                                         "df_pred"),
+                         xlab = paste0("ACC in gamete from sire"),
+                         ylab = paste0("Predicted ", sex, " ", trait),
+                         title = "")
+  ),
+  tar_target(
+    dirfit_co_count_sire_pred_plot_pdf,
+    ggsave_path(paste0("figs/dirfit_", dirfit, "_co_count_sire_", sex_lc, ".pdf"),
+                plot = dirfit_co_count_sire_pred_plot,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    dirfit_co_count_dam_pred_marg,
+    pred_marg_func_dirfit(
+      samp = dirfit_samps,
+      data = fitness_data_dir,
+      pred_info = list(coef_name = c("alpha",
+                                     "beta_co_count_sire",
+                                     "beta_co_count_sire2",
+                                     "beta_co_count_dam",
+                                     "beta_co_count_dam2",
+                                     "beta_age_q1",
+                                     "beta_age_q2",
+                                     "beta_f",
+                                     "beta_hatch_doy",
+                                     "beta_hatch_doy2",
+                                     "beta_first_dna_age"),
+                       action = list(avg_fun_alpha,
+                                     avg_fun_co_count_sire,
+                                     avg_fun_co_count_sire2,
+                                     pred_fun_co_count_dam,
+                                     pred_fun_co_count_dam2,
+                                     avg_fun_age_q1,
+                                     avg_fun_age_q2,
+                                     avg_fun_f,
+                                     avg_fun_hatch_doy,
+                                     avg_fun_hatch_doy2,
+                                     avg_fun_first_dna_age),
+                       x_axis_fun = x_axis_fun_co_count_dam,
+                       marg_eff_fun = marg_eff_fun_co_count_dam))
+  ),
+  tar_target(
+    dirfit_co_count_dam_pred_plot,
+    plot_lines_posterior(df = getElement(dirfit_co_count_dam_pred_marg,
+                                         "df_pred"),
+                         xlab = paste0("ACC in gamete from dam"),
+                         ylab = paste0("Predicted ", sex, " ", trait),
+                         title = "")
+  ),
+  tar_target(
+    dirfit_co_count_dam_pred_plot_pdf,
+    ggsave_path(paste0("figs/dirfit_", dirfit, "_co_count_dam_", sex_lc, ".pdf"),
+                plot = dirfit_co_count_dam_pred_plot,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
   )
 )
 

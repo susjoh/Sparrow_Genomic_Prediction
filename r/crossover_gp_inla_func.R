@@ -568,6 +568,8 @@ make_data_parent_dir <- function(lrs_data_path,
   lrs$co_count_dam_scale <- scale(lrs$co_count_dam)
   lrs$co_count_sire <- co_dat$co_count[match(lrs$ringnr, co_dat_m$offspring_red)]
   lrs$co_count_sire_scale <- scale(lrs$co_count_sire)
+  lrs$co_count_parsum <- lrs$co_count_sire + lrs$co_count_dam
+  lrs$co_count_parsum_scale <- scale(lrs$co_count_parsum)
 
   # Add age
   lrs$age <- lrs$year - lrs$hatch_year
@@ -698,6 +700,8 @@ make_data_nest_dir <- function(nestling_data_path,
   nest$co_count_dam_scale <- scale(nest$co_count_dam)
   nest$co_count_sire <- co_dat$co_count[match(nest$ringnr, co_dat_m$offspring_red)]
   nest$co_count_sire_scale <- scale(nest$co_count_sire)
+  nest$co_count_parsum <- nest$co_count_sire + nest$co_count_dam
+  nest$co_count_parsum_scale <- scale(nest$co_count_parsum)
 
   # Make numerical groups for random effect coding
   nest$ringnr_num <- match(nest$ringnr, unique(nest$ringnr))
@@ -1593,7 +1597,19 @@ make_sim_bv_plot <- function(summ,
           panel.grid.minor = element_blank())
 }
 
-x_axis_fun_bv <- function(dat, np) seq(min(dat$bv_mean), max(dat$bv_mean), len = np)
+x_axis_fun_co_count_sire <- function(dat, np) {
+  seq(min(dat$co_count_sire, na.rm = TRUE),
+      max(dat$co_count_sire, na.rm = TRUE),
+      len = np)
+}
+x_axis_fun_co_count_dam <- function(dat, np) {
+  seq(min(dat$co_count_dam, na.rm = TRUE),
+      max(dat$co_count_dam, na.rm = TRUE),
+      len = np)
+}
+x_axis_fun_bv <- function(dat, np) {
+  seq(min(dat$bv_mean), max(dat$bv_mean), len = np)
+}
 x_axis_fun_age <- function(dat, np) {
   if (is.null(dat$age))
     return(rep(0, np))
@@ -1612,7 +1628,15 @@ x_axis_fun_first_dna_age <- function(dat, np) {
 }
 x_axis_fun_co_n <- function(dat, np) seq(min(dat$co_n), max(dat$co_n), len = np)
 
-marg_eff_fun_bv <- function(x, dat, samp, ns) samp$beta_bv + 2 * samp$beta_bv2 * x
+marg_eff_fun_co_count_sire <- function(x, dat, samp, ns) {
+  samp$beta_co_count_sire + 2 * samp$beta_co_count_sire2 * x
+}
+marg_eff_fun_co_count_dam <- function(x, dat, samp, ns) {
+  samp$beta_co_count_dam + 2 * samp$beta_co_count_dam2 * x
+}
+marg_eff_fun_bv <- function(x, dat, samp, ns) {
+  samp$beta_bv + 2 * samp$beta_bv2 * x
+}
 marg_eff_fun_age <- function(x, dat, samp, ns) {
   if (is.null(dat$age))
     return(rep(0, ns))
@@ -1636,6 +1660,18 @@ marg_eff_fun_first_dna_age <- function(x, dat, samp, ns) {
 marg_eff_fun_co_n <- function(x, dat, samp, ns) samp$beta_co_n
 
 avg_fun_alpha <- function(dat, np) rep(1, np)
+avg_fun_co_count_sire <- function(dat, np) {
+  rep(mean(dat$co_count_sire, na.rm = TRUE), np)
+}
+avg_fun_co_count_sire2 <- function(dat, np) {
+  rep(mean(dat$co_count_sire, na.rm = TRUE), np)^2
+}
+avg_fun_co_count_dam <- function(dat, np) {
+  rep(mean(dat$co_count_dam, na.rm = TRUE), np)
+}
+avg_fun_co_count_dam2 <- function(dat, np) {
+  rep(mean(dat$co_count_dam, na.rm = TRUE), np)^2
+}
 avg_fun_bv <- function(dat, np) rep(mean(dat$bv_mean), np)
 avg_fun_bv2 <- function(dat, np) rep(mean(dat$bv_mean), np)^2
 avg_fun_age_q1 <- function(dat, np) {
@@ -1666,6 +1702,26 @@ avg_fun_first_dna_age <- function(dat, np) {
 }
 avg_fun_co_n <- function(dat, np) rep(mean(dat$co_n), np)
 
+pred_fun_co_count_sire <- function(dat, np) {
+  seq(min(dat$co_count_sire, na.rm = TRUE),
+      max(dat$co_count_sire, na.rm = TRUE),
+      length.out = np)
+}
+pred_fun_co_count_sire2 <- function(dat, np) {
+  seq(min(dat$co_count_sire, na.rm = TRUE),
+      max(dat$co_count_sire, na.rm = TRUE),
+      length.out = np)^2
+}
+pred_fun_co_count_dam <- function(dat, np) {
+  seq(min(dat$co_count_dam, na.rm = TRUE),
+      max(dat$co_count_dam, na.rm = TRUE),
+      length.out = np)
+}
+pred_fun_co_count_dam2 <- function(dat, np) {
+  seq(min(dat$co_count_dam, na.rm = TRUE),
+      max(dat$co_count_dam, na.rm = TRUE),
+      length.out = np)^2
+}
 pred_fun_bv <- function(dat, np) {
   seq(min(dat$bv_mean), max(dat$bv_mean), length.out = np)
 }
@@ -1741,7 +1797,11 @@ make_zip_preds_and_marg <- function(data,
   df_zinf <- samp_plot_df(y = zinf_pred, x = x_ax, n_samp = n_samp)
   df_pred <- samp_plot_df(y = y_pred, x = x_ax, n_samp = n_samp)
 
-  marg_count <- sapply(x_ax, pred_info$marg_eff_fun, dat = data, samp = samp, ns = n_samp) *
+  marg_count <- sapply(x_ax,
+                       pred_info$marg_eff_fun,
+                       dat = data,
+                       samp = samp,
+                       ns = n_samp) *
     count_pred
   marg_zinf <- matrix(0, nrow = n_samp, ncol = n_plot)
   marg_pred <- marg_count * (1 - zinf_pred)
@@ -1923,6 +1983,60 @@ dirfit_func_as <- function(data) {
     INLA::inla.rerun()
 }
 
+eval_func_ars <- function(..., ccs_mean, ccs_sd, ccd_mean, ccd_sd) {
+  c(alpha = Intercept -
+      co_count_sire_scale * (ccs_mean / ccs_sd) +
+      `I(co_count_sire_scale^2)` * (ccs_mean / ccs_sd)^2 -
+      co_count_dam_scale * (ccd_mean / ccd_sd) +
+      `I(co_count_dam_scale^2)` * (ccd_mean / ccd_sd)^2,
+    beta_co_count_sire = co_count_sire_scale / ccs_sd -
+      `I(co_count_sire_scale^2)` * 2 * ccs_mean / ccs_sd^2,
+    beta_co_count_sire2 = `I(co_count_sire_scale^2)` / ccs_sd^2,
+    beta_co_count_dam = co_count_dam_scale / ccd_sd -
+      `I(co_count_dam_scale^2)` * 2 * ccd_mean / ccd_sd^2,
+    beta_co_count_dam2 = `I(co_count_dam_scale^2)` / ccd_sd^2,
+    beta_age_q1 = age_q1,
+    beta_age_q2 = age_q2,
+    beta_f = froh,
+    alpha_zi = log(theta[1] / (1 - theta[1])))
+}
+
+eval_func_as <- function(..., ccs_mean, ccs_sd, ccd_mean, ccd_sd) {
+  c(alpha = Intercept -
+      co_count_sire_scale * (ccs_mean / ccs_sd) +
+      `I(co_count_sire_scale^2)` * (ccs_mean / ccs_sd)^2 -
+      co_count_dam_scale * (ccd_mean / ccd_sd) +
+      `I(co_count_dam_scale^2)` * (ccd_mean / ccd_sd)^2,
+    beta_co_count_sire = co_count_sire_scale / ccs_sd -
+      `I(co_count_sire_scale^2)` * 2 * ccs_mean / ccs_sd^2,
+    beta_co_count_sire2 = `I(co_count_sire_scale^2)` / ccs_sd^2,
+    beta_co_count_dam = co_count_dam_scale / ccd_sd -
+      `I(co_count_dam_scale^2)` * 2 * ccd_mean / ccd_sd^2,
+    beta_co_count_dam2 = `I(co_count_dam_scale^2)` / ccd_sd^2,
+    beta_age_q1 = age_q1,
+    beta_age_q2 = age_q2,
+    beta_f = froh)
+}
+
+get_dirfit_samps_ars_as <- function(model, eval_func, data, n_samp = 4000) {
+
+  inla_samps <- INLA::inla.posterior.sample(result = model,
+                                            n = n_samp,
+                                            add.names = FALSE)
+
+  inla_samps_eval <-
+    INLA::inla.posterior.sample.eval(
+      samples = inla_samps,
+      fun = eval_func,
+      ccs_mean = attr(data$co_count_sire_scale, "scaled:center"),
+      ccs_sd = attr(data$co_count_sire_scale, "scaled:scale"),
+      ccd_mean = attr(data$co_count_dam_scale, "scaled:center"),
+      ccd_sd = attr(data$co_count_dam_scale, "scaled:scale"))
+
+  # Convert to same format as stan samples
+  apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
+}
+
 dirfit_func_ns <- function(data) {
   hyperpar_var <- list(
     prec = list(initial = log(1),
@@ -1955,5 +2069,46 @@ dirfit_func_ns <- function(data) {
        data = data,
        verbose = TRUE) %>%
     INLA::inla.rerun()
+}
+
+eval_func_ns <- function(..., ccs_mean, ccs_sd, ccd_mean, ccd_sd, hd_mean, hd_sd) {
+  c(alpha = Intercept -
+      co_count_sire_scale * (ccs_mean / ccs_sd) +
+      `I(co_count_sire_scale^2)` * (ccs_mean / ccs_sd)^2 -
+      co_count_dam_scale * (ccd_mean / ccd_sd) +
+      `I(co_count_dam_scale^2)` * (ccd_mean / ccd_sd)^2 -
+      hatch_doy_scale * (hd_mean / hd_sd) +
+      `I(hatch_doy_scale^2)` * (hd_mean / hd_sd)^2,
+    beta_co_count_sire = co_count_sire_scale / ccs_sd -
+      `I(co_count_sire_scale^2)` * 2 * ccs_mean / ccs_sd^2,
+    beta_co_count_sire2 = `I(co_count_sire_scale^2)` / ccs_sd^2,
+    beta_co_count_dam = co_count_dam_scale / ccd_sd -
+      `I(co_count_dam_scale^2)` * 2 * ccd_mean / ccd_sd^2,
+    beta_co_count_dam2 = `I(co_count_dam_scale^2)` / ccd_sd^2,
+    beta_f = froh,
+    beta_hatch_doy = hatch_doy_scale / hd_sd -
+      `I(hatch_doy_scale^2)` * 2 * hd_mean / hd_sd^2,
+    beta_hatch_doy2 = `I(hatch_doy_scale^2)` / hd_sd^2,
+    beta_first_dna_age = first_dna_age)
+}
+
+get_dirfit_samps_ns <- function(model, eval_func, data, n_samp = 4000) {
+
+  inla_samps <- INLA::inla.posterior.sample(result = model,
+                                            n = n_samp,
+                                            add.names = FALSE)
+  inla_samps_eval <-
+    INLA::inla.posterior.sample.eval(
+      samples = inla_samps,
+      fun = eval_func,
+      ccs_mean = attr(data$co_count_sire_scale, "scaled:center"),
+      ccs_sd = attr(data$co_count_sire_scale, "scaled:scale"),
+      ccd_mean = attr(data$co_count_dam_scale, "scaled:center"),
+      ccd_sd = attr(data$co_count_dam_scale, "scaled:scale"),
+      hd_mean = attr(data$hatch_doy_scale, "scaled:center"),
+      hd_sd = attr(data$hatch_doy_scale, "scaled:scale"))
+
+  # Convert to same format as stan samples
+  apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
 }
 
