@@ -993,6 +993,15 @@ values_dirfit <- tibble(
   eval_func = rlang::syms(c("eval_func_ars",
                             "eval_func_as",
                             "eval_func_ns")),
+  dirfit_func_parsum = rlang::syms(c("dirfit_func_parsum_ars",
+                                     "dirfit_func_parsum_as",
+                                     "dirfit_func_parsum_ns")),
+  dirfit_samps_parsum_func = rlang::syms(c("get_dirfit_samps_parsum_ars_as",
+                                           "get_dirfit_samps_parsum_ars_as",
+                                           "get_dirfit_samps_parsum_ns")),
+  eval_func_parsum = rlang::syms(c("eval_func_parsum_ars",
+                                   "eval_func_parsum_as",
+                                   "eval_func_parsum_ns")),
   pred_marg_func_dirfit = rlang::syms(c("make_zip_preds_and_marg",
                                         "make_logit_preds_and_marg",
                                         "make_logit_preds_and_marg")),
@@ -1015,10 +1024,20 @@ dirfit_map <- tar_map(
     dirfit_func(data = fitness_data_dir)
   ),
   tar_target(
+    direct_fitness_parsum,
+    dirfit_func_parsum(data = fitness_data_dir)
+  ),
+  tar_target(
     dirfit_samps,
     dirfit_samps_func(model = direct_fitness,
                       data = fitness_data_dir,
                       eval_func = eval_func)
+  ),
+  tar_target(
+    dirfit_samps_parsum,
+    dirfit_samps_parsum_func(model = direct_fitness_parsum,
+                             data = fitness_data_dir,
+                             eval_func = eval_func_parsum)
   ),
   tar_target(
     dirfit_co_count_sire_pred_marg,
@@ -1110,6 +1129,50 @@ dirfit_map <- tar_map(
     dirfit_co_count_dam_pred_plot_pdf,
     ggsave_path(paste0("figs/dirfit_", dirfit, "_co_count_dam_", sex_lc, ".pdf"),
                 plot = dirfit_co_count_dam_pred_plot,
+                width = 7,
+                height = 5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    dirfit_co_count_parsum_pred_marg,
+    pred_marg_func_dirfit(
+      samp = dirfit_samps_parsum,
+      data = fitness_data_dir,
+      pred_info = list(coef_name = c("alpha",
+                                     "beta_co_count_parsum",
+                                     "beta_co_count_parsum2",
+                                     "beta_age_q1",
+                                     "beta_age_q2",
+                                     "beta_f",
+                                     "beta_hatch_doy",
+                                     "beta_hatch_doy2",
+                                     "beta_first_dna_age"),
+                       action = list(avg_fun_alpha,
+                                     pred_fun_co_count_parsum,
+                                     pred_fun_co_count_parsum2,
+                                     avg_fun_age_q1,
+                                     avg_fun_age_q2,
+                                     avg_fun_f,
+                                     avg_fun_hatch_doy,
+                                     avg_fun_hatch_doy2,
+                                     avg_fun_first_dna_age),
+                       x_axis_fun = x_axis_fun_co_count_parsum,
+                       marg_eff_fun = marg_eff_fun_co_count_parsum))
+  ),
+  tar_target(
+    dirfit_co_count_parsum_pred_plot,
+    plot_lines_posterior(df = getElement(dirfit_co_count_parsum_pred_marg,
+                                         "df_pred"),
+                         xlab = paste0("Sum of ACCs in gametes from each parent"),
+                         ylab = paste0("Predicted ", sex, " ", trait),
+                         title = "")
+  ),
+  tar_target(
+    dirfit_co_count_parsum_pred_plot_pdf,
+    ggsave_path(paste0("figs/dirfit_", dirfit, "_co_count_parsum_", sex_lc, ".pdf"),
+                plot = dirfit_co_count_parsum_pred_plot,
                 width = 7,
                 height = 5,
                 device = "pdf"),

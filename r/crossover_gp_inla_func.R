@@ -1597,6 +1597,11 @@ make_sim_bv_plot <- function(summ,
           panel.grid.minor = element_blank())
 }
 
+x_axis_fun_co_count_parsum <- function(dat, np) {
+  seq(min(dat$co_count_parsum, na.rm = TRUE),
+      max(dat$co_count_parsum, na.rm = TRUE),
+      len = np)
+}
 x_axis_fun_co_count_sire <- function(dat, np) {
   seq(min(dat$co_count_sire, na.rm = TRUE),
       max(dat$co_count_sire, na.rm = TRUE),
@@ -1628,6 +1633,9 @@ x_axis_fun_first_dna_age <- function(dat, np) {
 }
 x_axis_fun_co_n <- function(dat, np) seq(min(dat$co_n), max(dat$co_n), len = np)
 
+marg_eff_fun_co_count_parsum <- function(x, dat, samp, ns) {
+  samp$beta_co_count_parsum + 2 * samp$beta_co_count_parsum2 * x
+}
 marg_eff_fun_co_count_sire <- function(x, dat, samp, ns) {
   samp$beta_co_count_sire + 2 * samp$beta_co_count_sire2 * x
 }
@@ -1660,6 +1668,9 @@ marg_eff_fun_first_dna_age <- function(x, dat, samp, ns) {
 marg_eff_fun_co_n <- function(x, dat, samp, ns) samp$beta_co_n
 
 avg_fun_alpha <- function(dat, np) rep(1, np)
+avg_fun_co_count_parsum <- function(dat, np) {
+  rep(mean(dat$co_count_parsum, na.rm = TRUE), np)
+}
 avg_fun_co_count_sire <- function(dat, np) {
   rep(mean(dat$co_count_sire, na.rm = TRUE), np)
 }
@@ -1702,6 +1713,16 @@ avg_fun_first_dna_age <- function(dat, np) {
 }
 avg_fun_co_n <- function(dat, np) rep(mean(dat$co_n), np)
 
+pred_fun_co_count_parsum <- function(dat, np) {
+  seq(min(dat$co_count_parsum, na.rm = TRUE),
+      max(dat$co_count_parsum, na.rm = TRUE),
+      length.out = np)
+}
+pred_fun_co_count_parsum2 <- function(dat, np) {
+  seq(min(dat$co_count_parsum, na.rm = TRUE),
+      max(dat$co_count_parsum, na.rm = TRUE),
+      length.out = np)^2
+}
 pred_fun_co_count_sire <- function(dat, np) {
   seq(min(dat$co_count_sire, na.rm = TRUE),
       max(dat$co_count_sire, na.rm = TRUE),
@@ -2112,3 +2133,172 @@ get_dirfit_samps_ns <- function(model, eval_func, data, n_samp = 4000) {
   apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
 }
 
+dirfit_func_parsum_ars <- function(data) {
+  hyperpar_var <- list(
+    prec = list(initial = log(1),
+                prior = "pc.prec",
+                # sd, prob larger than sd
+                param = c(sqrt(1), 0.05),
+                fixed = FALSE))
+
+  effects_vec <- c("1",
+                   "co_count_parsum_scale",
+                   "I(co_count_parsum_scale^2)",
+                   "age_q1",
+                   "age_q2",
+                   "froh",
+                   "f(y_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+
+  inla_formula <- reformulate(effects_vec, response = "sum_recruit")
+
+  inla(inla_formula,
+       family = "zeroinflatedpoisson1",
+       control.compute = list(config = TRUE),
+       control.family = list(hyper = list(theta = list(param = c(0, 1 / 1.75^2)))),
+       data = data, verbose = TRUE) %>%
+    INLA::inla.rerun()
+}
+
+dirfit_func_parsum_as <- function(data) {
+  hyperpar_var <- list(
+    prec = list(initial = log(1),
+                prior = "pc.prec",
+                # sd, prob larger than sd
+                param = c(sqrt(1), 0.05),
+                fixed = FALSE))
+
+  effects_vec <- c("1",
+                   "co_count_parsum_scale",
+                   "I(co_count_parsum_scale^2)",
+                   "age_q1",
+                   "age_q2",
+                   "froh",
+                   "f(y_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+
+  inla_formula <- reformulate(effects_vec, response = "survival")
+
+  inla(inla_formula,
+       family = "binomial",
+       control.compute = list(config = TRUE),
+       control.family = list(link = "logit"),
+       data = data,
+       verbose = TRUE) %>%
+    INLA::inla.rerun()
+}
+
+eval_func_parsum_ars <- function(..., ccps_mean, ccps_sd) {
+  c(alpha = Intercept -
+      co_count_parsum_scale * (ccps_mean / ccps_sd) +
+      `I(co_count_parsum_scale^2)` * (ccps_mean / ccps_sd)^2,
+    beta_co_count_parsum = co_count_parsum_scale / ccps_sd -
+      `I(co_count_parsum_scale^2)` * 2 * ccps_mean / ccps_sd^2,
+    beta_co_count_parsum2 = `I(co_count_parsum_scale^2)` / ccps_sd^2,
+    beta_age_q1 = age_q1,
+    beta_age_q2 = age_q2,
+    beta_f = froh,
+    alpha_zi = log(theta[1] / (1 - theta[1])))
+}
+
+eval_func_parsum_as <- function(..., ccps_mean, ccps_sd) {
+  c(alpha = Intercept -
+      co_count_parsum_scale * (ccps_mean / ccps_sd) +
+      `I(co_count_parsum_scale^2)` * (ccps_mean / ccps_sd)^2,
+    beta_co_count_parsum = co_count_parsum_scale / ccps_sd -
+      `I(co_count_parsum_scale^2)` * 2 * ccps_mean / ccps_sd^2,
+    beta_co_count_parsum2 = `I(co_count_parsum_scale^2)` / ccps_sd^2,
+    beta_age_q1 = age_q1,
+    beta_age_q2 = age_q2,
+    beta_f = froh)
+}
+
+get_dirfit_samps_parsum_ars_as <- function(model, eval_func, data, n_samp = 4000) {
+
+  inla_samps <- INLA::inla.posterior.sample(result = model,
+                                            n = n_samp,
+                                            add.names = FALSE)
+  inla_samps_eval <-
+    INLA::inla.posterior.sample.eval(
+      samples = inla_samps,
+      fun = eval_func,
+      ccps_mean = attr(data$co_count_parsum_scale, "scaled:center"),
+      ccps_sd = attr(data$co_count_parsum_scale, "scaled:scale"))
+
+  # Convert to same format as stan samples
+  apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
+}
+
+dirfit_func_parsum_ns <- function(data) {
+  hyperpar_var <- list(
+    prec = list(initial = log(1),
+                prior = "pc.prec",
+                # sd, prob larger than sd
+                param = c(sqrt(1), 0.05),
+                fixed = FALSE))
+
+  effects_vec <- c("1",
+                   "co_count_parsum_scale",
+                   "I(co_count_parsum_scale^2)",
+                   "froh",
+                   "hatch_doy_scale",
+                   "I(hatch_doy_scale^2)",
+                   "first_dna_age",
+                   "f(hy_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(hi_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+
+  inla_formula <- reformulate(effects_vec, response = "recruit")
+
+  inla(inla_formula,
+       family = "binomial",
+       control.compute = list(config = TRUE),
+       control.family = list(link = "logit"),
+       data = data,
+       verbose = TRUE) %>%
+    INLA::inla.rerun()
+}
+
+eval_func_parsum_ns <- function(..., ccps_mean, ccps_sd, hd_mean, hd_sd) {
+  c(alpha = Intercept -
+      co_count_parsum_scale * (ccps_mean / ccps_sd) +
+      `I(co_count_parsum_scale^2)` * (ccps_mean / ccps_sd)^2 -
+      hatch_doy_scale * (hd_mean / hd_sd) +
+      `I(hatch_doy_scale^2)` * (hd_mean / hd_sd)^2,
+    beta_co_count_parsum = co_count_parsum_scale / ccps_sd -
+      `I(co_count_parsum_scale^2)` * 2 * ccps_mean / ccps_sd^2,
+    beta_co_count_parsum2 = `I(co_count_parsum_scale^2)` / ccps_sd^2,
+    beta_f = froh,
+    beta_hatch_doy = hatch_doy_scale / hd_sd -
+      `I(hatch_doy_scale^2)` * 2 * hd_mean / hd_sd^2,
+    beta_hatch_doy2 = `I(hatch_doy_scale^2)` / hd_sd^2,
+    beta_first_dna_age = first_dna_age)
+}
+
+get_dirfit_samps_parsum_ns <- function(model, eval_func, data, n_samp = 4000) {
+
+  inla_samps <- INLA::inla.posterior.sample(result = model,
+                                            n = n_samp,
+                                            add.names = FALSE)
+  inla_samps_eval <-
+    INLA::inla.posterior.sample.eval(
+      samples = inla_samps,
+      fun = eval_func,
+      ccps_mean = attr(data$co_count_parsum_scale, "scaled:center"),
+      ccps_sd = attr(data$co_count_parsum_scale, "scaled:scale"),
+      hd_mean = attr(data$hatch_doy_scale, "scaled:center"),
+      hd_sd = attr(data$hatch_doy_scale, "scaled:scale"))
+
+  # Convert to same format as stan samples
+  apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
+}
