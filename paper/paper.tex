@@ -53,15 +53,139 @@ Rationale and background - Susan
 
 % Describe fitness data
 
-\subsection*{Outline of analysis}
+\subsection*{Outline of fitness analyses}
 
-% Describe the general workflow here, before describing the details of each step in the subsections below.
-To investigate the fitness consequences of ACC one could relate ACC measurements to fitness components such as survival or reproductive success.
-However, we can only measure ACC for genotyped individuals with known and genotyped offspring.
-Individuals that were reproductively unsuccessful are therefore systematically unmeasured, which would introduce a sampling bias into such fitness analyses.
-As a workaround to this sampling bias we use GP to predict genetic values of ACC for \textit{all} genotyped individuals, including non-breeders.
-These predicted genetic values, rather than the unevenly sampled ACC measurements, can then be regressed against the survival and reproductive traits to investigate fitness effects of ACC.
-As outlined below, we used a Bayesian GP model to estimate and predict sex-specific ACC genetic values, and relate these genetic values to fitness components, while appropriately accounting for the uncertainty in our genetic value estimates.
+We investigated how the number of autosomal crossovers impacted fitness in our study populations.
+We addressed this by asking two related questions: first, how the ACC in the gametes an individual received from its parents impacted its fitness, and second, how an individual's own recombination rate impacted its fitness.
+In both analyses, we used mixed modelling to relate ACC to fitness components, including annual reproductive success (ARS), annual adult survival (AS), and nestling survival (NS).
+However, the second analysis was complicated by sampling biases, which we accounted for by applying genomic prediction (GP) and measurement error modelling.
+We fitted all models separately for the sexes since male and female ACC in house sparrows are essentially different traits with low genetic correlations \citep{mcauley2024genetic}, and since the dynamics of selection could be fundamentally different between the sexes \note{(cite some house sparrow paper)}.
+
+\subsection*{Fitness impacts of ACC in inherited gametes}
+
+We related the ACC in an individual's maternal and paternal gametes to that individual's (sex-specific) fitness using generalized linear mixed models for ARS, AS and NS, fitted in a Bayesian framework using \texttt{R-INLA} \citep{rue2009approximate}.
+The ACC information was incorporated in two different ways. 
+In what we label the \textit{sire and dam} (\textit{S\&D}) models, the ACCs in the gametes from the sire and dam were treated as two separate fixed effects in the same model, while in the \textit{parental sum} (\textit{PS}) models we used the sum of the ACC in the sire's and dam's gametes as a single covariate.
+The S\&D models therefore allowed for the possibility that the egg-derived and sperm-derived ACCs have different fitness effects, as a form of genomic imprinting \note{(add some citation)}, with these effects estimated conditional on each other.
+Conversely, the PS models considered the effect of overall inherited ACC, irrespective of source parent.
+Below we outline the \textit{S\&D} and \textit{PS} models for the three fitness traits.
+
+\subsubsection*{Annual reproductive success}
+
+ARS was modelled with a zero-inflated Poisson likelihood, so that $\text{ARS}_{ij}$, the number of recruits produced by individual $i$ in its $j^\text{th}$ adult year, was given by
+\begin{align} % Zero-inflated Poisson GLMM
+\begin{split}
+\label{eq-ars}
+\mathrm{ARS}_{ij} &\sim
+\begin{cases}
+0, & \text{with probability } \pi,\\[-10pt]
+\mathrm{Poisson}(\lambda_{ij}), & \text{with probability } 1-\pi,
+\end{cases}
+\\[-5pt]
+\operatorname{logit}(\pi) &= \gamma_0,
+\\[-10pt]
+\log(\lambda_{ij}) &= \eta_{ij},
+\end{split}
+\end{align}
+where $\lambda_{ij}$ is the Poisson rate linked to the linear predictor $\eta_{ij}$ by a log link, and $\pi$ is the zero-inflation probability determined by a single intercept term $\gamma_0$.
+For both the \textit{S\&D} and \textit{PS} models, $\eta_{ij}$ included an intercept, fixed effects for age (linear and quadratic) and inbreeding coefficient (linear), and unstructured random effects of measurement year, measurement island, individual ID, dam, sire, and a residual random effect.
+% age: polynomial bases
+% inbreeding: froh (Burnett et al)
+In the \textit{S\&D} models, $\eta_{ij}$ also contained fixed effects of ACC in the dam gamete (linear and quadratic), ACC in the sire gamete (linear and quadratic), whereas in the \textit{PS} models $\eta_{ij}$ contained the effect of the sum of the ACC in the parental gametes (linear and quadratic).
+We placed a Gaussian prior $\N{0}{1.75^2}$ on $\gamma_0$, wide independent Gaussian priors $\N{0}{10^4}$ on the fixed effect coefficients, and independent penalized complexity priors $\text{PC}(1, 0.05)$ on the random effect variances \citep{simpson2017penalising}.
+
+% For the adult model we used
+%\begin{equation*}
+%\eta_{ij}^\text{ad} = \alpha 
+%+ \beta_g\, g_{i} 
+%+ \beta_{g^2}\, g_{i}^2
+%+ \beta_a\, a_{ij}
+%+ \beta_{a^2}\, a_{ij}^2
+%+ \beta_f\, f_i
+%+ \text{ye}_{ij}
+%+ \text{isl}_i
+%+ \text{id}_i,
+%\end{equation*}
+%where ...
+%The parental model for ARS was similar to the adult model, except we instead used the linear predictor
+%\begin{align*}
+%\eta_{ij}^\text{par} = \alpha 
+%+ \beta_g\, g_{p(i)} 
+%+ \beta_{g^2}\, g_{p(i)}^2
+%+ \beta_a\, a_{ij}
+%+ \beta_{a^2}\, a_{ij}^2
+%+ \beta_f\, f_{i}
+%+ \text{ye}_{ij}
+%+ \text{isl}_i
+%+ \text{id}_i
+%+ \text{par}_i,
+%\end{align*}
+%so that ...
+
+% Direct fitness model:
+% \begin{align*}
+% \eta_{ij}^\text{par} =& \alpha
+% + \beta_{acc_d}\, acc_{d(i)} 
+% + \beta_{acc_d^2}\, acc_{d(i)}^2
+% + \beta_{acc_s}\, acc_{s(i)} 
+% + \beta_{acc_s^2}\, acc_{s(i)}^2
+% + \beta_{age}\, age_{ij}
+% + \beta_{age^2}\, age_{ij}^2
+% + \beta_f\, f_{i} \\
+% +& \text{ye}_{ij}
+% + \text{isl}_i
+% + \text{id}_i
+% + \text{par}_i,
+% \end{align*}
+
+\subsubsection*{Annual Survival}
+
+We modelled AS as a binomial trait with a logistic link, so that
+\begin{align}
+\begin{split}
+\label{eq-as}
+\mathrm{AS}_{ij} &\sim
+\begin{cases}
+0, & \text{with probability } 1 - p_{ij},\\[-10pt]
+1, & \text{with probability } p_{ij},
+\end{cases}
+\\[-5pt]
+\operatorname{logit}(p_{ij}) &= \eta_{ij},
+\end{split}
+\end{align}
+where $\mathrm{AS}_{ij}$ is an indicator for whether individual $i$ survived its $j^\text{th}$ adult year, and $\eta_{ij}$ is a linear predictor linked to the survival probability $p_{ij}$ by a logit link.
+For both the \textit{S\&D} and \textit{PS} models, we included the same fixed and random effects in $\eta_{ij}$ as in the model for ARS described above, with the same prior specifications.
+
+\subsubsection*{Nestling survival}
+
+Similar to AS, the NS was modelled as binomial trait, so that
+\begin{align}
+\begin{split}
+\label{eq-ns}
+\mathrm{NS}_{i} &\sim
+\begin{cases}
+0, & \text{with probability } 1 - p_{i},\\[-10pt]
+1, & \text{with probability } p_{i},
+\end{cases}
+\\[-5pt]
+\operatorname{logit}(p_{i}) &= \eta_{i},% ^\text{NS}
+% \\[-5pt]
+% &= \alpha 
+% + \beta_g\, g_{p(i)} 
+% + \beta_{g^2}\, g_{p(i)}^2
+% + \beta_f\, f_{i}
+% + \beta_{hd}\, hd_{i}
+% + \beta_{hd^2}\, hd_{i}^2
+% + \beta_{a}\, a_{i}
+% + \text{h-ye}_{i}
+% + \text{h-isl}_i
+% + \text{par}_i,
+\end{split}
+\end{align}
+where the survival $\text{NS}_i$ of nestling $i$ is determined by its survival probability $p_i$, which is linked to a linear predictor $\eta_{i}$.
+% intercept, fixed effects inbreeding coefficient (linear), hatch date (day of year, linear and quadratic), and age at first capture (linear)
+% unstructured random effects: hatch year, hatch island, dam, sire, and individual ID (equivalent to residual).
+Again, the same prior specifications for fixed effect coefficients and random effect variances as for ARS and AS were employed.
 
 \begin{table*}[!hb]
     \centering
@@ -122,22 +246,56 @@ As outlined below, we used a Bayesian GP model to estimate and predict sex-speci
     \label{tab-gp-ss}
 \end{table*}
 
-\subsection*{Genomic Prediction}
+\subsection*{Fitness impacts of own ACCs}
 
-We performed GP of ACC with a Bayesian linear mixed with a Gaussian likelihood, fitted in \texttt{R-INLA} \citep{rue2009approximate}.
+\subsubsection*{Sampling bias in ACC measurements}
+
+To investigate the fitness consequences of an individual's recombination rate, we could in principle have related the ACCs in the gametes produced by individual $i$ to directly the fitness of $i$.
+However, since we were only able to measure ACC for genotyped individuals with \textit{known and genotyped offspring}, the individuals that were reproductively unsuccessful were systematically unmeasured for ACC.
+Thus, a fitness analysis excluding these individual would thus suffer from a systematic sampling bias, where less fit individuals would be missing not at random.
+
+As a workaround to this sampling bias, we used GP to predict genetic values of ACC for \textit{all} genotyped individuals with fitness data, including non-breeders.
+Thus, by considering the fitness effects of the predicted additive genetic component of ACC, rather than the unevenly sampled ACC measurements, we eliminated this sampling bias.
+Below we outline a Bayesian GP model that estimated and predicted sex-specific ACC genetic values.
+We then related these genetic values to ARS and AS, while appropriately accounting for the uncertainty in our genetic value estimates using measurement error modelling.
+
+\subsubsection*{Genomic Prediction of ACC}
+
+We performed GP of ACC with a Bayesian linear mixed model with a Gaussian likelihood, fitted in \texttt{R-INLA} \citep{rue2009approximate}.
 While ACC is a count trait, its rates were high enough that assuming a continuous Gaussian likelihood was a reasonable modelling assumption.
-Given ACC measurements $y_{ij}$ of individual $i$ estimated from offspring $j$, we modelled
+Given the ACC measurement $\text{ACC}_{ij}$ of the gamete that individual $i$ passed  to offspring $j$, we modelled
 \begin{equation}
-    y_{ij} = \mu + \beta_\text{coverage} \cdot x_{\text{coverage},ij} + g_i + z_{\text{hy},i} + z_{\text{hi},i} + z_{\text{id},i} + z_{\varepsilon,ij}\ ,
+    \text{ACC}_{ij} = \mu + \beta_\text{coverage} \cdot x_{\text{coverage},ij} + \beta_f f_i +  g_i + z_{\text{hy},i} + z_{\text{hi},i} + z_{\text{id},i} + z_{\varepsilon,ij}\ ,
     \label{eq-gp}
 \end{equation}
-where $\mu$ is an intercept, $\beta_\text{coverage}$ is the regression coefficient for total coverage $x_{\text{coverage},ij}$, and $z_{\text{hy},i}$, $z_{\text{hi},i}$, $z_{\text{id},i}$, and $z_{\varepsilon,ij}$ are unstructured random effects corresponding to hatch year, (known or presumed) hatch island, permanent environmental effects and residual environmental effects, respectively.
-The genetic values $g_i$ form a structured random effect, such that the vector $\bm g = \left[g_1, g_2, \ldots, g_N\right]$ follows the distribution $\N{\bm{0}}{\sigma_{\text{G}}^2 \mathbf{G}}$, where $\sigma_{\text{G}}^2$ is the additive genetic variance and $\mathbf{G}$ is a pre-computed genomic relatedness matrix estimated with the first of the formulas given by \citet{vanraden2008efficient}.
-We placed independent normal priors $\N{0}{10^3}$ on fixed effect coefficients, and penalized complexity priors PC$\left(\hat \sigma / \sqrt{2}, 0.05\right)$ on the random effect variances \citep{simpson2017penalising}, $\hat\sigma$ being the sample standard deviation of $y_{ij}$.
-Fitting the GP model produced a joint posterior distribution for the entries of the genetic value vector $\bm g$, which we used in the following fitness analyses.
-We fitted separate GP models corresponding to each fitness model described in the following.
+where $\mu$ is an intercept, $\beta_\text{coverage}$ is the regression coefficient for total coverage $x_{\text{coverage},ij}$, $\beta_f$ is the regression coefficient for inbreeding coefficient $f_i$ of individual $i$ and $z_{\text{hy},i}$, $z_{\text{hi},i}$, $z_{\text{id},i}$, and $z_{\varepsilon,ij}$ are unstructured random effects corresponding to hatch year, (known or presumed) hatch island, permanent environmental effects and residual environmental effects, respectively.
+The genetic values $g_i$ form a structured random effect, such that the vector $\bm g = \left(g_1, g_2, \ldots, g_N\right)^\top$ follows the distribution $\N{\bm{0}}{\sigma_{\text{G}}^2 \mathbf{G}}$, where $\sigma_{\text{G}}^2$ is the additive genetic variance and $\mathbf{G}$ is a pre-computed genomic relatedness matrix estimated with the first of the formulas given by \citet{vanraden2008efficient}.
+We had $0$ to $42$ measurements of $\text{ACC}_{ij}$ per individual $i$, but only estimated one genetic value $g_i$.
+Therefore, $g_i$ should be interpreted as the genetic propensity of individual $i$ to produce gametes with high ACC compared to the overall population, and thus reflects that individual's underlying recombination rate.
+We placed independent normal priors $\N{0}{10^4}$ on fixed effect coefficients, and penalized complexity priors PC$\left(\hat \sigma / \sqrt{2}, 0.05\right)$ on the random effect variances \citep{simpson2017penalising}, $\hat\sigma$ being the sample standard deviation of $y_{ij}$.
+Fitting the GP model produced a joint posterior distribution for the entries of the genetic value vector $\bm g$, which we used in the subsequent fitness analyses.
+% We fitted separate GP models corresponding to each fitness model described in the following.
 
-\subsection*{Fitness analyses}
+\subsubsection*{Fitness analyses using ACC breeding values}
+
+We fitted models for ARS and AS that used the posterior estimates of $g_i$ from the model in Equation \eqref{eq-gp} as the covariate of interest.
+These models had a similar form to the previously described models in Equations \eqref{eq-ars} and \eqref{eq-as}.
+However, we could not straightforwardly replace the ACC covariates from the \textit{S\&D} models and \textit{PS} models with a linear and quadratic effect of $g_i$, since the uncertainty in $g_i$ needs to be propagated from the GP into the fitness models.
+Fitting the Bayesian GP model \eqref{eq-gp} gave us a full joint posteriors for the genetic value vector $\bm g$, which was approximately multivariate Gaussian.
+In the fitness models, we could therefore incorporate the measurement error in these genetic value by sampling genetic values from Gaussian approximations of these posterior distributions.
+Since the square of a Gaussian
+% Introduce here that we used R-STAN, since we need to mention it before MCMC
+Since the genetic values are unknown latent variables, we also allow their distribution to be further updated in the Rather than treating the genetic values as having static, known values, we update the genetic values in each MCMC iteration, and treat these as covariates with a linear and quadratic effect.
+\begin{itemize}
+    \item this is an example of feedback 
+    \item which is potentially undesired but checked with simulations that this is ok
+\end{itemize}
+% Similarly to the previous models, all these models were fitted separately for males and females.
+
+% The joint posterior of $\bm g$ is approximately multivariate Gaussian (can show in supplementary).
+%
+% (This is equivalent to assuming a Berkson measurement error model for the 
+% genetic values.)
 
 % Outline fitness models
 % \begin{itemize}
@@ -146,117 +304,11 @@ We fitted separate GP models corresponding to each fitness model described in th
 %     \item Since genetic values are estimated with uncertainty, this uncertainty propagated into fitness models.
 % \end{itemize}
 
-We investigated the impact of the genetic values for sex-specific ACC genetic values $g_i$ on three different fitness components: annual reproductive success (ARS), annual survival (AS), and nestling survival (NS).
-Similar to the genetic values $g_i$, all modelling of ARS, AS, and NS was done separately for males and females.
-As detailed below, we first related the ARS and AS of an individual $i$ to its own ACC genetic value $g_i$, and next to the genetic value $g_{p(i)}$ of its same-sex parent $p(i)$ in a separate model.
-We label the former as \textit{adult} models and the latter as \textit{parental} models.
-For nestling $i$ we only related $g_{p(i)}$ to the NS of $i$, similar to the parental models for ARS and AS.
-We modelled all three fitness traits with Bayesian GLMMs as detailed below.
-
-\subsubsection*{ARS}
-
-Zero-inflated Poisson
-
-% Zero-inflated Poisson GLMM
-\begin{align*}
-\mathrm{ARS}_{ij} &\sim
-\begin{cases}
-0, & \text{with probability } \pi,\\[-10pt]
-\mathrm{Poisson}(\lambda_{ij}), & \text{with probability } 1-\pi,
-\end{cases}
-\\[-5pt]
-\operatorname{logit}(\pi) &= \gamma_0 
-\\[-10pt]
-\log(\lambda_{ij}) &= \eta_{ij},
-\end{align*}
-
-For the adult model we used
-\begin{equation*}
-\eta_{ij}^\text{ad} = \alpha 
-+ \beta_g\, g_{i} 
-+ \beta_{g^2}\, g_{i}^2
-+ \beta_a\, a_{ij}
-+ \beta_{a^2}\, a_{ij}^2
-+ \beta_f\, f_i
-+ \text{ye}_{ij}
-+ \text{isl}_i
-+ \text{id}_i,
-\end{equation*}
-where ...
-
-The parental model for ARS was similar to the adult model, except we instead used the linear predictor
-\begin{align*}
-\eta_{ij}^\text{par} = \alpha 
-+ \beta_g\, g_{p(i)} 
-+ \beta_{g^2}\, g_{p(i)}^2
-+ \beta_a\, a_{ij}
-+ \beta_{a^2}\, a_{ij}^2
-+ \beta_f\, f_{p(i)}
-+ \text{ye}_{ij}
-+ \text{isl}_i
-+ \text{id}_i
-+ \text{par}_i,
-\end{align*}
-so that ...
-
-% age: polynomial bases
-
-priors: ...
-
-\subsubsection*{AS}
-
-For individual $i$ in year $j$ we modelled sex-specific AS with a logistic GLMM, so that
-% Binomial GLMM
-\begin{align*}
-\mathrm{AS}_{ij} &\sim
-\begin{cases}
-0, & \text{with probability } 1 - p_{ij},\\[-10pt]
-1, & \text{with probability } p_{ij},
-\end{cases}
-\\[-5pt]
-\operatorname{logit}(p_{ij}) &= \eta_{ij},
-\end{align*}
-with $\eta_{ij}$ for the adult and parental AS models corresponding to $\eta_{ij}^\text{ad}$ and $\eta_{ij}^\text{par}$, respectively, just as for ARS.
-
-priors: ...
-
-\subsubsection*{NS}
-
-Survival of nestling $i$ was modelled as
-\begin{align*}
-\mathrm{NS}_{i} &\sim
-\begin{cases}
-0, & \text{with probability } 1 - p_{i},\\[-10pt]
-1, & \text{with probability } p_{i},
-\end{cases}
-\\[-5pt]
-\operatorname{logit}(p_{i}) &= \eta_{i}^\text{NS}
-\\[-5pt]
-&= \alpha 
-+ \beta_g\, g_{p(i)} 
-+ \beta_{g^2}\, g_{p(i)}^2
-+ \beta_f\, f_{p(i)}
-+ \text{h-ye}_{i}
-+ \text{h-isl}_i
-+ \text{par}_i,
-\end{align*}
-
-priors: ...
-
-\subsubsection*{Measurement error in $g_i$}
-
-% First: justify why we need to do this. "Uncertainty propagation". Then explain.
-Fitting the Bayesian GP model \eqref{eq-gp} gave us full joint posteriors for the genetic value vector $\bm g$.
-In the fitness models, we could therefore incorporate the measurement error in these genetic value by sampling genetic values from these posterior distributions.
-Rather than treating the genetic values as having fixed, known values, we update the genetic values in each MCMC iteration.
-% The joint posterior of $\bm g$ is approximately multivariate Gaussian (can show in supplementary).
-\begin{itemize}
-    \item this is an example of feedback
-    \item which is potentially undesired but checked with simulations that this is ok
-\end{itemize}
-%, and regress on these samples (and their square) in the logistic regression. 
-% (This is equivalent to assuming a Berkson measurement error model for the 
-% genetic values.)
+% We investigated the impact of the genetic values for sex-specific ACC genetic values $g_i$ on three different fitness components: annual reproductive success (ARS), annual survival (AS), and nestling survival (NS).
+%As detailed below, we first related the ARS and AS of an individual $i$ to its own ACC genetic value $g_i$, and next to the genetic value $g_{p(i)}$ of its same-sex parent $p(i)$ in a separate model.
+%We label the former as \textit{adult} models and the latter as \textit{parental} models.
+%For nestling $i$ we only related $g_{p(i)}$ to the NS of $i$, similar to the parental models for ARS and AS.
+%We modelled all three fitness traits with Bayesian GLMMs as detailed below.
 
 \section*{Results}
 
