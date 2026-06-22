@@ -22,7 +22,7 @@ controller_slurm <- crew_controller_slurm(
     script_lines = paste("#SBATCH --account=share-nv-bio \n module load",
                          "R/4.4.2-gfbf-2024a R-bundle-CRAN/2024.11-foss-2024a",
                          "CMake/3.29.3-GCCcore-13.3.0"),
-    log_output = "Jobs/%A.log",
+    log_output = "Jobs/%A_%a.log",
     memory_gigabytes_per_cpu = 6,
     cpus_per_task = 16,
     time_minutes = 60 * 24 * 1, # minutes * hours * days
@@ -1746,6 +1746,135 @@ list(
                 plot = stan_bv_pred_plot_nest1x2,
                 width = 7.5,
                 height = 3.5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    dirfit_pred_plot_ars_3x2,
+    ggarrange(dirfit_co_count_sire_pred_plot_ars_f +
+                xlab("Sire ACC") +
+                rremove("ylab"),
+              dirfit_co_count_sire_pred_plot_ars_m +
+                xlab("Sire ACC") +
+                rremove("ylab"),
+              dirfit_co_count_dam_pred_plot_ars_f +
+                xlab("Dam ACC") +
+                rremove("ylab"),
+              dirfit_co_count_dam_pred_plot_ars_m +
+                xlab("Dam ACC") +
+                rremove("ylab"),
+              dirfit_co_count_parsum_pred_plot_ars_f +
+                xlab("Sum of parent's ACC") +
+                rremove("ylab"),
+              dirfit_co_count_parsum_pred_plot_ars_m +
+                xlab("Sum of parent's ACC") +
+                rremove("ylab"),
+              common.legend = TRUE,
+              legend = "right",
+              ncol = 2,
+              nrow = 3,
+              labels = c("Female", "Male", "", ""),
+              hjust = c(-1.75, -3, 0, 0)) %>%
+      annotate_figure(left = textGrob(
+        paste0("Annual reproductive success"),
+        rot = 90,
+        vjust = 1,
+        gp = gpar(cex = 1))),
+    deployment = "main"
+  ),
+  tar_target(
+    dirfit_pred_plot_ars_3x2_pdf,
+    ggsave_path("figs/dirfit_pred_plot_ars_3x2.pdf",
+                plot = dirfit_pred_plot_ars_3x2,
+                width = 7.5,
+                height = 10.5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    dirfit_pred_plot_as_3x2,
+    ggarrange(dirfit_co_count_sire_pred_plot_as_f +
+                xlab("Sire ACC") +
+                rremove("ylab"),
+              dirfit_co_count_sire_pred_plot_as_m +
+                xlab("Sire ACC") +
+                rremove("ylab"),
+              dirfit_co_count_dam_pred_plot_as_f +
+                xlab("Dam ACC") +
+                rremove("ylab"),
+              dirfit_co_count_dam_pred_plot_as_m +
+                xlab("Dam ACC") +
+                rremove("ylab"),
+              dirfit_co_count_parsum_pred_plot_as_f +
+                xlab("Sum of parent's ACC") +
+                rremove("ylab"),
+              dirfit_co_count_parsum_pred_plot_as_m +
+                xlab("Sum of parent's ACC") +
+                rremove("ylab"),
+              common.legend = TRUE,
+              legend = "right",
+              ncol = 2,
+              nrow = 3,
+              labels = c("Female", "Male", "", ""),
+              hjust = c(-1.75, -3, 0, 0)) %>%
+      annotate_figure(left = textGrob(
+        paste0("Annual survival"),
+        rot = 90,
+        vjust = 1,
+        gp = gpar(cex = 1))),
+    deployment = "main"
+  ),
+  tar_target(
+    dirfit_pred_plot_as_3x2_pdf,
+    ggsave_path("figs/dirfit_pred_plot_as_3x2.pdf",
+                plot = dirfit_pred_plot_as_3x2,
+                width = 7.5,
+                height = 10.5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    dirfit_pred_plot_ns_3x2,
+    ggarrange(dirfit_co_count_sire_pred_plot_ns_f +
+                xlab("Sire ACC") +
+                rremove("ylab"),
+              dirfit_co_count_sire_pred_plot_ns_m +
+                xlab("Sire ACC") +
+                rremove("ylab"),
+              dirfit_co_count_dam_pred_plot_ns_f +
+                xlab("Dam ACC") +
+                rremove("ylab"),
+              dirfit_co_count_dam_pred_plot_ns_m +
+                xlab("Dam ACC") +
+                rremove("ylab"),
+              dirfit_co_count_parsum_pred_plot_ns_f +
+                xlab("Sum of parent's ACC") +
+                rremove("ylab"),
+              dirfit_co_count_parsum_pred_plot_ns_m +
+                xlab("Sum of parent's ACC") +
+                rremove("ylab"),
+              common.legend = TRUE,
+              legend = "right",
+              ncol = 2,
+              nrow = 3,
+              labels = c("Female", "Male", "", ""),
+              hjust = c(-1.75, -3, 0, 0)) %>%
+      annotate_figure(left = textGrob(
+        paste0("Nestling survival"),
+        rot = 90,
+        vjust = 1,
+        gp = gpar(cex = 1))),
+    deployment = "main"
+  ),
+  tar_target(
+    dirfit_pred_plot_ns_3x2_pdf,
+    ggsave_path("figs/dirfit_pred_plot_ns_3x2.pdf",
+                plot = dirfit_pred_plot_ns_3x2,
+                width = 7.5,
+                height = 10.5,
                 device = "pdf"),
     format = "file",
     deployment = "main"
