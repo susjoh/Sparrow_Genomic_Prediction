@@ -15,7 +15,7 @@ controller_local <- crew_controller_local(name = "my_local_controller",
 
 controller_slurm <- crew_controller_slurm(
   name = "my_slurm_controller",
-  workers = 50,
+  workers = 40,
   seconds_idle = 120,
   tasks_max = 8,
   options_cluster = crew_options_slurm(
@@ -25,7 +25,7 @@ controller_slurm <- crew_controller_slurm(
     log_output = "Jobs/%A_%a.log",
     memory_gigabytes_per_cpu = 6,
     cpus_per_task = 16,
-    time_minutes = 60 * 24 * 1, # minutes * hours * days
+    time_minutes = 60 * 24 * 3, # minutes * hours * days
     partition = "CPUQ",
     verbose = TRUE)
 )

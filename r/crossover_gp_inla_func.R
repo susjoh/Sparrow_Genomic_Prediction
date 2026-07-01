@@ -90,6 +90,9 @@ prep_co_data <- function(recomb_data_path,
   pheno_data$hatch_year <- as.factor(pheno_data$hatch_year)
   pheno_data$first_locality <- as.factor(pheno_data$first_locality)
 
+  # Permute co_count for checking reasons
+  pheno_data$co_count <- pheno_data$co_count[sample(nrow(pheno_data))]
+
   # Make columns for sex-specific crossover rates
   pheno_data$co_count_m <- pheno_data$co_count_f <- pheno_data$co_count
   pheno_data$co_count_m <- ifelse(pheno_data$sex == "M",
