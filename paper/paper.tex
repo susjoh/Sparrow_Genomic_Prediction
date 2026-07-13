@@ -262,37 +262,40 @@ We then related these genetic values to ARS and AS, while appropriately accounti
 \subsubsection*{Genomic Prediction of ACC}
 
 We performed GP of ACC with a Bayesian linear mixed model with a Gaussian likelihood, fitted in \texttt{R-INLA} \citep{rue2009approximate}.
-While ACC is a count trait, its rates were high enough that assuming a continuous Gaussian likelihood was a reasonable modelling assumption.
-Given the ACC measurement $\text{ACC}_{ij}$ of the gamete that individual $i$ passed  to offspring $j$, we modelled
+Although ACC is a count trait, its rates were high enough that a continuous Gaussian likelihood was a reasonable modelling assumption.
+Let $\text{ACC}_{ij}$ denote the ACC measured in the gamete that individual $i$ passed to its offspring $j$, where the number of measurements per individual varied from $0$ to $42$.
+% We treated ACC separately for males and females due to differing genetic architectures (cite McAuley)
+We modelled
 \begin{equation}
     \text{ACC}_{ij} = \mu + \beta_\text{coverage} \cdot x_{\text{coverage},ij} + \beta_f f_i +  g_i + z_{\text{hy},i} + z_{\text{hi},i} + z_{\text{id},i} + z_{\varepsilon,ij}\ ,
     \label{eq-gp}
 \end{equation}
 where $\mu$ is an intercept, $\beta_\text{coverage}$ is the regression coefficient for total coverage $x_{\text{coverage},ij}$, $\beta_f$ is the regression coefficient for inbreeding coefficient $f_i$ of individual $i$ and $z_{\text{hy},i}$, $z_{\text{hi},i}$, $z_{\text{id},i}$, and $z_{\varepsilon,ij}$ are unstructured random effects corresponding to hatch year, (known or presumed) hatch island, permanent environmental effects and residual environmental effects, respectively.
-The genetic values $g_i$ form a structured random effect, such that the vector $\bm g = \left(g_1, g_2, \ldots, g_N\right)^\top$ follows the distribution $\N{\bm{0}}{\sigma_{\text{G}}^2 \mathbf{G}}$, where $\sigma_{\text{G}}^2$ is the additive genetic variance and $\mathbf{G}$ is a pre-computed genomic relatedness matrix estimated with the first of the formulas given by \citet{vanraden2008efficient}.
-We had $0$ to $42$ measurements of $\text{ACC}_{ij}$ per individual $i$, but only estimated one genetic value $g_i$.
-Therefore, $g_i$ should be interpreted as the genetic propensity of individual $i$ to produce gametes with high ACC compared to the overall population, and thus reflects that individual's underlying recombination rate.
-We placed independent normal priors $\N{0}{10^4}$ on fixed effect coefficients, and penalized complexity priors PC$\left(\hat \sigma / \sqrt{2}, 0.05\right)$ on the random effect variances \citep{simpson2017penalising}, $\hat\sigma$ being the sample standard deviation of $y_{ij}$.
-Fitting the GP model produced a joint posterior distribution for the entries of the genetic value vector $\bm g$, which we used in the subsequent fitness analyses.
-% We fitted separate GP models corresponding to each fitness model described in the following.
+The genetic values $g_i$ form a structured random effect, such that the vector $\bm g = \left(g_1, g_2, \ldots, g_N\right)^\top$ follows the distribution $\N{\bm{0}}{\sigma_{\text{G}}^2 \mathbf{G}}$, where $\sigma_{\text{G}}^2$ is the additive genetic variance for ACC and $\mathbf{G}$ is a pre-computed genomic relatedness matrix as given by \citet{vanraden2008efficient}. % estimated with the first of the formulas given by \citet{vanraden2008efficient}.
+Consequently, $g_i$ should be interpreted as the genetic propensity of individual $i$ to produce gametes with high ACC relative to the overall population, and thus reflects the underlying recombination rate of the individual.
+We placed independent normal priors $\N{0}{10^4}$ on the fixed effect coefficients, and penalized complexity priors PC$\left(\hat \sigma / \sqrt{2}, 0.05\right)$ on the random effect variances \citep{simpson2017penalising}, where $\hat\sigma$ was the sample standard deviation of $y_{ij}$.
+Fitting the Bayesian GP model \eqref{eq-gp} yielded a joint posterior distribution for the genetic value vector $\bm g$.
+This posterior was approximately multivariate Gaussian (results not shown), and we summarized it with the sample mean and covariance obtained from $10^4$ posterior samples.
+The resulting Gaussian approximation for $\bm g$ was used in the following fitness analyses.
 
 \subsubsection*{Fitness analyses using ACC breeding values}
 
-We fitted models for ARS and AS that used the posterior estimates of $g_i$ from the model in Equation \eqref{eq-gp} as the covariate of interest.
-These models had a similar form to the previously described models in Equations \eqref{eq-ars} and \eqref{eq-as}.
-However, we could not straightforwardly replace the ACC covariates from the \textit{S\&D} models and \textit{PS} models with a linear and quadratic effect of $g_i$, since the uncertainty in $g_i$ needs to be propagated from the GP into the fitness models.
-Fitting the Bayesian GP model \eqref{eq-gp} gave us a full joint posteriors for the genetic value vector $\bm g$, which was approximately multivariate Gaussian.
-In the fitness models, we could therefore incorporate the measurement error in these genetic value by sampling genetic values from Gaussian approximations of these posterior distributions.
+We fitted models for ARS, AS and \note{NS (todo)} that used the posterior estimates of $g_i$ from the GP in Equation \eqref{eq-gp} as the covariate of interest.
+These models had the same form as the previously described \textit{S\&D} and \textit{PS} models in Equations \eqref{eq-ars} and \eqref{eq-as}, with the ACC covariates replaced by linear and quadratic effects of $g_i$.
+However, this replacement was not completely straightforward, as $g_i$ was estimated with uncertainty in GP models, and this uncertainty should be accounted for in the new fitness models.
+The Gaussian approximation of the posterior distribution of $\bm g$ inferred from the GP encodes both the uncertainty and the dependence structure between the genetic values $g_i$.
+However, since we include the square of $g_i$ as a covariate to be able to detect stabilizing selection, but this resulted in a non-Gaussian linear predictor in the fitness models because the square of a Guassian random variable is non-Gaussian.
+This non-Gaussianity breaks a central assumption in R-INLA, so we instead fitted these models using MCMC as implemented in R-Stan (cite). % todo: label for these models?
+We incorporated the measurement error in these genetic value by sampling genetic values from Gaussian approximations of these posterior distributions.
 Since the square of a Gaussian
-% Introduce here that we used R-STAN, since we need to mention it before MCMC
-Since the genetic values are unknown latent variables, we also allow their distribution to be further updated in the Rather than treating the genetic values as having static, known values, we update the genetic values in each MCMC iteration, and treat these as covariates with a linear and quadratic effect.
+Since the genetic values are unknown latent variables, we also allow their distribution to be further updated in the 
+Rather than treating the genetic values as having static, known values, we update the genetic values in each MCMC iteration, and treat these as covariates with a linear and quadratic effect.
 \begin{itemize}
     \item this is an example of feedback 
-    \item which is potentially undesired but checked with simulations that this is ok
+    \item which is potentially undesired but checked with simulations and permutation analysis that this is ok
 \end{itemize}
 % Similarly to the previous models, all these models were fitted separately for males and females.
 
-% The joint posterior of $\bm g$ is approximately multivariate Gaussian (can show in supplementary).
 %
 % (This is equivalent to assuming a Berkson measurement error model for the 
 % genetic values.)
