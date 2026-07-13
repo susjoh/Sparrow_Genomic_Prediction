@@ -272,7 +272,7 @@ fitmod_map <- tar_map(
     gp_data_func(pheno_data = co_data,
                  lrs_path = lrs_data_path,
                  lrs_path2 = lrs_data_path2,
-                 nestling_path = nestling_data_path[1],
+                 nestling_path = nestling_data_path,
                  fam_path = geno_data_paths[3],
                  ped_path = pedigree_path,
                  sex_num = sex_num_lrs,
@@ -1017,6 +1017,7 @@ dirfit_map <- tar_map(
     fitness_data_dir_func(fitness_data_path_dir,
                           froh_file = froh_file,
                           sex_num = sex_num_lrs,
+                          sex_lc = sex_lc,
                           co_dat_path = recomb_data_path2)
   ),
   tar_target(
@@ -1290,8 +1291,7 @@ list(
   ),
   tar_target(
     nestling_data_path,
-    c("data/Nestlingdata_20240312_fix.csv", # fitness date
-      "data/nestling_hatchdate_age_clutch_21-01-2026_HB.txt"), # hatch data
+    c("data/nestling_data_for_kenneth_20260707.csv"),
     format = "file",
     deployment = "main"
   ),

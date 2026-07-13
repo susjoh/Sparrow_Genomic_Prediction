@@ -298,12 +298,18 @@ make_gp_data_nest <- function(pheno_data,
 
   nest <- fread(file = nestling_path)
 
-  # Keep only nestlings with fitness data
-  pedigree %<>% dplyr::filter(id_red %in% nest$ringnr)
   # Inds we want to do GP on (genotyped, and have child with fitness data)
   if (sex_keep == "F") {
+    # Keep on nestlings of correct sex
+    nest %<>% dplyr::filter(genetic_sex == tolower(sex_keep))
+    # Keep only nestlings with fitness data
+    pedigree %<>% dplyr::filter(id_red %in% nest$ringnr)
     gp_inds <- unique(pedigree$dam[pedigree$dam %in% geno_inds])
   } else if (sex_keep == "M") {
+    # Keep on nestlings of correct sex
+    nest %<>% dplyr::filter(genetic_sex == tolower(sex_keep))
+    # Keep only nestlings with fitness data
+    pedigree %<>% dplyr::filter(id_red %in% nest$ringnr)
     gp_inds <- unique(pedigree$sire[pedigree$sire %in% geno_inds])
   } else {
     stop("sex error")
@@ -532,6 +538,7 @@ make_data_parent <- function(gp_data,
 make_data_parent_dir <- function(lrs_data_path,
                                  froh_file,
                                  sex_num,
+                                 sex_lc,
                                  co_dat_path) {
 
   lrs <- fread(file = lrs_data_path)
@@ -602,7 +609,7 @@ make_data_nest <- function(gp_data,
                            sex_num,
                            ped_path) {
 
-  nest <- fread(file = nestling_data_path[1])
+  nest <- fread(file = nestling_data_path)
 
   pedigree <- read.table(file = ped_path, header = TRUE)
   pedigree$id_red <- gsub(x = pedigree$id, pattern = "_.+", "")
@@ -616,10 +623,12 @@ make_data_nest <- function(gp_data,
   gp_data$bv_sd <- gp_model$summary.random$id1$sd[
     order(gp_model$summary.random$id1$ID)][gp_data$id1]
 
-  # Keep nest entries where gp_data ringnrs are in pedigree
+  # Keep nest entries where gp_data ringnrs are correct sex, and in pedigree
   if (sex_num == 2) {
+    nest %<>% dplyr::filter(genetic_sex == "f")
     pedigree %<>% dplyr::filter(dam %in% gp_data$id_red)
   } else if (sex_num == 1) {
+    nest %<>% dplyr::filter(genetic_sex == "m")
     pedigree %<>% dplyr::filter(sire %in% gp_data$id_red)
   } else {
     stop("sex mistake")
@@ -647,6 +656,7 @@ make_data_nest <- function(gp_data,
   nest$sire_num <- match(nest$sire, unique(nest$sire))
   nest$hi_num <- match(nest$hatch_island, unique(nest$hatch_island))
   nest$hy_num <- match(nest$hatch_year, unique(nest$hatch_year))
+  nest$clutch_ID_num <- match(nest$clutch_ID, unique(nest$clutch_ID))
 
   # Add inbreeding info
   froh <- fread(file = froh_file)
@@ -661,11 +671,8 @@ make_data_nest <- function(gp_data,
   nest$idx <- seq_len(nrow(nest))
 
   # Add date info
-  nest_hatch <- fread(file = nestling_data_path[2])
-  nest$hatch_doy <- nest_hatch$hatch_doy[match(nest$ringnr, nest_hatch$ringnr)]
-  nest$chick_age <- nest_hatch$chick_age[match(nest$ringnr, nest_hatch$ringnr)]
-  nest$first_dna_age <- nest_hatch$first_dna_age[match(nest$ringnr,
-                                                       nest_hatch$ringnr)]
+  nest$first_dna_age <- nest$chick_age <- nest$age_at_ringing
+  nest$age_at_ringing <- NULL # remove old col
   # And standardized versions
   nest$hatch_doy_scale <- scale(nest$hatch_doy)
   nest$chick_age_scale <- scale(nest$chick_age)
@@ -677,9 +684,10 @@ make_data_nest <- function(gp_data,
 make_data_nest_dir <- function(nestling_data_path,
                                froh_file,
                                sex_num,
+                               sex_lc,
                                co_dat_path) {
 
-  nest <- fread(file = nestling_data_path[1])
+  nest <- fread(file = nestling_data_path)
 
   co_dat <- fread(file = co_dat_path, data.table = FALSE)
   # TODO: should we include missex, HET, etc, for both parents and offspring?
@@ -690,6 +698,12 @@ make_data_nest_dir <- function(nestling_data_path,
 
   # Keep nest entries where ringnrs are in co_dat
   nest %<>% dplyr::filter(ringnr %in% co_dat$offspring_red)
+
+  # Sex filtering
+  if (sex_lc != "all") {
+    nest %<>%
+      dplyr::filter(genetic_sex == sex_lc)
+  }
 
   # Add parental information
   nest$dam <- co_dat$parent[match(nest$ringnr, co_dat_f$offspring_red)]
@@ -711,6 +725,7 @@ make_data_nest_dir <- function(nestling_data_path,
   nest$sire_num[is.na(nest$sire)] <- NA
   nest$hi_num <- match(nest$hatch_island, unique(nest$hatch_island))
   nest$hy_num <- match(nest$hatch_year, unique(nest$hatch_year))
+  nest$clutch_ID_num <- match(nest$clutch_ID, unique(nest$clutch_ID))
 
   # Add inbreeding info
   froh <- fread(file = froh_file)
@@ -720,11 +735,8 @@ make_data_nest_dir <- function(nestling_data_path,
   nest$idx <- seq_len(nrow(nest))
 
   # Add date info
-  nest_hatch <- fread(file = nestling_data_path[2])
-  nest$hatch_doy <- nest_hatch$hatch_doy[match(nest$ringnr, nest_hatch$ringnr)]
-  nest$chick_age <- nest_hatch$chick_age[match(nest$ringnr, nest_hatch$ringnr)]
-  nest$first_dna_age <- nest_hatch$first_dna_age[match(nest$ringnr,
-                                                       nest_hatch$ringnr)]
+  nest$chick_age <- nest$first_dna_age <- nest$age_at_ringing
+  nest$age_at_ringing <- NULL # remove old col
   # And standardized versions
   nest$hatch_doy_scale <- scale(nest$hatch_doy)
   nest$chick_age_scale <- scale(nest$chick_age)
@@ -1412,10 +1424,12 @@ make_stan_data_nest <- function(data, gp_data, covmat) {
        N_hy = max(data$hy_num),
        N_id = max(data$ringnr_num),
        N_par = max(data$parent_num),
+       N_clutch = max(data$clutch_ID_num),
        hi_idx = data$hi_num,
        hy_idx = data$hy_num,
        id_idx = data$ringnr_num,
        par_idx = data$parent_num,
+       clutch_idx = data$clutch_ID_num,
        bv_mean = bv_mean,
        bv_covmat = bv_covmat,
        bv_covmat_chol = t(chol(bv_covmat)), # pre-multiply this with z-vec
@@ -2077,6 +2091,7 @@ dirfit_func_ns <- function(data) {
                    "first_dna_age",
                    "f(hy_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(hi_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(clutch_ID_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(dam_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(idx, model = \"iid\", hyper = hyperpar_var)")
@@ -2256,6 +2271,7 @@ dirfit_func_parsum_ns <- function(data) {
                    "f(hi_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(dam_num, model = \"iid\", hyper = hyperpar_var)",
+                   "f(clutch_ID_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(idx, model = \"iid\", hyper = hyperpar_var)")
 
   inla_formula <- reformulate(effects_vec, response = "recruit")
