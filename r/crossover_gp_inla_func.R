@@ -399,6 +399,11 @@ make_data_adult <- function(gp_data,
   lrs <- cbind(lrs, age_q1 = age_poly[, 1], age_q2 = age_poly[, 2])
 
   lrs$idx <- seq_len(nrow(lrs))
+
+  # Permute fitness
+  lrs$sum_recruit <- lrs$sum_recruit[sample(nrow(lrs))]
+  lrs$survival <- lrs$survival[sample(nrow(lrs))]
+
   lrs
 }
 
