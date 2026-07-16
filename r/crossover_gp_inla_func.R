@@ -400,10 +400,6 @@ make_data_adult <- function(gp_data,
 
   lrs$idx <- seq_len(nrow(lrs))
 
-  # Permute fitness
-  lrs$sum_recruit <- lrs$sum_recruit[sample(nrow(lrs))]
-  lrs$survival <- lrs$survival[sample(nrow(lrs))]
-
   lrs
 }
 
