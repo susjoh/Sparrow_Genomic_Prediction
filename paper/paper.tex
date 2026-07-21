@@ -12,14 +12,14 @@
 \subsection*{ESEB Abstract}
 
 \subsubsection*{Background}
-Meiotic recombination during gamete formation is a fundamental evolutionary process. It is required to ensure proper chromosome segregation and promotes genetic diversity by shuffling alleles into novel haplotypes. This can create beneficial allele combinations and break up linkage between beneficial and harmful alleles, thereby facilitating adaptive evolution. However, high recombination rates also carry risks, such as introducing mutations at crossover sites, and potentially disrupting favorable allele combinations. Thus, recombination rates could affect individual fitness in opposite directions, suggesting a complex relationship with individual fitness.
+Meiotic recombination during gamete formation is a fundamental evolutionary process. It is required to ensure proper chromosome segregation and promotes genetic diversity by shuffling alleles into novel haplotypes. This can create beneficial allele combinations and break up linkage between beneficial and harmful alleles, thereby facilitating adaptive evolution. However, high recombination rates also carry risks, such as introducing mutations at crossover sites, and potentially disrupting favorable allele combinations. Recombination rates could thus affect individual fitness in opposite directions, suggesting a complex relationship with individual fitness.
 
-Investigating the impact of recombination rates on fitness is complicated by the fact that identifying crossover positions during meiosis - and thus finding the crossover count - is only possible for individuals with genotyped offspring. This introduces a sampling bias which prevents measuring the recombination rates of individuals that are reproductively unsuccessful, excluding them from potential fitness analyses. Failure to account for these unmeasured individuals could potentially bias analyses of the fitness effects of recombination rates.
+Investigating the impact of recombination rates on fitness is complicated by the fact that identifying crossover positions during meiosis - and thus finding the crossover count - is only possible for individuals with genotyped offspring. This limitation introduces a sampling bias which prevents measuring the recombination rates of individuals that are reproductively unsuccessful, excluding them from potential fitness analyses. Failure to account for these unmeasured individuals could potentially bias analyses of the fitness effects of recombination rates. 
 
 \subsubsection*{Materials and methods}
 We used a long-term house sparrow study system from northern Norway with extensive pedigree, genotype, and fitness data to investigate the relationship between individual recombination rates and fitness components. The genomic and pedigree data were leveraged to measure autosomal crossover count (ACC) in adult house sparrows, resulting in one ACC measure per genotyped parent-offspring pair. We estimated sex-specific individual genetic values for ACC by using the phenotypic ACC measures for each parent as responses in a genomic prediction model. The genomic prediction, implemented as a Bayesian G-BLUP model, allowed us to estimate these genetic values in more than 2,600 phenotyped individuals, as well as in more than 2,900 additional individuals with no recorded offspring, correcting the aforementioned sampling bias and increasing the sample size of the subsequent fitness analyses.
 
-We then related the estimated genetic values to sex-specific fitness components, including annual reproductive success and annual survival. As the individuals without ACC measurements had higher uncertainty in their estimated genetic values, we used measurement error modelling to account for the heterogeneous genetic value uncertainties. 
+We then related the estimated genetic values to sex-specific fitness components, including annual reproductive success and annual survival. As the individuals without ACC measurements had higher uncertainty in their estimated genetic values, we used measurement error modeling to account for the heterogeneous genetic value uncertainties. 
 
 \subsubsection*{Results}
 We found that individual ACC was related to male and female annual survival, with predicted annual survival peaking at intermediate genetic values for individual ACC. We also found weak evidence that males with intermediate genetic values had higher annual recruit production, but no evidence of a relationship with reproductive success in females. Altogether these results suggest potential stabilizing selection against extreme values of ACC, especially in male house sparrows.
@@ -56,9 +56,9 @@ Rationale and background - Susan
 \subsection*{Outline of fitness analyses}
 
 We investigated how the number of autosomal crossovers impacted fitness in our study populations.
-We addressed this by asking two related questions: first, how the ACC in the gametes an individual received from its parents impacted its fitness, and second, how an individual's own recombination rate impacted its fitness.
-In both analyses, we used mixed modelling to relate ACC to fitness components, including annual reproductive success (ARS), annual adult survival (AS), and nestling survival (NS).
-However, the second analysis was complicated by sampling biases, which we accounted for by applying genomic prediction (GP) and measurement error modelling.
+We addressed this by asking two related questions: first, how the ACC in the gametes an individual received from its parents impacted its fitness, and second, how an individual's own recombination rate impacted its fitness. % through the gametes passed along to the next generation.
+In both analyses, we used mixed modeling to relate ACC to fitness components, including annual reproductive success (ARS), annual adult survival (AS), and nestling survival (NS).
+However, the second analysis was complicated by sampling biases, which we accounted for by applying genomic prediction (GP) and measurement error modeling.
 We fitted all models separately for the sexes since male and female ACC in house sparrows are essentially different traits with low genetic correlations \citep{mcauley2024genetic}, and since the dynamics of selection could be fundamentally different between the sexes \note{(cite some house sparrow paper)}.
 
 \subsection*{Fitness impacts of ACC in inherited gametes}
@@ -72,7 +72,7 @@ Below we outline the S\&D and PS models for the three fitness traits.
 
 \subsubsection*{Annual reproductive success}
 
-ARS was modelled with a zero-inflated Poisson likelihood, so that $\text{ARS}_{ij}$, the number of recruits produced by individual $i$ in its $j^\text{th}$ adult year, was given by
+ARS was modeled with a zero-inflated Poisson likelihood, so that $\text{ARS}_{ij}$, the number of recruits produced by individual $i$ in its $j^\text{th}$ adult year, was given by
 \begin{align} % Zero-inflated Poisson GLMM
 \begin{split}
 \label{eq-ars}
@@ -88,11 +88,12 @@ ARS was modelled with a zero-inflated Poisson likelihood, so that $\text{ARS}_{i
 \end{split}
 \end{align}
 where $\lambda_{ij}$ is the Poisson rate linked to the linear predictor $\eta_{ij}$ by a log link, and $\pi$ is the zero-inflation probability determined by a single intercept term $\gamma_0$.
-For both the S\&D and PS models, $\eta_{ij}$ included an intercept, fixed effects for age (linear and quadratic) and inbreeding coefficient (linear), and unstructured random effects of measurement year, measurement island, individual ID, dam, sire, and a residual random effect.
+For both the S\&D and PS models, $\eta_{ij}$ included an intercept, fixed effects for age (linear and quadratic) and inbreeding coefficient (linear), and unstructured random effects of measurement year, measurement island, individual ID, dam, and sire, as well as a residual random effect.
 % age: polynomial bases
-% inbreeding: froh (Burnett et al)
-In the S\&D models, $\eta_{ij}$ also contained fixed effects of ACC in the dam gamete (linear and quadratic), ACC in the sire gamete (linear and quadratic), whereas in the PS models $\eta_{ij}$ contained the effect of the sum of the ACC in the parental gametes (linear and quadratic).
-We placed a Gaussian prior $\N{0}{1.75^2}$ on $\gamma_0$, wide independent Gaussian priors $\N{0}{10^4}$ on the fixed effect coefficients, and independent penalized complexity priors $\text{PC}(1, 0.05)$ on the random effect variances \citep{simpson2017penalising}.
+% inbreeding: F_roh (Burnett et al)
+In the S\&D models, $\eta_{ij}$ also contained fixed effects of ACC in the dam gamete (linear and quadratic), ACC in the sire gamete (linear and quadratic), whereas in the PS models $\eta_{ij}$ contained the effect of the sum of the ACCs in the two parental gametes (linear and quadratic).
+We placed independent, wide Gaussian priors $\N{0}{10^4}$ on the fixed effect coefficients, and independent penalized complexity priors $\text{PC}(1, 0.05)$ on the random effect variances \citep{simpson2017penalising}.
+For $\gamma_0$ we used a Gaussian prior $\N{0}{1.25^2}$, which was parametrized so that the zero-inflation probability was centered on $0.5$ with a roughly uniform shape between $0$ and $1$ on the probability scale.
 
 % For the adult model we used
 %\begin{equation*}
@@ -140,7 +141,7 @@ We placed a Gaussian prior $\N{0}{1.75^2}$ on $\gamma_0$, wide independent Gauss
 
 \subsubsection*{Annual Survival}
 
-We modelled AS as a binomial trait with a logistic link, so that
+We modeled AS as a binomial trait with a logistic link, so that
 \begin{align}
 \begin{split}
 \label{eq-as}
@@ -158,7 +159,7 @@ For both the S\&D and PS models, we included the same fixed and random effects i
 
 \subsubsection*{Nestling survival}
 
-Similar to AS, NS was modelled as a binomial trait, so that
+Similar to AS, NS was modeled as a binomial trait, so that
 \begin{align}
 \begin{split}
 \label{eq-ns}
@@ -192,57 +193,47 @@ We employed the same prior specifications for fixed effect coefficients and rand
     \ra{1.3}
     \begin{tabular}{@{}lccccc@{}}
         \toprule
-        & \multicolumn{5}{c}{Fitness}\\ 
-        \cmidrule{2-6}
-        Model & ARS, adult & ARS, parental & AS, adult & AS, parental & NS  \\
-        \midrule
+        & \multicolumn{2}{c}{Female} & & \multicolumn{2}{c}{Male} \\
+        \cmidrule{2-3} \cmidrule{5-6}
+        Model & ARS/AS & NS & & ARS/AS  & NS \\
+        \midrule 
+        \rowcolor{LightGray}
+        S\&D/PS &
+        $1804$ $(3334)$ &
+        $1929$ & &
+        $1932$ $(3832)$ &
+        $2038$ \\ % check missingness
 
-        GP ACC pheno &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ \\
+        % \cmidrule{2-8}
+        GP phen &
+        $1285$ $(6377)$ &
+        $-$ & &
+        $1242$ $(6489)$ &
+        $-$ \\
 
-        GP ACC pred &
-        $XXX$ &
-        $XXX$ &
-        $XXX$ &
-        $XXX$ &
-        $XXX$  \\
+        \rowcolor{LightGray}
+        GP pred &
+        $1354$ &
+        $-$ & &
+        $1454$ &
+        $-$ \\
+        
+        GV-F &
+        $-$ $(-)$ &
+        $-$ & &
+        $-$ $(-)$ &
+        $-$ \\
 
-        GP ACC total &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ \\
-
-        \cmidrule{2-6}
-        Fitness pheno &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ \\
-
-        Fitness pred &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ \\
-
-        Fitness total &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ &
-        $XXX$ $(XXX)$ \\
+        \rowcolor{LightGray}
+        PGV-F &
+        $-$ $(-)$ &
+        $-$ & &
+        $-$ $(-)$ &
+        $-$ \\
 
         \bottomrule 
     \end{tabular}
-    \caption{Sample sizes}
+    \caption{Sample sizes for the various models. In cases where the number of individuals and the number of observations differ due to repeated measurements, the number of observations is parenthesized.} % issue: missingness in S&D and parsum models
     \label{tab-gp-ss}
 \end{table*}
 
@@ -250,24 +241,25 @@ We employed the same prior specifications for fixed effect coefficients and rand
 
 \subsubsection*{Sampling bias in ACC measurements}
 
-To investigate the fitness consequences of an individual's recombination rate, we could in principle have related the ACCs in the gametes produced by individual $i$ to directly the fitness of $i$.
-However, since we were only able to measure ACC for genotyped individuals with \textit{known and genotyped offspring}, the individuals that were reproductively unsuccessful were systematically unmeasured for ACC.
-Thus, a fitness analysis excluding these individual would thus suffer from a systematic sampling bias, where less fit individuals would be missing not at random.
+To investigate the fitness consequences of an individual's recombination rate, we could in principle have related the ACCs in the gametes produced by individual $i$ directly to the fitness of $i$.
+However, since we were only able to measure ACC for genotyped individuals \textit{with genotyped offspring}, any individuals that were reproductively unsuccessful were unmeasured for ACC.
+Thus, a fitness analysis excluding these individuals would suffer from a systematic sampling bias, where less fit individuals would be missing not at random.
 
-As a workaround to this sampling bias, we used GP to predict genetic values (also known as breeding values) of ACC for \textit{all} genotyped individuals with fitness data, including non-breeders.
-Thus, by considering the fitness effects of the predicted additive genetic component of ACC, rather than the unevenly sampled ACC measurements, we eliminated this sampling bias.
-Below we outline a Bayesian GP model that estimated and predicted sex-specific ACC genetic values.
-We related these genetic values to ARS and AS in fitness models.
-We label these fitness models ``genetic value-fitness'' (GV-F) models to differentiate them from the S\&D and PS models.
-Similarly to the previous models, the GP and GV-F models were fitted separately for males and females. % due to differing genetic architectures (cite McAuley)
-We take care to properly feed forward the uncertainty from the GP results into the GV-F models, as fitting the models jointly would have been computationally unfeasible.
+As a workaround for this sampling bias, we used GP to predict genetic values (also known as breeding values) of ACC for \textit{all} genotyped individuals with fitness data, including non-breeders.
+% Mention that this is basically an imputation model.
+By considering the fitness effects of the predicted additive genetic component of ACC, rather than the unevenly sampled ACC measurements, we eliminated the sampling bias.
+Below we outline a Bayesian GP model that estimated and predicted sex-specific ACC genetic values. 
+We used these genetic values as covariates in fitness models for ARS and AS, which we label ``genetic value-fitness'' (GV-F) models to differentiate them from the S\&D and PS models.
+Ideally, the GP and GV-F models would have been fitted jointly, but because this was computationally unfeasible, we took care to propagate the uncertainty from the GP results into the GV-F models.
+As with the previous models, the GP and GV-F models were fitted separately for males and females. % due to differing genetic architectures (cite McAuley)
 
 \subsubsection*{Genomic Prediction of ACC}
 
-We performed GP of ACC with a Bayesian linear mixed model with a Gaussian likelihood, fitted in \texttt{R-INLA} \citep{rue2009approximate}.
-Although ACC is a count trait, its rates were high enough that a continuous Gaussian likelihood was a reasonable modelling assumption.
+We predicted additive genetic values for ACC with a GP model.
+The GP model was a Bayesian linear mixed model with a Gaussian likelihood, fitted in \texttt{R-INLA} \citep{rue2009approximate}.
+Although ACC is a count trait, its rates were high enough that a continuous Gaussian likelihood was a reasonable modeling assumption.
 Let $\text{ACC}_{ij}$ denote the ACC measured in the gamete that individual $i$ passed to its offspring $j$, where the number of measurements per individual varied from $0$ to $42$.
-We modelled
+We modeled
 \begin{equation}
     \text{ACC}_{ij} = \mu + \beta_\text{coverage} \cdot x_{\text{coverage},ij} + \beta_f f_i +  g_i + z_{\text{hy},i} + z_{\text{hi},i} + z_{\text{id},i} + z_{\varepsilon,ij}\ ,
     \label{eq-gp}
@@ -300,7 +292,7 @@ As described in \note{suppmat YYY}, we also related an individual's fitness to t
 %As detailed below, we first related the ARS and AS of an individual $i$ to its own ACC genetic value $g_i$, and next to the genetic value $g_{p(i)}$ of its same-sex parent $p(i)$ in a separate model.
 %We label the former as \textit{adult} models and the latter as \textit{parental} models.
 %For nestling $i$ we only related $g_{p(i)}$ to the NS of $i$, similar to the parental models for ARS and AS.
-%We modelled all three fitness traits with Bayesian GLMMs as detailed below.
+%We modeled all three fitness traits with Bayesian GLMMs as detailed below.
 
 \section*{Results}
 
