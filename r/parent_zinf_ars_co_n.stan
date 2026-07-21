@@ -19,7 +19,6 @@ data {
   int<lower=0> Y[N];                 // Response variable (yearly number of offspring)
   // Rate in exponential priors
   real<lower=0> exp_rate_ars;
-  real<lower=0> exp_rate_zi;
   // real<lower=0> phi_inv_rate;
   // Parameters for the priors on coefficients:
   real alpha_prior_mean_ars;

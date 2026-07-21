@@ -1328,10 +1328,9 @@ make_stan_data_adult <- function(data, gp_data, covmat) {
        exp_rate_ars = 1 / 0.2,
        beta_prior_sd_surv = 0.5,
        exp_rate_surv = 1 / 0.5,
-       beta_zi_prior_sd = 0.5,
-       exp_rate_zi = 1 / 0.5,
-       alpha_zi_prior_mean = log(mean(data$sum_recruit == 0) /
-                                   (1 - mean(data$sum_recruit == 0))),
+       beta_zi_prior_sd = sqrt(2.5),
+       alpha_zi_prior_mean = 0,
+       # = log(mean(data$sum_recruit == 0) / (1 - mean(data$sum_recruit == 0))),
        alpha_prior_mean_surv = log(1 / (1 / mean(data$survival) - 1)),
        alpha_prior_mean_ars = log(mean(data$sum_recruit[data$sum_recruit != 0]))
   )
@@ -1358,45 +1357,42 @@ make_stan_data_parent <- function(data, gp_data, covmat) {
   # sample, and add repeats
   bv_std_vec <- rmvnorm(1e4, bv_mean, bv_covmat)[, data$parent_num]
 
-  idx <-
-
-    list(N = nrow(data),
-         sex = data$sex,
-         N_ll = max(data$ll_num),
-         N_ye = max(data$y_num),
-         N_id = max(data$ringnr_num),
-         N_par = max(data$parent_num),
-         ye_idx = data$y_num,
-         ll_idx = data$ll_num,
-         id_idx = data$ringnr_num,
-         par_idx = data$parent_num,
-         id_to_par_idx = data$parent_num[match(seq_len(max(data$ringnr_num)),
-                                               data$ringnr_num)],
-         bv_mean = bv_mean,
-         bv_covmat = bv_covmat,
-         bv_covmat_chol = t(chol(bv_covmat)), # pre-multiply this with z-vec
-         sum_recruit = data$sum_recruit,
-         sum_recruit_log_mean = log(mean(data$sum_recruit)),
-         survival = data$survival,
-         survival_logit_mean = log(1 / (1 / mean(data$survival) - 1)),
-         age = data$age,
-         age_q1 = poly(data$age, degree = 2)[, 1],
-         age_q2 = poly(data$age, degree = 2)[, 2],
-         f = data$froh,
-         bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
-         bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
-         co_n = data$co_n,
-         co_meas = data$co_meas,
-         beta_prior_sd_ars = 0.2,
-         exp_rate_ars = 1 / 0.2,
-         beta_prior_sd_surv = 0.5,
-         exp_rate_surv = 1 / 0.5,
-         beta_zi_prior_sd = 0.5,
-         exp_rate_zi = 1 / 0.5,
-         alpha_zi_prior_mean = log(mean(data$sum_recruit == 0) /
-                                     (1 - mean(data$sum_recruit == 0))),
-         alpha_prior_mean_surv = log(1 / (1 / mean(data$survival) - 1)),
-         alpha_prior_mean_ars = log(mean(data$sum_recruit[data$sum_recruit != 0])))
+  list(N = nrow(data),
+       sex = data$sex,
+       N_ll = max(data$ll_num),
+       N_ye = max(data$y_num),
+       N_id = max(data$ringnr_num),
+       N_par = max(data$parent_num),
+       ye_idx = data$y_num,
+       ll_idx = data$ll_num,
+       id_idx = data$ringnr_num,
+       par_idx = data$parent_num,
+       id_to_par_idx = data$parent_num[match(seq_len(max(data$ringnr_num)),
+                                             data$ringnr_num)],
+       bv_mean = bv_mean,
+       bv_covmat = bv_covmat,
+       bv_covmat_chol = t(chol(bv_covmat)), # pre-multiply this with z-vec
+       sum_recruit = data$sum_recruit,
+       sum_recruit_log_mean = log(mean(data$sum_recruit)),
+       survival = data$survival,
+       survival_logit_mean = log(1 / (1 / mean(data$survival) - 1)),
+       age = data$age,
+       age_q1 = poly(data$age, degree = 2)[, 1],
+       age_q2 = poly(data$age, degree = 2)[, 2],
+       f = data$froh,
+       bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
+       bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
+       co_n = data$co_n,
+       co_meas = data$co_meas,
+       beta_prior_sd_ars = 0.2,
+       exp_rate_ars = 1 / 0.2,
+       beta_prior_sd_surv = 0.5,
+       exp_rate_surv = 1 / 0.5,
+       beta_zi_prior_sd = sqrt(2.5),
+       alpha_zi_prior_mean = 0,
+       #= log(mean(data$sum_recruit == 0) / (1 - mean(data$sum_recruit == 0))),
+       alpha_prior_mean_surv = log(1 / (1 / mean(data$survival) - 1)),
+       alpha_prior_mean_ars = log(mean(data$sum_recruit[data$sum_recruit != 0])))
 }
 
 make_stan_data_nest <- function(data, gp_data, covmat) {
@@ -1447,9 +1443,7 @@ make_stan_data_nest <- function(data, gp_data, covmat) {
        beta_prior_sd_ars = 0.2,
        exp_rate_ars = 1 / 0.2,
        beta_prior_sd_surv = 0.5,
-       exp_rate_surv = 1 / 0.5,
-       beta_zi_prior_sd = 0.5,
-       exp_rate_zi = 1 / 0.5)
+       exp_rate_surv = 1 / 0.5)
 }
 
 ppc_ars <- function(dat, samp) {
@@ -1980,7 +1974,7 @@ dirfit_func_ars <- function(data) {
   inla(inla_formula,
        family = "zeroinflatedpoisson1",
        control.compute = list(config = TRUE),
-       control.family = list(hyper = list(theta = list(param = c(0, 1 / 1.75^2)))),
+       control.family = list(hyper = list(theta = list(param = c(0, 1 / 1.25^2)))),
        data = data, verbose = TRUE) %>%
     INLA::inla.rerun()
 }
@@ -2175,7 +2169,7 @@ dirfit_func_parsum_ars <- function(data) {
   inla(inla_formula,
        family = "zeroinflatedpoisson1",
        control.compute = list(config = TRUE),
-       control.family = list(hyper = list(theta = list(param = c(0, 1 / 1.75^2)))),
+       control.family = list(hyper = list(theta = list(param = c(0, 1 / 1.25^2)))),
        data = data, verbose = TRUE) %>%
     INLA::inla.rerun()
 }

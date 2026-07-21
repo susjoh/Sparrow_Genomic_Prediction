@@ -10,13 +10,12 @@ data {
   int<lower=0> N_id;                 // Number of levels in identity random effect
   int<lower=0,upper=N_id> id_idx[N];
   vector[N_id] bv_mean;              // Posterior means of breeding values
-  matrix[N_id, N_id] bv_covmat_chol;     // Chol decomp of covariance for bvs
+  matrix[N_id, N_id] bv_covmat_chol; // Chol decomp of covariance for bvs
   real bv_mean_std;                  // Constant used to standardize the vector of breeding values
   real bv_sd_std;                    // Constant used to standardize the vector of breeding values
   int<lower=0> Y[N];                 // Response variable (yearly number of offspring)
   // Rate in exponential priors
   real<lower=0> exp_rate_ars;
-  real<lower=0> exp_rate_zi;
   // real<lower=0> phi_inv_rate;
   // Parameters for the priors on coefficients:
   real alpha_prior_mean_ars;
