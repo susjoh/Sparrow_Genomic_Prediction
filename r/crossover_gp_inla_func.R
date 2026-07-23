@@ -118,7 +118,7 @@ prep_co_data <- function(recomb_data_path,
   pheno_data$ringnr <- pheno_data$id # just an alternate name
 
   # Numerical id columns needed for random effects in INLA
-  pheno_data$id1 <- # For breeding values
+  pheno_data$id1 <- # For genetic values
     pheno_data$id2 <- # For ID effect
     pheno_data$id3 <- # For meas. error
     ids_num # numerical ids
@@ -185,7 +185,7 @@ make_gp_data_adult <- function(pheno_data,
   dat
 }
 
-# Sex-GP on inds with offspring with fitness measures
+# Sex-specific GP on inds with offspring with fitness measures
 make_gp_data_parent <- function(pheno_data,
                                 lrs_path,
                                 lrs_path2,
@@ -263,7 +263,7 @@ make_gp_data_parent <- function(pheno_data,
   dat
 }
 
-# Sex-GP on inds with offspring with fitness measures
+# Sex-specific GP on inds with offspring with fitness measures
 make_gp_data_nest <- function(pheno_data,
                               lrs_path,
                               lrs_path2,
@@ -318,6 +318,9 @@ make_gp_data_nest <- function(pheno_data,
   gp_inds <- gp_inds[!gp_inds %in% pheno_data$id]
   gp_inds_red <- gsub(x = gp_inds, pattern = "_.+", "")
 
+  # 1 male is missing from both lrs and lrs2, remove it
+  gp_inds_red <- gp_inds_red[(gp_inds_red %in% lrs$ringnr |
+                                gp_inds_red %in% lrs2$ringnr)]
   # Data frame to add to pheno_data
   gp_inds_df <- lrs[lrs$ringnr %in% gp_inds_red, ]
   # Add inds missing from lrs, but present in lrs2
@@ -348,6 +351,59 @@ make_gp_data_nest <- function(pheno_data,
   dat
 }
 
+# Sex-specific GP on inds with offspring with fitness measures
+make_gp_data_n2 <- function(pheno_data,
+                            lrs_path,
+                            lrs_path2,
+                            nestling_path,
+                            fam_path,
+                            ped_path,
+                            sex_num,
+                            sex_keep,
+                            froh_file) {
+
+  geno_inds <- fread(file = fam_path, select = 2)$V2
+  geno_inds_red <- gsub(x = geno_inds, pattern = "_.+", "")
+
+  nest <- fread(file = nestling_path)
+
+  # Inds we want to do GP on (genotyped, and have fitness data)
+  nest %<>% dplyr::filter(genetic_sex == tolower(sex_keep))
+  # Do GP on inds. with nestling fitness data
+  gp_inds <- nest$ringnr
+  # ... that are genotyped
+  gp_inds <- gp_inds[gp_inds %in% geno_inds_red]
+
+  # Don't need to do GP for inds already phenotyped
+  gp_inds <- gp_inds[!gp_inds %in% pheno_data$id_red]
+
+  # Data frame to add to pheno_data
+  gp_inds_df <- nest[nest$ringnr %in% gp_inds, ]
+
+  # For duplicated genotypes:
+  gp_inds_df$id_red <- gp_inds_df$ringnr
+  gp_inds_df$ringnr[which(!gp_inds_df$ringnr %in% geno_inds)] <-
+    sapply(which(!gp_inds_df$ringnr %in% geno_inds),
+           function(ind) {
+             geno_inds[match(gp_inds_df$ringnr[ind], geno_inds_red)]
+           })
+  gp_inds_df$id <- gp_inds_df$ringnr
+  # Recasting
+  gp_inds_df$sex <- toupper(gp_inds_df$genetic_sex)
+  gp_inds_df$hatch_year <- as.factor(gp_inds_df$hatch_year)
+  gp_inds_df$first_locality <- as.factor(gp_inds_df$hatch_island)
+  gp_inds_df$id1 <- gp_inds_df$id2 <- gp_inds_df$id3 <-
+    seq(from = max(pheno_data$id1) + 1,  length = nrow(gp_inds_df), by = 1)
+  # Merge
+  dat <- plyr::rbind.fill(pheno_data, gp_inds_df)
+
+  # Add inbreeding info
+  froh <- fread(file = froh_file)
+  dat$froh <- froh$FROH2.5[match(dat$id_red, froh$FID)]
+
+  dat
+}
+
 make_data_adult <- function(gp_data,
                             gp_model,
                             lrs_data_path,
@@ -360,7 +416,7 @@ make_data_adult <- function(gp_data,
                c(20, 22, 23, 24, 26, 27, 28, 34, 35, 38, 331, 332)]
   lrs <- lrs[lrs$ringnr %in% gp_data$id_red]
 
-  # add predicted phenotypes and breeding values from GP model to data
+  # add predicted phenotypes and genetic values from GP model to data
   gp_data$pred_pheno <- gp_model$summary.fitted.values$mean
   gp_data$bv_mean <- gp_model$summary.random$id1$mean[
     order(gp_model$summary.random$id1$ID)][gp_data$id1]
@@ -403,54 +459,6 @@ make_data_adult <- function(gp_data,
   lrs
 }
 
-make_data_adult_dir <- function(lrs_data_path,
-                                froh_file,
-                                sex_num,
-                                co_dat_path) {
-
-  lrs <- fread(file = lrs_data_path)
-  lrs <- lrs[lrs$last_locality %in%
-               c(20, 22, 23, 24, 26, 27, 28, 34, 35, 38, 331, 332)]
-
-  co_dat <- fread(file = co_dat_path, data.table = FALSE)
-  co_dat$parent_red <- gsub(x = co_dat$parent, pattern = "_.+", "")
-  # TODO: should we include missex, HET, etc, for both parents and offspring?
-
-  # Keep lrs entries where ringnrs are in co_dat
-  lrs %<>% dplyr::filter(ringnr %in% co_dat$parent_red)
-
-  # Remove inds with missing sex
-  lrs %<>% dplyr::filter(!is.na(sex))
-  # Sex filtering
-  if (sex_num != "all") {
-    lrs %<>%
-      dplyr::filter(sex != 1.5) %>%
-      mutate(sex = round(sex)) %>%
-      filter(sex %in% sex_num)
-  }
-
-  lrs$parent_n_kids <- co_dat$parent_n_kids[match(lrs$ringr, co_dat$parent_red)]
-  # TODO: figure out how one would do this model. Probably measurement error
-  # model for the co_counts, but then square again requires stan...
-
-  lrs$age <- lrs$year - lrs$hatch_year
-
-  lrs$ringnr_num <- match(lrs$ringnr, unique(lrs$ringnr))
-  lrs$ll_num <- match(lrs$last_locality, unique(lrs$last_locality))
-  lrs$y_num <- match(lrs$year, unique(lrs$year))
-  lrs$hy_num <- match(lrs$hatch_year, unique(lrs$hatch_year))
-
-  # Add inbreeding info
-  froh <- fread(file = froh_file)
-  lrs$froh <- froh$FROH2.5[match(lrs$ringnr, froh$FID)]
-
-  age_poly <- poly(lrs$age, degree = 2)
-  lrs <- cbind(lrs, age_q1 = age_poly[, 1], age_q2 = age_poly[, 2])
-
-  lrs$idx <- seq_len(nrow(lrs))
-  lrs
-}
-
 make_data_parent <- function(gp_data,
                              gp_model,
                              lrs_data_path,
@@ -467,7 +475,7 @@ make_data_parent <- function(gp_data,
   pedigree$dam_red <- gsub(x = pedigree$dam, pattern = "_.+", "")
   pedigree$sire_red <- gsub(x = pedigree$sire, pattern = "_.+", "")
 
-  # add predicted phenotypes and breeding values from GP model to data
+  # add predicted phenotypes and genetic values from GP model to data
   gp_data$pred_pheno <- gp_model$summary.fitted.values$mean
   gp_data$bv_mean <- gp_model$summary.random$id1$mean[
     order(gp_model$summary.random$id1$ID)][gp_data$id1]
@@ -617,7 +625,7 @@ make_data_nest <- function(gp_data,
   pedigree$dam_red <- gsub(x = pedigree$dam, pattern = "_.+", "")
   pedigree$sire_red <- gsub(x = pedigree$sire, pattern = "_.+", "")
 
-  # add predicted phenotypes and breeding values from GP model to data
+  # add predicted phenotypes and genetic values from GP model to data
   gp_data$pred_pheno <- gp_model$summary.fitted.values$mean
   gp_data$bv_mean <- gp_model$summary.random$id1$mean[
     order(gp_model$summary.random$id1$ID)][gp_data$id1]
@@ -681,6 +689,81 @@ make_data_nest <- function(gp_data,
 
   nest
 }
+
+make_data_n2 <- function(gp_data,
+                         gp_model,
+                         nestling_data_path,
+                         froh_file,
+                         sex_num,
+                         ped_path) {
+
+  nest <- fread(file = nestling_data_path)
+
+  pedigree <- read.table(file = ped_path, header = TRUE)
+  pedigree$id_red <- gsub(x = pedigree$id, pattern = "_.+", "")
+  pedigree$dam_red <- gsub(x = pedigree$dam, pattern = "_.+", "")
+  pedigree$sire_red <- gsub(x = pedigree$sire, pattern = "_.+", "")
+
+  # add predicted phenotypes and genetic values from GP model to data
+  gp_data$pred_pheno <- gp_model$summary.fitted.values$mean
+  gp_data$bv_mean <- gp_model$summary.random$id1$mean[
+    order(gp_model$summary.random$id1$ID)][gp_data$id1]
+  gp_data$bv_sd <- gp_model$summary.random$id1$sd[
+    order(gp_model$summary.random$id1$ID)][gp_data$id1]
+
+  # Keep nest entries where gp_data ringnrs are correct sex, and in pedigree
+  if (sex_num == 2) {
+    nest %<>% dplyr::filter(genetic_sex == "f")
+  } else if (sex_num == 1) {
+    nest %<>% dplyr::filter(genetic_sex == "m")
+  } else {
+    stop("sex mistake")
+  }
+
+  # Add parental information
+  nest$dam <- pedigree$dam[match(nest$ringnr, pedigree$id_red)]
+  nest$dam_red <- pedigree$dam_red[match(nest$ringnr, pedigree$id_red)]
+  nest$sire <- pedigree$sire[match(nest$ringnr, pedigree$id_red)]
+  nest$sire_red <- pedigree$sire_red[match(nest$ringnr, pedigree$id_red)]
+
+  nest$bv_mean <- gp_data$bv_mean[match(nest$ringnr, gp_data$id_red)]
+  nest$bv_sd <- gp_data$bv_sd[match(nest$ringnr, gp_data$id_red)]
+
+  # Remove inds that were not genotyped
+  nest %<>% dplyr::filter(!is.na(bv_mean))
+
+  # Make numerical groups for random effect coding
+  nest$ringnr_num <- match(nest$ringnr, unique(nest$ringnr))
+  nest$parent_num <- match(nest$parent, unique(nest$parent))
+  nest$dam_num <- match(nest$dam, unique(nest$dam))
+  nest$sire_num <- match(nest$sire, unique(nest$sire))
+  nest$hi_num <- match(nest$hatch_island, unique(nest$hatch_island))
+  nest$hy_num <- match(nest$hatch_year, unique(nest$hatch_year))
+  nest$clutch_ID_num <- match(nest$clutch_ID, unique(nest$clutch_ID))
+
+  # Add inbreeding info
+  froh <- fread(file = froh_file)
+  nest$froh <- froh$FROH2.5[match(nest$ringnr, froh$FID)]
+
+  # # Number of crossover measurements
+  nest$co_n <- gp_data$n[match(nest$ringnr, gp_data$id_red)]
+  nest %<>% mutate(co_n = ifelse(is.na(co_n), 0, co_n))
+  nest$co_meas <- (nest$co_n > 0)
+
+  # Add index
+  nest$idx <- seq_len(nrow(nest))
+
+  # Add date info
+  nest$first_dna_age <- nest$chick_age <- nest$age_at_ringing
+  nest$age_at_ringing <- NULL # remove old col
+  # And standardized versions
+  nest$hatch_doy_scale <- scale(nest$hatch_doy)
+  nest$chick_age_scale <- scale(nest$chick_age)
+  nest$first_dna_age_scale <- scale(nest$first_dna_age)
+
+  nest
+}
+
 
 make_data_nest_dir <- function(nestling_data_path,
                                froh_file,
@@ -1338,7 +1421,7 @@ make_stan_data_adult <- function(data, gp_data, covmat) {
 
 make_stan_data_parent <- function(data, gp_data, covmat) {
 
-  # Make bv stats same order as ringnr, and give one entry per ind.
+  # Make bv stats same order as ringnr, and give one entry per parent
   bv_mean <- data$bv_mean[order(data$parent_num)][
     match(unique(data[order(data$parent_num)]$parent),
           data[order(data$parent_num)]$parent)]
@@ -1446,6 +1529,57 @@ make_stan_data_nest <- function(data, gp_data, covmat) {
        exp_rate_surv = 1 / 0.5)
 }
 
+make_stan_data_n2 <- function(data, gp_data, covmat) {
+
+  # Make bv stats same order as ringnr, and give one entry per ind.
+  bv_mean <- data$bv_mean[order(data$ringnr_num)][
+    match(unique(data[order(data$ringnr_num)]$ringnr),
+          data[order(data$ringnr_num)]$ringnr)]
+
+  # All the same reordering that was done for bv_mean
+  bv_covmat <- covmat[
+    gp_data$id1, gp_data$id1][
+      match(data$ringnr, gp_data$id_red),
+      match(data$ringnr, gp_data$id_red)][
+        order(data$ringnr_num), order(data$ringnr_num)][
+          match(unique(data[order(data$ringnr_num)]$ringnr),
+                data[order(data$ringnr_num)]$ringnr),
+          match(unique(data[order(data$ringnr_num)]$ringnr),
+                data[order(data$ringnr_num)]$ringnr)]
+
+  # sample, and add repeats
+  bv_std_vec <- rmvnorm(1e4, bv_mean, bv_covmat)[, data$ringnr_num]
+
+  list(N = nrow(data),
+       N_hi = max(data$hi_num),
+       N_hy = max(data$hy_num),
+       N_id = max(data$ringnr_num),
+       N_par = max(data$parent_num),
+       N_clutch = max(data$clutch_ID_num),
+       hi_idx = data$hi_num,
+       hy_idx = data$hy_num,
+       id_idx = data$ringnr_num,
+       par_idx = data$parent_num,
+       clutch_idx = data$clutch_ID_num,
+       bv_mean = bv_mean,
+       bv_covmat = bv_covmat,
+       bv_covmat_chol = t(chol(bv_covmat)), # pre-multiply this with z-vec
+       recruit = data$recruit,
+       alpha_prior_mean_nestling = log(1 / (1 / mean(data$recruit) - 1)),
+       f = data$froh,
+       bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
+       bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
+       co_n = data$co_n,
+       hatch_doy = data$hatch_doy,
+       chick_age = data$chick_age,
+       first_dna_age = data$first_dna_age,
+       co_meas = data$co_meas,
+       beta_prior_sd_ars = 0.2,
+       exp_rate_ars = 1 / 0.2,
+       beta_prior_sd_surv = 0.5,
+       exp_rate_surv = 1 / 0.5)
+}
+
 ppc_ars <- function(dat, samp) {
 
   y <- dat$sum_recruit
@@ -1514,6 +1648,23 @@ ppc_surv <- function(dat, samp) {
 }
 
 ppc_nest <- function(dat, samp) {
+
+  y <- dat$recruit
+  yrep <- samp$y_rep
+  hi_i <- dat$hi_idx
+  hy_i <- dat$hy_idx
+
+  lst(bar = ppc_bars(y, yrep),
+      bar_hi = ppc_bars_grouped(y, yrep, group = hi_i),
+      bar_hy = ppc_bars_grouped(y, yrep, group = hy_i),
+      sd = ppc_stat(y, yrep, stat = "sd"),
+      sd_hi = ppc_stat_grouped(y, yrep, group = hi_i, stat = "sd"),
+      sd_hy = ppc_stat_grouped(y, yrep, group = hy_i, stat = "sd"),
+      p_mean = mean(colMeans(yrep) > mean(y)),
+      p_sd = mean(apply(yrep, 2, sd) > sd(y)))
+}
+
+ppc_n2 <- function(dat, samp) {
 
   y <- dat$recruit
   yrep <- samp$y_rep
@@ -1896,8 +2047,8 @@ plot_bv_out_vs_in <- function(stats, dat) {
     geom_abline(slope = 1, intercept = 0) +
     theme_minimal() +
     coord_fixed(ratio = 1) +
-    xlab("Input breeding value") +
-    ylab("Output breeding value") +
+    xlab("Input genetic value") +
+    ylab("Output genetic value") +
     scale_x_continuous(limits = range(bv_in, bv_out)) +
     scale_y_continuous(limits = range(bv_in, bv_out)) +
     theme(panel.border = element_rect(fill = NA),
@@ -1928,7 +2079,7 @@ make_cv_test_sets <- function(analysis_inds,
 cv_acc_fun <- function(model, pheno_data, test_set, y) {
 
   pred_bv <- model$summary.random$id1$mean[order(model$summary.random$id1$ID)]
-  # GP accuracy, with repeated breeding values
+  # GP accuracy, with repeated genetic values
   pheno_data$pred_bv_rep <- pred_bv[pheno_data$id1]
 
   pheno_data %>%

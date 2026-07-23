@@ -78,33 +78,39 @@ values_fitmod <- tibble(
           "surv_adult",
           "ars_parent",
           "surv_parent",
-          "nest"),
+          "nest", # parental
+          "n2"), # self
   gp_data_func = rlang::syms(c("make_gp_data_adult",
                                "make_gp_data_adult",
                                "make_gp_data_parent",
                                "make_gp_data_parent",
-                               "make_gp_data_nest")),
+                               "make_gp_data_nest",
+                               "make_gp_data_n2")),
   fitness_data_path = rlang::syms(c("lrs_data_path",
                                     "lrs_data_path",
                                     "lrs_data_path",
                                     "lrs_data_path",
+                                    "nestling_data_path",
                                     "nestling_data_path")),
   fitdat_func = rlang::syms(c("make_data_adult",
                               "make_data_adult",
                               "make_data_parent",
                               "make_data_parent",
-                              "make_data_nest")),
+                              "make_data_nest",
+                              "make_data_n2")),
   trait = c("annual reproductive success",
             "annual survival",
             "annual reproductive success",
             "annual survival",
+            "nestling survival",
             "nestling survival"),
-  xlab_start = c("B", "B", "Parental b", "Parental b", "Parental b"),
+  xlab_start = c("B", "B", "Parental b", "Parental b", "Parental b", "B"),
   make_sim = rlang::syms(c("make_sim_ars_adult",
                            "make_sim_surv_adult",
                            "make_sim_ars_parent",
                            "make_sim_surv_parent",
-                           "make_sim_nest")),
+                           "make_sim_nest",
+                           "make_sim_n2")),
   sim_par_vec = list(list("alpha" = 0.26,
                           "beta_bv" = -0.16,
                           "beta_bv2" = -1.2,
@@ -156,12 +162,21 @@ values_fitmod <- tibble(
                           "sigma_hy" = 0.44,
                           "sigma_hi" = 0.36,
                           "sigma_par" = 0.40,
+                          "sigma_res" = 0),
+                     list("alpha" = -1.3,
+                          "beta_bv" = -0.39,
+                          "beta_bv2" = -0.29,
+                          "beta_f" = 1.1,
+                          "sigma_hy" = 0.44,
+                          "sigma_hi" = 0.36,
+                          "sigma_par" = 0.40,
                           "sigma_res" = 0)),
   stan_data_func = rlang::syms(c("make_stan_data_adult",
                                  "make_stan_data_adult",
                                  "make_stan_data_parent",
                                  "make_stan_data_parent",
-                                 "make_stan_data_nest")),
+                                 "make_stan_data_nest",
+                                 "make_stan_data_n2")),
   stan_pars = list(c("alpha",
                      "beta_bv",
                      "beta_bv2",
@@ -236,32 +251,55 @@ values_fitmod <- tibble(
                      "hy",
                      "hi",
                      "par",
+                     "clutch",
                      "bv_lat",
                      "sigma_hi",
                      "sigma_hy",
                      "sigma_par",
+                     "sigma_clutch",
+                     "y_rep"),
+                   c("alpha",
+                     "beta_bv",
+                     "beta_bv2",
+                     "beta_f",
+                     "beta_hatch_doy",
+                     "beta_hatch_doy2",
+                     "beta_first_dna_age",
+                     "hy",
+                     "hi",
+                     "id",
+                     "clutch",
+                     "bv_lat",
+                     "sigma_hi",
+                     "sigma_hy",
+                     "sigma_id",
+                     "sigma_clutch",
                      "y_rep")),
-  y_col = c("sum_recruit", "survival", "sum_recruit", "survival", "recruit"),
+  y_col = c("sum_recruit", "survival", "sum_recruit", "survival", rep("recruit", 2)),
   stan_file_name = c("r/zinf_ars_covmat.stan",
                      "r/adult_surv_covmat.stan",
                      "r/parent_zinf_ars_covmat.stan",
                      "r/parent_surv_covmat.stan",
-                     "r/nestling_surv_covmat.stan"),
+                     "r/nestling_surv_covmat.stan",
+                     "r/n2.stan"),
   stan_file_name_co_n = c("r/zinf_ars_co_n.stan",
                           "r/adult_surv_co_n.stan",
                           "r/parent_zinf_ars_co_n.stan",
                           "r/parent_surv_co_n.stan",
-                          "r/nestling_surv_co_n.stan"),
+                          "r/nestling_surv_co_n.stan",
+                          "r/n2_co_n.stan"),
   pred_marg_func = rlang::syms(c("make_zip_preds_and_marg",
                                  "make_logit_preds_and_marg",
                                  "make_zip_preds_and_marg",
+                                 "make_logit_preds_and_marg",
                                  "make_logit_preds_and_marg",
                                  "make_logit_preds_and_marg")),
   ppc_fun = rlang::syms(c("ppc_ars",
                           "ppc_surv",
                           "ppc_ars",
                           "ppc_surv",
-                          "ppc_nest"))
+                          "ppc_nest",
+                          "ppc_n2"))
 )
 
 fitmod_map <- tar_map(
@@ -358,7 +396,7 @@ fitmod_map <- tar_map(
     dplyr::filter(fitness_data, !duplicated(ringnr)) %>%
       ggplot(aes(y = abs(bv_mean), group = (co_n != 0), x = (co_n != 0))) +
       geom_boxplot() +
-      labs(y = "Absolute estimated breeding value",
+      labs(y = "Absolute estimated genetic value",
            x = "Phenotyped for ACC or not"),
     deployment = "main"
   ),
@@ -368,7 +406,7 @@ fitmod_map <- tar_map(
     dplyr::filter(fitness_data, !duplicated(ringnr)) %>%
       ggplot(aes(y = bv_sd, group = (co_n != 0), x = (co_n != 0))) +
       geom_boxplot() +
-      labs(y = "S.d. of breeding value",
+      labs(y = "S.d. of genetic value",
            x = "Phenotyped for ACC or not"),
     deployment = "main"
   ),
@@ -378,7 +416,7 @@ fitmod_map <- tar_map(
     dplyr::filter(fitness_data, !duplicated(ringnr)) %>%
       ggplot(aes(y = abs(bv_mean), x = ifelse(is.na(co_n), 0, co_n))) +
       geom_point() +
-      labs(y = "Absolute estimated breeding value",
+      labs(y = "Absolute estimated genetic value",
            x = "Number of crossover count measurements") +
       geom_smooth(formula = y ~ x, method = "loess"),
     deployment = "main"
@@ -1334,7 +1372,7 @@ list(
       "f(hatch_year, model = \"iid\", hyper = prior$hyperpar_var)",
       # Island effect (iid random effect)
       "f(first_locality, model = \"iid\", hyper = prior$hyperpar_var)",
-      # Breeding values (using a GRM)
+      # Genetic values (using a GRM)
       "f(id1,
       values = as.numeric(colnames(inverse_relatedness_matrix)),
       model = \"generic0\",
@@ -1498,16 +1536,16 @@ list(
   tar_target(
     stan_bv_pred_plot_ars2x2,
     ggarrange(stan_bv_pred_plot_ars_adult_f +
-                xlab("ACC breeding value") +
+                xlab("ACC genetic value") +
                 rremove("ylab"),
               stan_bv_pred_plot_ars_adult_m +
-                xlab("ACC breeding value") +
+                xlab("ACC genetic value") +
                 rremove("ylab"),
               stan_bv_pred_plot_ars_parent_f +
-                xlab("Parental ACC breeding value") +
+                xlab("Parental ACC genetic value") +
                 rremove("ylab"),
               stan_bv_pred_plot_ars_parent_m +
-                xlab("Parental ACC breeding value") +
+                xlab("Parental ACC genetic value") +
                 scale_y_continuous(labels = function(x) sprintf("%.1f", x)) +
                 rremove("ylab"), # One-digit yaxis here causes misalignment
               common.legend = TRUE,
@@ -1598,19 +1636,19 @@ list(
   tar_target(
     stan_bv_pred_plot_surv2x2,
     ggarrange(stan_bv_pred_plot_surv_adult_f +
-                xlab("ACC breeding value") +
+                xlab("ACC genetic value") +
                 scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
                 rremove("ylab"),
               stan_bv_pred_plot_surv_adult_m +
-                xlab("ACC breeding value") +
+                xlab("ACC genetic value") +
                 scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
                 rremove("ylab"),
               stan_bv_pred_plot_surv_parent_f +
-                xlab("Parental ACC breeding value") +
+                xlab("Parental ACC genetic value") +
                 scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
                 rremove("ylab"),
               stan_bv_pred_plot_surv_parent_m +
-                xlab("Parental ACC breeding value") +
+                xlab("Parental ACC genetic value") +
                 rremove("ylab"),
               common.legend = TRUE,
               legend = "right",
@@ -1701,11 +1739,11 @@ list(
   tar_target(
     stan_bv_pred_plot_nest1x2,
     ggarrange(stan_bv_pred_plot_nest_f +
-                xlab("Parental ACC breeding value") +
+                xlab("Parental ACC genetic value") +
                 scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
                 rremove("ylab"),
               stan_bv_pred_plot_nest_m +
-                xlab("Parental ACC breeding value") +
+                xlab("Parental ACC genetic value") +
                 rremove("ylab"),
               common.legend = TRUE,
               legend = "right",
@@ -1873,6 +1911,84 @@ list(
     dirfit_pred_plot_ns_3x2_pdf,
     ggsave_path("figs/dirfit_pred_plot_ns_3x2.pdf",
                 plot = dirfit_pred_plot_ns_3x2,
+                width = 7.5,
+                height = 10.5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    stan_gvf_bv_plot_3x2,
+    ggarrange(stan_bv_pred_plot_ars_adult_f +
+                xlab("ACC genetic value"),
+              stan_bv_pred_plot_ars_adult_m +
+                rremove("ylab") +
+                xlab("ACC genetic value") ,
+              stan_bv_pred_plot_surv_adult_f +
+                xlab("ACC genetic value"),
+              stan_bv_pred_plot_surv_adult_m +
+                rremove("ylab") +
+                xlab("ACC genetic value"),
+              stan_bv_pred_plot_n2_f +
+                xlab("ACC genetic value"),
+              stan_bv_pred_plot_n2_m +
+                rremove("ylab") +
+                xlab("ACC genetic value"),
+              common.legend = TRUE,
+              legend = "right",
+              ncol = 2,
+              nrow = 3,
+              labels = c("Female", "Male", "", ""),
+              hjust = c(-1.75, -3, 0, 0)) %>%
+      annotate_figure(left = textGrob(
+        paste0("GV-F models"),
+        rot = 90,
+        vjust = 1,
+        gp = gpar(cex = 1)))
+  ),
+  tar_target(
+    stan_gvf_bv_plot_3x2_pdf,
+    ggsave_path("figs/stan_gvf_bv_plot_3x2.pdf",
+                plot = stan_gvf_bv_plot_3x2,
+                width = 7.5,
+                height = 10.5,
+                device = "pdf"),
+    format = "file",
+    deployment = "main"
+  ),
+  tar_target(
+    stan_pgvf_bv_plot_3x2,
+    ggarrange(stan_bv_pred_plot_ars_parent_f +
+                xlab("ACC genetic value"),
+              stan_bv_pred_plot_ars_parent_m +
+                rremove("ylab") +
+                xlab("ACC genetic value") ,
+              stan_bv_pred_plot_surv_parent_f +
+                xlab("ACC genetic value"),
+              stan_bv_pred_plot_surv_parent_m +
+                rremove("ylab") +
+                xlab("ACC genetic value"),
+              stan_bv_pred_plot_nest_f +
+                xlab("ACC genetic value"),
+              stan_bv_pred_plot_nest_m +
+                rremove("ylab") +
+                xlab("ACC genetic value"),
+              common.legend = TRUE,
+              legend = "right",
+              ncol = 2,
+              nrow = 3,
+              labels = c("Female", "Male", "", ""),
+              hjust = c(-1.75, -3, 0, 0)) %>%
+      annotate_figure(left = textGrob(
+        paste0("PGV-F models"),
+        rot = 90,
+        vjust = 1,
+        gp = gpar(cex = 1)))
+  ),
+  tar_target(
+    stan_pgvf_bv_plot_3x2_pdf,
+    ggsave_path("figs/stan_pgvf_bv_plot_3x2.pdf",
+                plot = stan_pgvf_bv_plot_3x2,
                 width = 7.5,
                 height = 10.5,
                 device = "pdf"),

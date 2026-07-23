@@ -7,7 +7,7 @@ data {
   int<lower=0,upper=N_hy> hy_idx[N];
   int<lower=0> N_hi;                     // Number of levels in last locality random effect
   int<lower=0,upper=N_hi> hi_idx[N];
-  int<lower=0> N_par;                     // Number of levels in identity random effect
+  int<lower=0> N_par;                     // Number of levels in parental random effect
   int<lower=0,upper=N_par> par_idx[N];
   int<lower=0> N_clutch;                     // Number of levels in clutch random effect
   int<lower=0,upper=N_clutch> clutch_idx[N];
@@ -57,7 +57,7 @@ transformed data {
 parameters {
   vector[N_hy] z_hy;              // Std.normal noise for year random effect
   vector[N_hi] z_hi;              // Std.normal noise for last locality random effect
-  vector[N_par] z_par;              // Std.normal noise for identity random effect
+  vector[N_par] z_par;              // Std.normal noise for parental random effect
   vector[N_clutch] z_clutch;              // Std.normal noise for clutch random effect
   // vector[N] z_res;                // Std.normal noise for residual random effect
   vector[N_par] z_bv;              // Std.norm noise in bv
@@ -93,7 +93,7 @@ transformed parameters {
   real beta_bv2_std = beta_prior_sd_surv * z_beta_bv2 / sqrt(2);
   real beta_f_std = beta_prior_sd_surv * z_beta_f;
   real beta_hatch_doy_std = beta_prior_sd_surv * z_beta_hatch_doy;
-  real beta_hatch_doy_std2 = beta_prior_sd_surv * z_beta_hatch_doy2;
+  real beta_hatch_doy_std2 = beta_prior_sd_surv * z_beta_hatch_doy2  / sqrt(2);
   real beta_first_dna_age_std = beta_prior_sd_surv * z_beta_first_dna_age;
 
   vector[N_par] bv_lat = bv_mean + bv_covmat_chol * z_bv;
