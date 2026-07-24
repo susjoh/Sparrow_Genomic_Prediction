@@ -46,18 +46,16 @@ Rationale and background - Susan
 
 We based our analyses on data from a meta-population of house sparrows in a coastal archipelago in Helgeland, Northern Norway \citep{jensen2013genetic}.
 Since 1993, select island-populations of house sparrows in the archipelago have been studied at the individual level.
-From spring to late summer adult and fledged juvenile birds are (re)captured using mist nets, \note{while nestlings are observed in the nest (add more detail here if necessary, Henrik)}.
-Upon first capture, sparrows were marked with unique rings, allowing their identification in future observations or recaptures, and 25 $\mu$L blood samples were taken from the brachial vein.
-The blood samples were used to generate single-nucleotide polymorphism (SNP) data with an Axiom 200K SNP array or a cross-compatible Axiom 70K SNP array containing a subset of the 200K array markers \citep{burnett2026snps}.
-The SNP dataset was used to generate a genetic pedigree containing over $10\ 000$ individuals, and $F_\text{ROH}$ inbreeding coefficients for each individual \citep[see][for details]{burnett2026snps}.
+Adult and fledged juvenile birds are captured using mist nets, \note{while nestlings are observed in the nest (add more detail here if necessary, Henrik)}.
+Upon first capture, sparrows were marked with unique rings, allowing their identification in future observations or recaptures.
+If a sparrow was a nestling or fledgling when the first capture occurred, the hatch year was known to be the current year.
+For individuals first captured as adults, the hatch year was assumed to be the current year if the capture happened in fall, or the previous year if capture happened in August or earlier.
+Hatch island was known for individuals observed as nestlings and juveniles, and was assumed to be the island of first observation for adults \citep[around $17\%$ of recruits dispersed during their first fall, see][]{ranke2021spatial}.
+Each sparrow had a 25 $\mu$L blood sample taken from the brachial vein when first captured.
+The blood samples were used to generate single-nucleotide polymorphism (SNP) data with an Axiom 200K SNP array \citep{lundregan2018inferences, niskanen2020consistent}, or a cross-compatible Axiom 70K SNP array containing a subset of the 200K array markers \citep{burnett2026snps}.
+The SNP data set and ecological data was used to generate a genetic pedigree containing over $10\ 000$ individuals, and $F_\text{ROH}$ inbreeding coefficients for each individual \citep[see][for details]{burnett2026snps}.
  
-% Describe hatch years
-
 % Describe fitness data: nestling have shorter time span
-
-% THIS IS AN ALMOST DIRECT LIFTOVER FROM THE MBE PAPER
-% (midpoint of 66$^\circ$32`N, 12$^\circ$32`E and covering 1600km\textsuperscript{2}). 
-% Individual hatch year was determined as either (a) the first year recorded for nestlings or fledged juveniles captured in the summer and autumn, or (b) the year prior to first year recorded for birds first captured as female adults before June 1 or as males before August 1, or (c) a range including the year first recorded and the year prior for birds first captured as adult females after June 1 or adult males after August 1; hatch island is also recorded alongside hatch year \citep{ranke2021spatial, Saatoglu2021-ya}.
 
 \subsubsection*{ACC measurements}
 
@@ -286,8 +284,8 @@ The resulting Gaussian approximation for the distribution of $\bm g$ was used in
 
 \subsubsection*{Fitness analyses using genetic values}
 
-We fitted models for ARS and AS that used the posterior estimates of the genetic values $g_i$ obtained from the GP in Equation \eqref{eq-gp} as the covariate of interest.
-These GV-F models were Bayesian GLMMs with the same form as the previously described S\&D and PS models in Equations \eqref{eq-ars} and \eqref{eq-as}, respectively, except that we replaced the ACC covariate with linear and quadratic effects of $g_i$.
+We fitted models for ARS, AS and NS that used the posterior estimates of the genetic values $g_i$ obtained from the GP in Equation \eqref{eq-gp} as the covariate of interest.
+These GV-F models were Bayesian GLMMs with the same form as the previously described S\&D and PS models in Equations \eqref{eq-ars}, \eqref{eq-as} and \eqref{eq-ns}, respectively, except that we replaced the ACC covariate with linear and quadratic effects of $g_i$.
 This replacement was not straightforward, since $g_i$ was estimated with uncertainty in GP models, and this uncertainty should be propagated into the GV-F models.
 However, the measurement-error methods available in R-INLA clash with our need to include the square of $g_i$ as a covariate to allow detection of stabilizing selection.
 Adding this quadratic term would result in a non-Gaussian linear predictor in the fitness models, which violates a core assumption of \texttt{R-INLA}.
