@@ -52,8 +52,8 @@ tar_option_set(
                "grid",
                "MCMCglmm",
                "HDInterval",
-               "rstan",
-               "bayesplot"),
+               "bayesplot",
+               "patchwork"),
   format = "qs", # Optionally set the default storage format. qs is fast.
   error = "continue", # produce result even if the target errored
   resources = tar_resources(
@@ -104,7 +104,8 @@ values_fitmod <- tibble(
             "annual survival",
             "nestling survival",
             "nestling survival"),
-  xlab_start = c("B", "B", "Parental b", "Parental b", "Parental b", "B"),
+  trait_short = c("ARS", "AS", "ARS", "AS", "NS", "NS"),
+  xlab_start = c("G", "G", "Parental g", "Parental g", "Parental g", "G"),
   make_sim = rlang::syms(c("make_sim_ars_adult",
                            "make_sim_surv_adult",
                            "make_sim_ars_parent",
@@ -513,8 +514,7 @@ fitmod_map <- tar_map(
                 width = 7,
                 height = 5,
                 device = "pdf"),
-    format = "file",
-    deployment = "main"
+    format = "file"
   ),
   tar_target(
     stan_bv_pred_marg,
@@ -544,35 +544,16 @@ fitmod_map <- tar_map(
   tar_target(
     stan_bv_pred_plot,
     plot_lines_posterior(df = getElement(stan_bv_pred_marg, "df_pred"),
-                         xlab = paste0(xlab_start,
-                                       "reeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted ", sex, " ", trait),
+                         xlab = paste0(xlab_start, "enetic value for ACC"),
+                         ylab = paste0("Predicted ", trait_short),
                          title = "")
   ),
   tar_target(
     stan_bv_marg_plot,
     plot_lines_posterior(df = getElement(stan_bv_pred_marg, "df_marg"),
-                         xlab = paste0(xlab_start,
-                                       "reeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Marginal effect on ",
-                                       sex,
-                                       " ",
-                                       trait),
-                         title = "")
-  ),
-  tar_target(
-    stan_bv_pred_plot_pdf,
-    ggsave_path(paste0("figs/stan_", mod, "_bv_pred_", sex_lc, ".pdf"),
-                plot = stan_bv_pred_plot,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
+                         xlab = paste0(xlab_start, "enetic value for ACC"),
+                         ylab = paste0("Marginal effect on ", trait),
+                         title = toTitleCase(sex))
   ),
   tar_target(
     stan_bv_marg_plot_pdf,
@@ -581,8 +562,7 @@ fitmod_map <- tar_map(
                 width = 7,
                 height = 5,
                 device = "pdf"),
-    format = "file",
-    deployment = "main"
+    format = "file"
   ),
   tar_target(
     stan_age_pred_marg,
@@ -613,8 +593,8 @@ fitmod_map <- tar_map(
     stan_age_pred_plot,
     plot_lines_posterior(df = getElement(stan_age_pred_marg, "df_pred"),
                          xlab = paste0("Age"),
-                         ylab = paste0("Predicted ", sex, " ", trait),
-                         title = "")
+                         ylab = paste0("Predicted ", trait),
+                         title = toTitleCase(sex))
   ),
   tar_target(
     stan_age_pred_plot_pdf,
@@ -623,8 +603,7 @@ fitmod_map <- tar_map(
                 width = 7,
                 height = 5,
                 device = "pdf"),
-    format = "file",
-    deployment = "main"
+    format = "file"
   ),
   tar_target(
     stan_f_pred_marg,
@@ -655,18 +634,8 @@ fitmod_map <- tar_map(
     stan_f_pred_plot,
     plot_lines_posterior(df = getElement(stan_f_pred_marg, "df_pred"),
                          xlab = paste0("Inbreeding coefficient"),
-                         ylab = paste0("Predicted ", sex, " ", trait),
-                         title = "")
-  ),
-  tar_target(
-    stan_f_pred_plot_pdf,
-    ggsave_path(paste0("figs/stan_", mod, "_f_pred_", sex_lc, ".pdf"),
-                plot = stan_f_pred_plot,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
+                         ylab = paste0("Predicted ", trait),
+                         title = toTitleCase(sex))
   ),
   tar_target(
     stan_hatch_doy_pred_marg,
@@ -697,8 +666,8 @@ fitmod_map <- tar_map(
     stan_hatch_doy_pred_plot,
     plot_lines_posterior(df = getElement(stan_hatch_doy_pred_marg, "df_pred"),
                          xlab = paste0("Hatch day of year"),
-                         ylab = paste0("Predicted ", sex, " ", trait),
-                         title = "")
+                         ylab = paste0("Predicted ", trait),
+                         title = toTitleCase(sex))
   ),
   tar_target(
     stan_hatch_doy_pred_plot_pdf,
@@ -707,8 +676,7 @@ fitmod_map <- tar_map(
                 width = 7,
                 height = 5,
                 device = "pdf"),
-    format = "file",
-    deployment = "main"
+    format = "file"
   ),
   tar_target(
     stan_first_dna_age_pred_marg,
@@ -739,8 +707,8 @@ fitmod_map <- tar_map(
     stan_first_dna_age_pred_plot,
     plot_lines_posterior(df = getElement(stan_first_dna_age_pred_marg, "df_pred"),
                          xlab = paste0("Age at first DNA sampling (days)"),
-                         ylab = paste0("Predicted ", sex, " ", trait),
-                         title = "")
+                         ylab = paste0("Predicted ", trait),
+                         title = toTitleCase(sex))
   ),
   tar_target(
     stan_first_dna_age_pred_plot_pdf,
@@ -749,8 +717,7 @@ fitmod_map <- tar_map(
                 width = 7,
                 height = 5,
                 device = "pdf"),
-    format = "file",
-    deployment = "main"
+    format = "file"
   ),
   tar_target(
     stan_ppc,
@@ -898,8 +865,7 @@ fitmod_map <- tar_map(
                 width = 7,
                 height = 5,
                 device = "pdf"),
-    format = "file",
-    deployment = "main"
+    format = "file"
   ),
   ################ co_n modeller
   tar_target(
@@ -955,12 +921,9 @@ fitmod_map <- tar_map(
   tar_target(
     stan_bv_pred_plot_co_n,
     plot_lines_posterior(df = getElement(stan_bv_pred_marg_co_n, "df_pred"),
-                         xlab = paste0(xlab_start,
-                                       "reeding value for ",
-                                       sex,
-                                       " crossover count"),
-                         ylab = paste0("Predicted ", sex, " ", trait),
-                         title = "")
+                         xlab = paste0(xlab_start, "enetic value for ACC"),
+                         ylab = paste0("Predicted ", trait),
+                         title = toTitleCase(sex))
   ),
   tar_target(
     stan_bv_pred_plot_co_n_pdf,
@@ -969,8 +932,7 @@ fitmod_map <- tar_map(
                 width = 7,
                 height = 5,
                 device = "pdf"),
-    format = "file",
-    deployment = "main"
+    format = "file"
   ),
   tar_target(
     stan_co_n_pred_marg_co_n,
@@ -996,9 +958,9 @@ fitmod_map <- tar_map(
   tar_target(
     stan_co_n_pred_plot_co_n,
     plot_lines_posterior(df = getElement(stan_co_n_pred_marg_co_n, "df_pred"),
-                         xlab = "Number of crossover count measurements",
-                         ylab = paste0("Predicted ", sex, " ", trait),
-                         title = "")
+                         xlab = "Number of ACC measurements",
+                         ylab = paste0("Predicted ", trait),
+                         title = toTitleCase(sex))
   ),
   tar_target(
     stan_co_n_pred_plot_co_n_pdf,
@@ -1007,8 +969,7 @@ fitmod_map <- tar_map(
                 width = 7,
                 height = 5,
                 device = "pdf"),
-    format = "file",
-    deployment = "main"
+    format = "file"
   )
 )
 
@@ -1113,8 +1074,8 @@ dirfit_map <- tar_map(
     plot_lines_posterior(df = getElement(dirfit_co_count_sire_pred_marg,
                                          "df_pred"),
                          xlab = paste0("ACC in gamete from sire"),
-                         ylab = paste0("Predicted ", sex, " ", trait),
-                         title = "")
+                         ylab = paste0("Predicted ", trait),
+                         title = toTitleCase(sex))
   ),
   tar_target(
     dirfit_co_count_sire_pred_plot_pdf,
@@ -1161,8 +1122,8 @@ dirfit_map <- tar_map(
     plot_lines_posterior(df = getElement(dirfit_co_count_dam_pred_marg,
                                          "df_pred"),
                          xlab = paste0("ACC in gamete from dam"),
-                         ylab = paste0("Predicted ", sex, " ", trait),
-                         title = "")
+                         ylab = paste0("Predicted ", trait),
+                         title = toTitleCase(sex))
   ),
   tar_target(
     dirfit_co_count_dam_pred_plot_pdf,
@@ -1205,8 +1166,8 @@ dirfit_map <- tar_map(
     plot_lines_posterior(df = getElement(dirfit_co_count_parsum_pred_marg,
                                          "df_pred"),
                          xlab = paste0("Sum of ACCs in gametes from each parent"),
-                         ylab = paste0("Predicted ", sex, " ", trait),
-                         title = "")
+                         ylab = paste0("Predicted ", trait),
+                         title = toTitleCase(sex))
   ),
   tar_target(
     dirfit_co_count_parsum_pred_plot_pdf,
@@ -1535,465 +1496,227 @@ list(
   ),
   tar_target(
     stan_bv_pred_plot_ars2x2,
-    ggarrange(stan_bv_pred_plot_ars_adult_f +
-                xlab("ACC genetic value") +
-                rremove("ylab"),
-              stan_bv_pred_plot_ars_adult_m +
-                xlab("ACC genetic value") +
-                rremove("ylab"),
-              stan_bv_pred_plot_ars_parent_f +
-                xlab("Parental ACC genetic value") +
-                rremove("ylab"),
-              stan_bv_pred_plot_ars_parent_m +
-                xlab("Parental ACC genetic value") +
-                scale_y_continuous(labels = function(x) sprintf("%.1f", x)) +
-                rremove("ylab"), # One-digit yaxis here causes misalignment
-              common.legend = TRUE,
-              legend = "right",
-              ncol = 2,
-              nrow = 2,
-              labels = c("Female", "Male", "", ""),
-              hjust = c(-1.75, -3, 0, 0)) %>%
-      annotate_figure(left = textGrob(
-        paste0("Predicted ARS",
-               "                                             ",
-               "Predicted ARS"),
-        rot = 90,
-        vjust = 1,
-        hjust = 0.45,
-        gp = gpar(cex = 1)))
+    layout_2x2_fig(p1 = stan_bv_pred_plot_ars_adult_f,
+                   p2 = stan_bv_pred_plot_ars_adult_m,
+                   p3 = stan_bv_pred_plot_ars_parent_f,
+                   p4 = stan_bv_pred_plot_ars_parent_m,
+                   tit_str = "Effect of ACC breeding value on ARS")
   ),
   tar_target(
-    stan_bv_pred_plot_ars2x2_pdf,
-    ggsave_path("figs/stan_bv_pred_plot_ars2x2.pdf",
+    stan_bv_pred_plot_ars2x2_png,
+    ggsave_path("figs/stan_bv_pred_plot_ars2x2.png",
                 plot = stan_bv_pred_plot_ars2x2,
                 width = 7.5,
                 height = 6.5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
+                device = "png"),
+    format = "file"
   ),
   tar_target(
     stan_age_pred_plot_ars2x2,
-    ggarrange(stan_age_pred_plot_ars_adult_f +
-                xlab("Age") +
-                rremove("ylab"),
-              stan_age_pred_plot_ars_adult_m +
-                xlab("Age") +
-                rremove("ylab"),
-              stan_age_pred_plot_ars_parent_f +
-                xlab("Age") +
-                rremove("ylab"),
-              stan_age_pred_plot_ars_parent_m +
-                xlab("Age") +
-                scale_y_continuous(labels = function(x) sprintf("%.1f", x)) +
-                rremove("ylab"), # One-digit yaxis here causes misalignment
-              common.legend = TRUE,
-              legend = "right",
-              ncol = 2,
-              nrow = 2,
-              labels = c("Female", "Male", "", ""),
-              hjust = c(-1.75, -3, 0, 0)) %>%
-      annotate_figure(left = textGrob(
-        paste0("Predicted ARS",
-               "                                             ",
-               "Predicted ARS"),
-        rot = 90,
-        vjust = 1,
-        hjust = 0.45,
-        gp = gpar(cex = 1)))
+    layout_2x2_fig(p1 = stan_age_pred_plot_ars_adult_f,
+                   p2 = stan_age_pred_plot_ars_adult_m,
+                   p3 = stan_age_pred_plot_ars_parent_f,
+                   p4 = stan_age_pred_plot_ars_parent_m,
+                   tit_str = "Effect of age on ARS")
   ),
   tar_target(
     stan_f_pred_plot_ars2x2,
-    ggarrange(stan_f_pred_plot_ars_adult_f +
-                xlab("Inbreeding coefficient") +
-                rremove("ylab"),
-              stan_f_pred_plot_ars_adult_m +
-                xlab("Inbreeding coefficient") +
-                rremove("ylab"),
-              stan_f_pred_plot_ars_parent_f +
-                xlab("Parental inbreeding coefficient") +
-                rremove("ylab"),
-              stan_f_pred_plot_ars_parent_m +
-                xlab("Parental inbreeding coefficient") +
-                scale_y_continuous(labels = function(x) sprintf("%.1f", x)) +
-                rremove("ylab"), # One-digit yaxis here causes misalignment
-              common.legend = TRUE,
-              legend = "right",
-              ncol = 2,
-              nrow = 2,
-              labels = c("Female", "Male", "", ""),
-              hjust = c(-1.75, -3, 0, 0)) %>%
-      annotate_figure(left = textGrob(
-        paste0("Predicted ARS",
-               "                                             ",
-               "Predicted ARS"),
-        rot = 90,
-        vjust = 1,
-        hjust = 0.45,
-        gp = gpar(cex = 1)))
+    layout_2x2_fig(p1 = stan_f_pred_plot_ars_adult_f,
+                   p2 = stan_f_pred_plot_ars_adult_m,
+                   p3 = stan_f_pred_plot_ars_parent_f,
+                   p4 = stan_f_pred_plot_ars_parent_m,
+                   tit_str = "Effect of inbreeding on ARS")
   ),
   tar_target(
     stan_bv_pred_plot_surv2x2,
-    ggarrange(stan_bv_pred_plot_surv_adult_f +
-                xlab("ACC genetic value") +
-                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
-                rremove("ylab"),
-              stan_bv_pred_plot_surv_adult_m +
-                xlab("ACC genetic value") +
-                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
-                rremove("ylab"),
-              stan_bv_pred_plot_surv_parent_f +
-                xlab("Parental ACC genetic value") +
-                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
-                rremove("ylab"),
-              stan_bv_pred_plot_surv_parent_m +
-                xlab("Parental ACC genetic value") +
-                rremove("ylab"),
-              common.legend = TRUE,
-              legend = "right",
-              ncol = 2,
-              nrow = 2,
-              labels = c("Female", "Male", "", ""),
-              hjust = c(-1.75, -3, 0, 0)) %>%
-      annotate_figure(left = textGrob(
-        paste0("Adult AS",
-               "                                                      ",
-               "Adult AS"),
-        rot = 90,
-        vjust = 1,
-        gp = gpar(cex = 1)))
+    layout_2x2_fig(p1 = stan_bv_pred_plot_surv_adult_f,
+                   p2 = stan_bv_pred_plot_surv_adult_m,
+                   p3 = stan_bv_pred_plot_surv_parent_f,
+                   p4 = stan_bv_pred_plot_surv_parent_m,
+                   tit_str = "Effect of ACC breeding value on AS")
   ),
   tar_target(
-    stan_age_pred_plot_surv2x2,
-    ggarrange(stan_age_pred_plot_surv_adult_f +
-                xlab("Age") +
-                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
-                rremove("ylab"),
-              stan_age_pred_plot_surv_adult_m +
-                xlab("Age") +
-                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
-                rremove("ylab"),
-              stan_age_pred_plot_surv_parent_f +
-                xlab("Age") +
-                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
-                rremove("ylab"),
-              stan_age_pred_plot_surv_parent_m +
-                xlab("Age") +
-                rremove("ylab"),
-              common.legend = TRUE,
-              legend = "right",
-              ncol = 2,
-              nrow = 2,
-              labels = c("Female", "Male", "", ""),
-              hjust = c(-1.75, -3, 0, 0)) %>%
-      annotate_figure(left = textGrob(
-        paste0("Adult AS",
-               "                                                      ",
-               "Adult AS"),
-        rot = 90,
-        vjust = 1,
-        gp = gpar(cex = 1)))
-  ),
-  tar_target(
-    stan_f_pred_plot_surv2x2,
-    ggarrange(stan_f_pred_plot_surv_adult_f +
-                xlab("Inbreeding coefficient") +
-                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
-                rremove("ylab"),
-              stan_f_pred_plot_surv_adult_m +
-                xlab("Inbreeding coefficient") +
-                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
-                rremove("ylab"),
-              stan_f_pred_plot_surv_parent_f +
-                xlab("Parental inbreeding coefficient") +
-                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
-                rremove("ylab"),
-              stan_f_pred_plot_surv_parent_m +
-                xlab("Parental inbreeding coefficient") +
-                rremove("ylab"),
-              common.legend = TRUE,
-              legend = "right",
-              ncol = 2,
-              nrow = 2,
-              labels = c("Female", "Male", "", ""),
-              hjust = c(-1.75, -3, 0, 0)) %>%
-      annotate_figure(left = textGrob(
-        paste0("Adult AS",
-               "                                                      ",
-               "Adult AS"),
-        rot = 90,
-        vjust = 1,
-        gp = gpar(cex = 1)))
-  ),
-  tar_target(
-    stan_bv_pred_plot_surv2x2_pdf,
-    ggsave_path("figs/stan_bv_pred_plot_surv2x2.pdf",
+    stan_bv_pred_plot_surv2x2_png,
+    ggsave_path("figs/stan_bv_pred_plot_surv2x2.png",
                 plot = stan_bv_pred_plot_surv2x2,
                 width = 7.5,
                 height = 6.5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
+                device = "png"),
+    format = "file"
   ),
   tar_target(
-    stan_bv_pred_plot_nest1x2,
-    ggarrange(stan_bv_pred_plot_nest_f +
-                xlab("Parental ACC genetic value") +
-                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
-                rremove("ylab"),
-              stan_bv_pred_plot_nest_m +
-                xlab("Parental ACC genetic value") +
-                rremove("ylab"),
-              common.legend = TRUE,
-              legend = "right",
-              ncol = 2,
-              nrow = 1,
-              labels = c("Female", "Male", "", ""),
-              hjust = c(-1.75, -3, 0, 0)) %>%
-      annotate_figure(left = textGrob(
-        paste0("Nestling survival"),
-        rot = 90,
-        vjust = 1,
-        gp = gpar(cex = 1)))
+    stan_age_pred_plot_surv2x2,
+    layout_2x2_fig(p1 = stan_age_pred_plot_surv_adult_f,
+                   p2 = stan_age_pred_plot_surv_adult_m,
+                   p3 = stan_age_pred_plot_surv_parent_f,
+                   p4 = stan_age_pred_plot_surv_parent_m,
+                   tit_str = "Effect of age on AS")
   ),
   tar_target(
-    stan_f_pred_plot_nest1x2,
-    ggarrange(stan_f_pred_plot_nest_f +
-                xlab("Parental inbreeding coefficient") +
-                scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +
-                rremove("ylab"),
-              stan_f_pred_plot_nest_m +
-                xlab("Parental inbreeding coefficient") +
-                rremove("ylab"),
-              common.legend = TRUE,
-              legend = "right",
-              ncol = 2,
-              nrow = 1,
-              labels = c("Female", "Male", "", ""),
-              hjust = c(-1.75, -3, 0, 0)) %>%
-      annotate_figure(left = textGrob(
-        paste0("Nestling survival"),
-        rot = 90,
-        vjust = 1,
-        gp = gpar(cex = 1)))
+    stan_f_pred_plot_surv2x2,
+    layout_2x2_fig(p1 = stan_f_pred_plot_surv_adult_f,
+                   p2 = stan_f_pred_plot_surv_adult_m,
+                   p3 = stan_f_pred_plot_surv_parent_f,
+                   p4 = stan_f_pred_plot_surv_parent_m,
+                   tit_str = "Effect of inbreeding on AS")
   ),
   tar_target(
-    stan_bv_pred_plot_nest1x2_pdf,
-    ggsave_path("figs/stan_bv_pred_plot_nest1x2.pdf",
-                plot = stan_bv_pred_plot_nest1x2,
+    stan_bv_pred_plot_nest2x2,
+    layout_2x2_fig(p1 = stan_bv_pred_plot_n2_f,
+                   p2 = stan_bv_pred_plot_n2_m,
+                   p3 = stan_bv_pred_plot_nest_f,
+                   p4 = stan_bv_pred_plot_nest_m,
+                   tit_str = "Effect of ACC genetic value on NS")
+  ),
+  tar_target(
+    stan_bv_pred_plot_nest2x2_png,
+    ggsave_path("figs/stan_bv_pred_plot_nest2x2.png",
+                plot = stan_bv_pred_plot_nest2x2,
                 width = 7.5,
-                height = 3.5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
+                height = 7,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    stan_f_pred_plot_nest2x2,
+    layout_2x2_fig(p1 = stan_f_pred_plot_n2_f,
+                   p2 = stan_f_pred_plot_n2_m,
+                   p3 = stan_f_pred_plot_nest_f,
+                   p4 = stan_f_pred_plot_nest_m,
+                   tit_str = "Inbreeding effect on NS")
   ),
   tar_target(
     dirfit_pred_plot_ars_3x2,
-    ggarrange(dirfit_co_count_sire_pred_plot_ars_f +
-                xlab("Sire ACC") +
-                rremove("ylab"),
-              dirfit_co_count_sire_pred_plot_ars_m +
-                xlab("Sire ACC") +
-                rremove("ylab"),
-              dirfit_co_count_dam_pred_plot_ars_f +
-                xlab("Dam ACC") +
-                rremove("ylab"),
-              dirfit_co_count_dam_pred_plot_ars_m +
-                xlab("Dam ACC") +
-                rremove("ylab"),
-              dirfit_co_count_parsum_pred_plot_ars_f +
-                xlab("Sum of parent's ACC") +
-                rremove("ylab"),
-              dirfit_co_count_parsum_pred_plot_ars_m +
-                xlab("Sum of parent's ACC") +
-                rremove("ylab"),
-              common.legend = TRUE,
-              legend = "right",
-              ncol = 2,
-              nrow = 3,
-              labels = c("Female", "Male", "", ""),
-              hjust = c(-1.75, -3, 0, 0)) %>%
-      annotate_figure(left = textGrob(
-        paste0("Annual reproductive success"),
-        rot = 90,
-        vjust = 1,
-        gp = gpar(cex = 1))),
-    deployment = "main"
+    layout_3x2_fig(p1 = dirfit_co_count_sire_pred_plot_ars_f,
+                   p2 = dirfit_co_count_sire_pred_plot_ars_m,
+                   p3 = dirfit_co_count_dam_pred_plot_ars_f,
+                   p4 = dirfit_co_count_dam_pred_plot_ars_m,
+                   p5 = dirfit_co_count_parsum_pred_plot_ars_f,
+                   p6 = dirfit_co_count_parsum_pred_plot_ars_m,
+                   tit_str = "S&D/PS models for AS")
   ),
   tar_target(
-    dirfit_pred_plot_ars_3x2_pdf,
-    ggsave_path("figs/dirfit_pred_plot_ars_3x2.pdf",
+    dirfit_pred_plot_ars_3x2_png,
+    ggsave_path("figs/dirfit_pred_plot_ars_3x2.png",
                 plot = dirfit_pred_plot_ars_3x2,
                 width = 7.5,
                 height = 10.5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
+                device = "png"),
+    format = "file"
   ),
   tar_target(
     dirfit_pred_plot_as_3x2,
-    ggarrange(dirfit_co_count_sire_pred_plot_as_f +
-                xlab("Sire ACC") +
-                rremove("ylab"),
-              dirfit_co_count_sire_pred_plot_as_m +
-                xlab("Sire ACC") +
-                rremove("ylab"),
-              dirfit_co_count_dam_pred_plot_as_f +
-                xlab("Dam ACC") +
-                rremove("ylab"),
-              dirfit_co_count_dam_pred_plot_as_m +
-                xlab("Dam ACC") +
-                rremove("ylab"),
-              dirfit_co_count_parsum_pred_plot_as_f +
-                xlab("Sum of parent's ACC") +
-                rremove("ylab"),
-              dirfit_co_count_parsum_pred_plot_as_m +
-                xlab("Sum of parent's ACC") +
-                rremove("ylab"),
-              common.legend = TRUE,
-              legend = "right",
-              ncol = 2,
-              nrow = 3,
-              labels = c("Female", "Male", "", ""),
-              hjust = c(-1.75, -3, 0, 0)) %>%
-      annotate_figure(left = textGrob(
-        paste0("Annual survival"),
-        rot = 90,
-        vjust = 1,
-        gp = gpar(cex = 1))),
-    deployment = "main"
+    layout_3x2_fig(p1 = dirfit_co_count_sire_pred_plot_as_f,
+                   p2 = dirfit_co_count_sire_pred_plot_as_m,
+                   p3 = dirfit_co_count_dam_pred_plot_as_f,
+                   p4 = dirfit_co_count_dam_pred_plot_as_m,
+                   p5 = dirfit_co_count_parsum_pred_plot_as_f,
+                   p6 = dirfit_co_count_parsum_pred_plot_as_m,
+                   tit_str = "S&D/PS models for AS")
   ),
   tar_target(
-    dirfit_pred_plot_as_3x2_pdf,
-    ggsave_path("figs/dirfit_pred_plot_as_3x2.pdf",
+    dirfit_pred_plot_as_3x2_png,
+    ggsave_path("figs/dirfit_pred_plot_as_3x2.png",
                 plot = dirfit_pred_plot_as_3x2,
                 width = 7.5,
                 height = 10.5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
+                device = "png"),
+    format = "file"
   ),
   tar_target(
     dirfit_pred_plot_ns_3x2,
-    ggarrange(dirfit_co_count_sire_pred_plot_ns_f +
-                xlab("Sire ACC") +
-                rremove("ylab"),
-              dirfit_co_count_sire_pred_plot_ns_m +
-                xlab("Sire ACC") +
-                rremove("ylab"),
-              dirfit_co_count_dam_pred_plot_ns_f +
-                xlab("Dam ACC") +
-                rremove("ylab"),
-              dirfit_co_count_dam_pred_plot_ns_m +
-                xlab("Dam ACC") +
-                rremove("ylab"),
-              dirfit_co_count_parsum_pred_plot_ns_f +
-                xlab("Sum of parent's ACC") +
-                rremove("ylab"),
-              dirfit_co_count_parsum_pred_plot_ns_m +
-                xlab("Sum of parent's ACC") +
-                rremove("ylab"),
-              common.legend = TRUE,
-              legend = "right",
-              ncol = 2,
-              nrow = 3,
-              labels = c("Female", "Male", "", ""),
-              hjust = c(-1.75, -3, 0, 0)) %>%
-      annotate_figure(left = textGrob(
-        paste0("Nestling survival"),
-        rot = 90,
-        vjust = 1,
-        gp = gpar(cex = 1))),
-    deployment = "main"
+    layout_3x2_fig(p1 = dirfit_co_count_sire_pred_plot_ns_f,
+                   p2 = dirfit_co_count_sire_pred_plot_ns_m,
+                   p3 = dirfit_co_count_dam_pred_plot_ns_f,
+                   p4 = dirfit_co_count_dam_pred_plot_ns_m,
+                   p5 = dirfit_co_count_parsum_pred_plot_ns_f,
+                   p6 = dirfit_co_count_parsum_pred_plot_ns_m,
+                   tit_str = "S&D/PS models for NS")
   ),
   tar_target(
-    dirfit_pred_plot_ns_3x2_pdf,
-    ggsave_path("figs/dirfit_pred_plot_ns_3x2.pdf",
+    dirfit_pred_plot_ns_3x2_png,
+    ggsave_path("figs/dirfit_pred_plot_ns_3x2.png",
                 plot = dirfit_pred_plot_ns_3x2,
                 width = 7.5,
                 height = 10.5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
+                device = "png"),
+    format = "file"
   ),
   tar_target(
     stan_gvf_bv_plot_3x2,
-    ggarrange(stan_bv_pred_plot_ars_adult_f +
-                xlab("ACC genetic value"),
-              stan_bv_pred_plot_ars_adult_m +
-                rremove("ylab") +
-                xlab("ACC genetic value") ,
-              stan_bv_pred_plot_surv_adult_f +
-                xlab("ACC genetic value"),
-              stan_bv_pred_plot_surv_adult_m +
-                rremove("ylab") +
-                xlab("ACC genetic value"),
-              stan_bv_pred_plot_n2_f +
-                xlab("ACC genetic value"),
-              stan_bv_pred_plot_n2_m +
-                rremove("ylab") +
-                xlab("ACC genetic value"),
-              common.legend = TRUE,
-              legend = "right",
-              ncol = 2,
-              nrow = 3,
-              labels = c("Female", "Male", "", ""),
-              hjust = c(-1.75, -3, 0, 0)) %>%
-      annotate_figure(left = textGrob(
-        paste0("GV-F models"),
-        rot = 90,
-        vjust = 1,
-        gp = gpar(cex = 1)))
+    layout_3x2_fig(p1 = stan_bv_pred_plot_ars_adult_f,
+                   p2 = stan_bv_pred_plot_ars_adult_m,
+                   p3 = stan_bv_pred_plot_surv_adult_f,
+                   p4 = stan_bv_pred_plot_surv_adult_m,
+                   p5 = stan_bv_pred_plot_n2_f,
+                   p6 = stan_bv_pred_plot_n2_m,
+                   tit_str = "GV-F models")
   ),
   tar_target(
-    stan_gvf_bv_plot_3x2_pdf,
-    ggsave_path("figs/stan_gvf_bv_plot_3x2.pdf",
+    stan_gvf_bv_plot_3x2_png,
+    ggsave_path("figs/stan_gvf_bv_plot_3x2.png",
                 plot = stan_gvf_bv_plot_3x2,
                 width = 7.5,
                 height = 10.5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    stan_gvf_f_plot_3x2,
+    layout_3x2_fig(p1 = stan_f_pred_plot_ars_adult_f,
+                   p2 = stan_f_pred_plot_ars_adult_m,
+                   p3 = stan_f_pred_plot_surv_adult_f,
+                   p4 = stan_f_pred_plot_surv_adult_m,
+                   p5 = stan_f_pred_plot_n2_f,
+                   p6 = stan_f_pred_plot_n2_m,
+                   tit_str = "GV-F models")
+  ),
+  tar_target(
+    stan_gvf_f_plot_3x2_png,
+    ggsave_path("figs/stan_gvf_f_plot_3x2.png",
+                plot = stan_gvf_f_plot_3x2,
+                width = 7.5,
+                height = 10.5,
+                device = "png"),
+    format = "file"
   ),
   tar_target(
     stan_pgvf_bv_plot_3x2,
-    ggarrange(stan_bv_pred_plot_ars_parent_f +
-                xlab("ACC genetic value"),
-              stan_bv_pred_plot_ars_parent_m +
-                rremove("ylab") +
-                xlab("ACC genetic value") ,
-              stan_bv_pred_plot_surv_parent_f +
-                xlab("ACC genetic value"),
-              stan_bv_pred_plot_surv_parent_m +
-                rremove("ylab") +
-                xlab("ACC genetic value"),
-              stan_bv_pred_plot_nest_f +
-                xlab("ACC genetic value"),
-              stan_bv_pred_plot_nest_m +
-                rremove("ylab") +
-                xlab("ACC genetic value"),
-              common.legend = TRUE,
-              legend = "right",
-              ncol = 2,
-              nrow = 3,
-              labels = c("Female", "Male", "", ""),
-              hjust = c(-1.75, -3, 0, 0)) %>%
-      annotate_figure(left = textGrob(
-        paste0("PGV-F models"),
-        rot = 90,
-        vjust = 1,
-        gp = gpar(cex = 1)))
+    layout_3x2_fig(p1 = stan_bv_pred_plot_ars_parent_f,
+                   p2 = stan_bv_pred_plot_ars_parent_m,
+                   p3 = stan_bv_pred_plot_surv_parent_f,
+                   p4 = stan_bv_pred_plot_surv_parent_m,
+                   p5 = stan_bv_pred_plot_nest_f,
+                   p6 = stan_bv_pred_plot_nest_m,
+                   tit_str = "PGV-F models")
   ),
   tar_target(
-    stan_pgvf_bv_plot_3x2_pdf,
-    ggsave_path("figs/stan_pgvf_bv_plot_3x2.pdf",
+    stan_pgvf_bv_plot_3x2_png,
+    ggsave_path("figs/stan_pgvf_bv_plot_3x2.png",
                 plot = stan_pgvf_bv_plot_3x2,
                 width = 7.5,
-                height = 10.5,
-                device = "pdf"),
-    format = "file",
-    deployment = "main"
+                height = 10,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    stan_pgvf_f_plot_3x2,
+    layout_3x2_fig(p1 = stan_f_pred_plot_ars_parent_f,
+                   p2 = stan_f_pred_plot_ars_parent_m,
+                   p3 = stan_f_pred_plot_surv_parent_f,
+                   p4 = stan_f_pred_plot_surv_parent_m,
+                   p5 = stan_f_pred_plot_nest_f,
+                   p6 = stan_f_pred_plot_nest_m,
+                   tit_str = "PGV-F models")
+  ),
+  tar_target(
+    stan_pgvf_f_plot_3x2_png,
+    ggsave_path("figs/stan_pgvf_f_plot_3x2.png",
+                plot = stan_pgvf_f_plot_3x2,
+                width = 7.5,
+                height = 10,
+                device = "png"),
+    format = "file"
   ),
   tar_combine(
     co_gp_cv_mean_acc_fitmod_sex,

@@ -1336,7 +1336,10 @@ plot_lines_posterior <- function(df,
           legend.background = element_blank(),
           legend.box.background = element_rect(colour = "black"),
           legend.spacing.y = unit(0, "mm"),
-          legend.title = element_blank()) +
+          legend.title = element_blank(),
+          plot.title    = element_blank(),
+          plot.subtitle = element_blank(),
+          plot.caption  = element_blank()) +
     scale_x_continuous(expand = c(0, 0))
 
   if (!is.null(data)) {
@@ -2464,3 +2467,87 @@ get_dirfit_samps_parsum_ns <- function(model, eval_func, data, n_samp = 4000) {
   # Convert to same format as stan samples
   apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
 }
+
+layout_2x2_fig <- function(p1, p2, p3, p4, tit_str) {
+  wrap_elements(full = textGrob("Female",
+                                x = 0.5, y = 0,
+                                hjust = 0.5, vjust = 0,
+                                gp = gpar(fontsize = 13,
+                                          fontface = "bold"))) +
+    wrap_elements(full = textGrob("Male",
+                                  x = 0.5, y = 0,
+                                  hjust = 0.5, vjust = 0,
+                                  gp = gpar(fontsize = 13,
+                                            fontface = "bold"))) +
+    plot_spacer() +
+    p1 + p2 + plot_spacer() +
+    p3 + p4 + plot_spacer() +
+    plot_layout(byrow = TRUE,
+                ncol = 3,
+                nrow = 4,
+                heights = c(0.05, 1, 1), # Small header, equal plot rows
+                widths  = c(1, 1, 0.01),
+                guides = "collect",
+                axis_titles = "collect") +
+    plot_annotation(title = tit_str,
+                    tag_levels = list(c("", "", LETTERS[1:4]))) &
+    theme(plot.tag.position = c(0.01, 0.94),
+          legend.position   = "right",
+          plot.tag.location = "panel",
+          plot.tag = element_text(size = 12,
+                                  face = "bold",
+                                  hjust = 0,
+                                  vjust = -0.15),
+          plot.margin = margin(t = 1, r = 5.5, b = 2, l = 5.5),
+          plot.subtitle = element_blank(),
+          plot.caption = element_blank(),
+          legend.box.margin = margin(l = -5),
+          legend.margin = margin(r = 10),
+          legend.box.spacing = unit(0, "pt"),
+          legend.background = element_rect(color = "black",
+                                           linewidth = 0.3,
+                                           fill = "white"))
+}
+
+layout_3x2_fig <- function(p1, p2, p3, p4, p5, p6, tit_str) {
+  wrap_elements(full = textGrob("Female",
+                                x = 0.5, y = 0,
+                                hjust = 0.5, vjust = 0,
+                                gp = gpar(fontsize = 13,
+                                          fontface = "bold"))) +
+    wrap_elements(full = textGrob("Male",
+                                  x = 0.5, y = 0,
+                                  hjust = 0.5, vjust = 0,
+                                  gp = gpar(fontsize = 13,
+                                            fontface = "bold"))) +
+    plot_spacer() +
+    p1 + p2 + plot_spacer() +
+    p3 + p4 + plot_spacer() +
+    p5 + p6 + plot_spacer() +
+    plot_layout(byrow = TRUE,
+                ncol = 3,
+                nrow = 4,
+                heights = c(0.05, 1, 1, 1), # Small header, equal plot rows
+                widths  = c(1, 1, 0.01),
+                guides = "collect",
+                axis_titles = "collect") +
+    plot_annotation(title = tit_str,
+                    tag_levels = list(c("", "", LETTERS[1:6]))) &
+    theme(plot.tag.position = c(0.01, 0.94),
+          legend.position   = "right",
+          plot.tag.location = "panel",
+          plot.tag = element_text(size = 12,
+                                  face = "bold",
+                                  hjust = 0,
+                                  vjust = -0.15),
+          plot.margin = margin(t = 1, r = 5.5, b = 2, l = 5.5),
+          plot.subtitle = element_blank(),
+          plot.caption = element_blank(),
+          legend.box.margin = margin(l = -10),
+          legend.margin = margin(r = 10),
+          legend.box.spacing = unit(0, "pt"),
+          legend.background = element_rect(color = "black",
+                                           linewidth = 0.3,
+                                           fill = "white"))
+}
+
