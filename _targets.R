@@ -508,15 +508,6 @@ fitmod_map <- tar_map(
     plot_bv_out_vs_in(stats = stan_post_stats, dat = stan_data)
   ),
   tar_target(
-    stan_bv_out_vs_in_plot_pdf,
-    ggsave_path(paste0("figs/stan_bv_in_vs_out_", mod, "_", sex_lc, ".pdf"),
-                plot = stan_bv_out_vs_in_plot,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file"
-  ),
-  tar_target(
     stan_bv_pred_marg,
     pred_marg_func(samp = stan_samps,
                    data = fitness_data,
@@ -552,17 +543,8 @@ fitmod_map <- tar_map(
     stan_bv_marg_plot,
     plot_lines_posterior(df = getElement(stan_bv_pred_marg, "df_marg"),
                          xlab = paste0(xlab_start, "enetic value for ACC"),
-                         ylab = paste0("Marginal effect on ", trait),
-                         title = toTitleCase(sex))
-  ),
-  tar_target(
-    stan_bv_marg_plot_pdf,
-    ggsave_path(paste0("figs/stan_", mod, "_bv_marg_", sex_lc, ".pdf"),
-                plot = stan_bv_marg_plot,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file"
+                         ylab = paste0("Marginal effect on ", trait_short),
+                         title = "")
   ),
   tar_target(
     stan_age_pred_marg,
@@ -594,16 +576,7 @@ fitmod_map <- tar_map(
     plot_lines_posterior(df = getElement(stan_age_pred_marg, "df_pred"),
                          xlab = paste0("Age"),
                          ylab = paste0("Predicted ", trait),
-                         title = toTitleCase(sex))
-  ),
-  tar_target(
-    stan_age_pred_plot_pdf,
-    ggsave_path(paste0("figs/stan_", mod, "_age_pred_", sex_lc, ".pdf"),
-                plot = stan_age_pred_plot,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file"
+                         title = "")
   ),
   tar_target(
     stan_f_pred_marg,
@@ -635,7 +608,7 @@ fitmod_map <- tar_map(
     plot_lines_posterior(df = getElement(stan_f_pred_marg, "df_pred"),
                          xlab = paste0("Inbreeding coefficient"),
                          ylab = paste0("Predicted ", trait),
-                         title = toTitleCase(sex))
+                         title = "")
   ),
   tar_target(
     stan_hatch_doy_pred_marg,
@@ -667,16 +640,7 @@ fitmod_map <- tar_map(
     plot_lines_posterior(df = getElement(stan_hatch_doy_pred_marg, "df_pred"),
                          xlab = paste0("Hatch day of year"),
                          ylab = paste0("Predicted ", trait),
-                         title = toTitleCase(sex))
-  ),
-  tar_target(
-    stan_hatch_doy_pred_plot_pdf,
-    ggsave_path(paste0("figs/stan_", mod, "_hatch_doy_pred_", sex_lc, ".pdf"),
-                plot = stan_hatch_doy_pred_plot,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file"
+                         title = "")
   ),
   tar_target(
     stan_first_dna_age_pred_marg,
@@ -708,16 +672,7 @@ fitmod_map <- tar_map(
     plot_lines_posterior(df = getElement(stan_first_dna_age_pred_marg, "df_pred"),
                          xlab = paste0("Age at first DNA sampling (days)"),
                          ylab = paste0("Predicted ", trait),
-                         title = toTitleCase(sex))
-  ),
-  tar_target(
-    stan_first_dna_age_pred_plot_pdf,
-    ggsave_path(paste0("figs/stan_", mod, "_first_dna_age_pred_", sex_lc, ".pdf"),
-                plot = stan_first_dna_age_pred_plot,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file"
+                         title = "")
   ),
   tar_target(
     stan_ppc,
@@ -859,12 +814,12 @@ fitmod_map <- tar_map(
     pattern = map(sim_data, stan_sim_summ)
   ),
   tar_target(
-    stan_sim_bv_plot_pdf,
-    ggsave_path(paste0("figs/", mod, "_sim_bv_plot_", sex_lc, ".pdf"),
+    stan_sim_bv_plot_png,
+    ggsave_path(paste0("figs/", mod, "_sim_bv_plot_", sex_lc, ".png"),
                 plot = stan_sim_bv_plot[[1]],
                 width = 7,
                 height = 5,
-                device = "pdf"),
+                device = "png"),
     format = "file"
   ),
   ################ co_n modeller
@@ -923,16 +878,7 @@ fitmod_map <- tar_map(
     plot_lines_posterior(df = getElement(stan_bv_pred_marg_co_n, "df_pred"),
                          xlab = paste0(xlab_start, "enetic value for ACC"),
                          ylab = paste0("Predicted ", trait),
-                         title = toTitleCase(sex))
-  ),
-  tar_target(
-    stan_bv_pred_plot_co_n_pdf,
-    ggsave_path(paste0("figs/stan_", mod, "_bv_pred_", sex_lc, "_co_n.pdf"),
-                plot = stan_bv_pred_plot_co_n,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file"
+                         title = "")
   ),
   tar_target(
     stan_co_n_pred_marg_co_n,
@@ -960,16 +906,7 @@ fitmod_map <- tar_map(
     plot_lines_posterior(df = getElement(stan_co_n_pred_marg_co_n, "df_pred"),
                          xlab = "Number of ACC measurements",
                          ylab = paste0("Predicted ", trait),
-                         title = toTitleCase(sex))
-  ),
-  tar_target(
-    stan_co_n_pred_plot_co_n_pdf,
-    ggsave_path(paste0("figs/stan_", mod, "_co_n_pred_", sex_lc, "_co_n.pdf"),
-                plot = stan_co_n_pred_plot_co_n,
-                width = 7,
-                height = 5,
-                device = "pdf"),
-    format = "file"
+                         title = "")
   )
 )
 
@@ -1573,7 +1510,7 @@ list(
     ggsave_path("figs/stan_bv_pred_plot_nest2x2.png",
                 plot = stan_bv_pred_plot_nest2x2,
                 width = 7.5,
-                height = 7,
+                height = 6.5,
                 device = "png"),
     format = "file"
   ),
@@ -1600,7 +1537,7 @@ list(
     ggsave_path("figs/dirfit_pred_plot_ars_3x2.png",
                 plot = dirfit_pred_plot_ars_3x2,
                 width = 7.5,
-                height = 10.5,
+                height = 9,
                 device = "png"),
     format = "file"
   ),
@@ -1619,7 +1556,7 @@ list(
     ggsave_path("figs/dirfit_pred_plot_as_3x2.png",
                 plot = dirfit_pred_plot_as_3x2,
                 width = 7.5,
-                height = 10.5,
+                height = 9,
                 device = "png"),
     format = "file"
   ),
@@ -1638,7 +1575,7 @@ list(
     ggsave_path("figs/dirfit_pred_plot_ns_3x2.png",
                 plot = dirfit_pred_plot_ns_3x2,
                 width = 7.5,
-                height = 10.5,
+                height = 9,
                 device = "png"),
     format = "file"
   ),
@@ -1657,7 +1594,45 @@ list(
     ggsave_path("figs/stan_gvf_bv_plot_3x2.png",
                 plot = stan_gvf_bv_plot_3x2,
                 width = 7.5,
-                height = 10.5,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    stan_gvf_bv_marg_plot_3x2,
+    layout_3x2_fig(p1 = stan_bv_marg_plot_ars_adult_f,
+                   p2 = stan_bv_marg_plot_ars_adult_m,
+                   p3 = stan_bv_marg_plot_surv_adult_f,
+                   p4 = stan_bv_marg_plot_surv_adult_m,
+                   p5 = stan_bv_marg_plot_n2_f,
+                   p6 = stan_bv_marg_plot_n2_m,
+                   tit_str = "GV-F models")
+  ),
+  tar_target(
+    stan_gvf_bv_marg_plot_3x2_png,
+    ggsave_path("figs/stan_gvf_bv_marg_plot_3x2.png",
+                plot = stan_gvf_bv_marg_plot_3x2,
+                width = 7.5,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    stan_gvf_bv_out_vs_in_plot_3x2,
+    layout_3x2_fig(p1 = stan_bv_out_vs_in_plot_ars_adult_f,
+                   p2 = stan_bv_out_vs_in_plot_ars_adult_m,
+                   p3 = stan_bv_out_vs_in_plot_surv_adult_f,
+                   p4 = stan_bv_out_vs_in_plot_surv_adult_m,
+                   p5 = stan_bv_out_vs_in_plot_n2_f,
+                   p6 = stan_bv_out_vs_in_plot_n2_m,
+                   tit_str = "GV-F models")
+  ),
+  tar_target(
+    stan_gvf_bv_out_vs_in_plot_3x2_png,
+    ggsave_path("figs/stan_gvf_bv_out_vs_in_plot_3x2.png",
+                plot = stan_gvf_bv_out_vs_in_plot_3x2,
+                width = 7.5,
+                height = 9,
                 device = "png"),
     format = "file"
   ),
@@ -1676,7 +1651,41 @@ list(
     ggsave_path("figs/stan_gvf_f_plot_3x2.png",
                 plot = stan_gvf_f_plot_3x2,
                 width = 7.5,
-                height = 10.5,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    stan_gvf_age_plot_2x2,
+    layout_2x2_fig(p1 = stan_age_pred_plot_ars_adult_f,
+                   p2 = stan_age_pred_plot_ars_adult_m,
+                   p3 = stan_age_pred_plot_surv_adult_f,
+                   p4 = stan_age_pred_plot_surv_adult_m,
+                   tit_str = "GV-F models")
+  ),
+  tar_target(
+    stan_gvf_age_plot_2x2_png,
+    ggsave_path("figs/stan_gvf_age_plot_2x2.png",
+                plot = stan_gvf_age_plot_2x2,
+                width = 7.5,
+                height = 6.5,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    stan_gvf_nfix_plot_2x2,
+    layout_2x2_fig(p1 = stan_hatch_doy_pred_plot_n2_f,
+                   p2 = stan_hatch_doy_pred_plot_n2_m,
+                   p3 = stan_first_dna_age_pred_plot_n2_f,
+                   p4 = stan_first_dna_age_pred_plot_n2_m,
+                   tit_str = "GV-F models")
+  ),
+  tar_target(
+    stan_gvf_nfix_plot_2x2_png,
+    ggsave_path("figs/stan_gvf_nfix_plot_2x2.png",
+                plot = stan_gvf_nfix_plot_2x2,
+                width = 7.5,
+                height = 6.5,
                 device = "png"),
     format = "file"
   ),
@@ -1695,7 +1704,45 @@ list(
     ggsave_path("figs/stan_pgvf_bv_plot_3x2.png",
                 plot = stan_pgvf_bv_plot_3x2,
                 width = 7.5,
-                height = 10,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    stan_pgvf_bv_marg_plot_3x2,
+    layout_3x2_fig(p1 = stan_bv_marg_plot_ars_parent_f,
+                   p2 = stan_bv_marg_plot_ars_parent_m,
+                   p3 = stan_bv_marg_plot_surv_parent_f,
+                   p4 = stan_bv_marg_plot_surv_parent_m,
+                   p5 = stan_bv_marg_plot_nest_f,
+                   p6 = stan_bv_marg_plot_nest_m,
+                   tit_str = "PGV-F models")
+  ),
+  tar_target(
+    stan_pgvf_bv_marg_plot_3x2_png,
+    ggsave_path("figs/stan_pgvf_bv_marg_plot_3x2.png",
+                plot = stan_pgvf_bv_marg_plot_3x2,
+                width = 7.5,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    stan_pgvf_bv_out_vs_in_plot_3x2,
+    layout_3x2_fig(p1 = stan_bv_out_vs_in_plot_ars_parent_f,
+                   p2 = stan_bv_out_vs_in_plot_ars_parent_m,
+                   p3 = stan_bv_out_vs_in_plot_surv_parent_f,
+                   p4 = stan_bv_out_vs_in_plot_surv_parent_m,
+                   p5 = stan_bv_out_vs_in_plot_nest_f,
+                   p6 = stan_bv_out_vs_in_plot_nest_m,
+                   tit_str = "PGV-F models")
+  ),
+  tar_target(
+    stan_pgvf_bv_out_vs_in_plot_3x2_png,
+    ggsave_path("figs/stan_pgvf_bv_out_vs_in_plot_3x2.png",
+                plot = stan_pgvf_bv_out_vs_in_plot_3x2,
+                width = 7.5,
+                height = 9,
                 device = "png"),
     format = "file"
   ),
@@ -1714,7 +1761,41 @@ list(
     ggsave_path("figs/stan_pgvf_f_plot_3x2.png",
                 plot = stan_pgvf_f_plot_3x2,
                 width = 7.5,
-                height = 10,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    stan_pgvf_age_plot_2x2,
+    layout_2x2_fig(p1 = stan_age_pred_plot_ars_parent_f,
+                   p2 = stan_age_pred_plot_ars_parent_m,
+                   p3 = stan_age_pred_plot_surv_parent_f,
+                   p4 = stan_age_pred_plot_surv_parent_m,
+                   tit_str = "PGV-F models")
+  ),
+  tar_target(
+    stan_pgvf_age_plot_2x2_png,
+    ggsave_path("figs/stan_pgvf_age_plot_2x2.png",
+                plot = stan_pgvf_age_plot_2x2,
+                width = 7.5,
+                height = 6.5,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    stan_pgvf_nfix_plot_2x2,
+    layout_2x2_fig(p1 = stan_hatch_doy_pred_plot_nest_f,
+                   p2 = stan_hatch_doy_pred_plot_nest_m,
+                   p3 = stan_first_dna_age_pred_plot_nest_f,
+                   p4 = stan_first_dna_age_pred_plot_nest_m,
+                   tit_str = "PGV-F models")
+  ),
+  tar_target(
+    stan_pgvf_nfix_plot_2x2_png,
+    ggsave_path("figs/stan_pgvf_nfix_plot_2x2.png",
+                plot = stan_pgvf_nfix_plot_2x2,
+                width = 7.5,
+                height = 6.5,
                 device = "png"),
     format = "file"
   ),
