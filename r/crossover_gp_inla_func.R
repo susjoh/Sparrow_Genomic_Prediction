@@ -1108,7 +1108,7 @@ make_sim_ars_adult <- function(data,
     idx_full
 
   pois <- rpois(n = nrow(data), lambda = exp(eta))
-  zeros <- rbinom(n = nrow(data), size = 1, prob = inv_logit(pars$alpha_zi))
+  zeros <- rbinom(n = nrow(data), size = 1, prob = plogis(pars$alpha_zi))
   data$sum_recruit_orig <- data$sum_recruit
   data$sum_recruit <- pois * (1 - zeros)
   data
@@ -1143,7 +1143,7 @@ make_sim_surv_adult <- function(data,
     idx_full
 
   data$survival_orig <- data$survival
-  data$survival <- rbinom(n = nrow(data), size = 1, prob = inv_logit(eta))
+  data$survival <- rbinom(n = nrow(data), size = 1, prob = plogis(eta))
   data
 }
 
@@ -1179,7 +1179,7 @@ make_sim_ars_parent <- function(data,
     idx_full
 
   pois <- rpois(n = nrow(data), lambda = exp(eta))
-  zeros <- rbinom(n = nrow(data), size = 1, prob = inv_logit(pars$alpha_zi))
+  zeros <- rbinom(n = nrow(data), size = 1, prob = plogis(pars$alpha_zi))
   data$sum_recruit_orig <- data$sum_recruit
   data$sum_recruit <- pois * (1 - zeros)
   data
@@ -1217,7 +1217,7 @@ make_sim_surv_parent <- function(data,
     idx_full
 
   data$survival_orig <- data$survival
-  data$survival <- rbinom(n = nrow(data), size = 1, prob = inv_logit(eta))
+  data$survival <- rbinom(n = nrow(data), size = 1, prob = plogis(eta))
   data
 }
 
@@ -1248,7 +1248,7 @@ make_sim_nest <- function(data,
     idx_full
 
   data$recruit_orig <- data$recruit
-  data$recruit <- rbinom(n = nrow(data), size = 1, prob = inv_logit(eta))
+  data$recruit <- rbinom(n = nrow(data), size = 1, prob = plogis(eta))
   data
 }
 
@@ -1262,8 +1262,6 @@ samp_plot_df <- function(x, y, n_samp) {
            y_lower = rep(apply(y, 2, quantile, p = 0.025), n_samp),
            y_upper = rep(apply(y, 2, quantile, p = 0.975), n_samp))
 }
-
-inv_logit <- function(x) 1 / (1 + exp(-x))
 
 plot_lines_posterior <- function(df,
                                  xlab,
@@ -1414,10 +1412,11 @@ make_stan_data_adult <- function(data, gp_data, covmat) {
        exp_rate_ars = 1 / 0.2,
        beta_prior_sd_surv = 0.5,
        exp_rate_surv = 1 / 0.5,
-       beta_zi_prior_sd = sqrt(2.5),
+       beta_zi_prior_sd = 1.25,
        alpha_zi_prior_mean = 0,
-       # = log(mean(data$sum_recruit == 0) / (1 - mean(data$sum_recruit == 0))),
-       alpha_prior_mean_surv = log(1 / (1 / mean(data$survival) - 1)),
+       # Intercept mean prior is logit of mean annual survival rate
+       alpha_prior_mean_surv = qlogis(mean(data$survival)),
+       # Intercept mean prior is log-mean of non-zero counts
        alpha_prior_mean_ars = log(mean(data$sum_recruit[data$sum_recruit != 0]))
   )
 }
@@ -1474,10 +1473,11 @@ make_stan_data_parent <- function(data, gp_data, covmat) {
        exp_rate_ars = 1 / 0.2,
        beta_prior_sd_surv = 0.5,
        exp_rate_surv = 1 / 0.5,
-       beta_zi_prior_sd = sqrt(2.5),
+       beta_zi_prior_sd = 1.25,
        alpha_zi_prior_mean = 0,
-       #= log(mean(data$sum_recruit == 0) / (1 - mean(data$sum_recruit == 0))),
-       alpha_prior_mean_surv = log(1 / (1 / mean(data$survival) - 1)),
+       # Intercept mean prior is logit of mean annual survival rate
+       alpha_prior_mean_surv = qlogis(mean(data$survival)),
+       # Intercept mean prior is log-mean of non-zero counts
        alpha_prior_mean_ars = log(mean(data$sum_recruit[data$sum_recruit != 0])))
 }
 
@@ -1517,7 +1517,8 @@ make_stan_data_nest <- function(data, gp_data, covmat) {
        bv_covmat = bv_covmat,
        bv_covmat_chol = t(chol(bv_covmat)), # pre-multiply this with z-vec
        recruit = data$recruit,
-       alpha_prior_mean_nestling = log(1 / (1 / mean(data$recruit) - 1)),
+       # Intercept mean prior is logit of mean recruit rate
+       alpha_prior_mean_nestling = qlogis(mean(data$recruit)),
        f = data$froh,
        bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
        bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
@@ -1568,7 +1569,8 @@ make_stan_data_n2 <- function(data, gp_data, covmat) {
        bv_covmat = bv_covmat,
        bv_covmat_chol = t(chol(bv_covmat)), # pre-multiply this with z-vec
        recruit = data$recruit,
-       alpha_prior_mean_nestling = log(1 / (1 / mean(data$recruit) - 1)),
+       # Intercept mean prior is logit of mean recruit rate
+       alpha_prior_mean_nestling = qlogis(mean(data$recruit)),
        f = data$froh,
        bv_mean_std = mean(apply(bv_std_vec, 2, mean)),
        bv_sd_std = mean(apply(bv_std_vec, 2, sd)),
@@ -1971,7 +1973,8 @@ make_zip_preds_and_marg <- function(data,
           samp[pred_info$coef_name[k]][[1]][i] *
           pred_val[[k]][j]
       }
-      zinf_pred[i, j] <- inv_logit(samp$alpha_zi[i])
+      # Inverse logit to get probability
+      zinf_pred[i, j] <- plogis(samp$alpha_zi[i])
     }
   }
   count_pred <- exp(pred)
@@ -2024,7 +2027,8 @@ make_logit_preds_and_marg <- function(data,
     }
   }
 
-  pred_prob_samples <- inv_logit(predictor_samples)
+  # Inverse logit to get probability
+  pred_prob_samples <- plogis(predictor_samples)
   df_pred <- samp_plot_df(y = pred_prob_samples, x = x_ax, n_samp = n_samp)
 
   marg_effect <-
@@ -2105,7 +2109,7 @@ dirfit_func_ars <- function(data) {
     prec = list(initial = log(1),
                 prior = "pc.prec",
                 # sd, prob larger than sd
-                param = c(sqrt(1), 0.05),
+                param = c(0.6, 0.05),
                 fixed = FALSE))
 
   effects_vec <- c("1",
@@ -2125,10 +2129,19 @@ dirfit_func_ars <- function(data) {
 
   inla_formula <- reformulate(effects_vec, response = "sum_recruit")
 
+  # Prior mean for intercept is log-mean of non-zero counts
+  intercept_mean_prior <- data %>%
+    dplyr::filter(sum_recruit != 0) %>%
+    dplyr::pull(sum_recruit) %>%
+    mean() %>%
+    log()
+
   inla(inla_formula,
        family = "zeroinflatedpoisson1",
        control.compute = list(config = TRUE),
-       control.family = list(hyper = list(theta = list(param = c(0, 1 / 1.25^2)))),
+       # Zero inf. intercept has N(0, 1.25^2) prior:
+       control.family = list(hyper = list(theta = list(param = c(0, 1.25^(-2))))),
+       control.fixed = control.fixed(mean.intercept = intercept_mean_prior),
        data = data, verbose = TRUE) %>%
     INLA::inla.rerun()
 }
@@ -2138,7 +2151,7 @@ dirfit_func_as <- function(data) {
     prec = list(initial = log(1),
                 prior = "pc.prec",
                 # sd, prob larger than sd
-                param = c(sqrt(1), 0.05),
+                param = c(1.5, 0.05),
                 fixed = FALSE))
 
   effects_vec <- c("1",
@@ -2158,10 +2171,14 @@ dirfit_func_as <- function(data) {
 
   inla_formula <- reformulate(effects_vec, response = "survival")
 
+  # Prior mean for intercept is logit of annual survival rate
+  intercept_mean_prior <- mean(data$survival) %>% qlogis()
+
   inla(inla_formula,
        family = "binomial",
        control.compute = list(config = TRUE),
        control.family = list(link = "logit"),
+       control.fixed = control.fixed(mean.intercept = intercept_mean_prior),
        data = data,
        verbose = TRUE) %>%
     INLA::inla.rerun()
@@ -2226,7 +2243,7 @@ dirfit_func_ns <- function(data) {
     prec = list(initial = log(1),
                 prior = "pc.prec",
                 # sd, prob larger than sd
-                param = c(sqrt(1), 0.05),
+                param = c(1.5, 0.05),
                 fixed = FALSE))
 
   effects_vec <- c("1",
@@ -2247,10 +2264,14 @@ dirfit_func_ns <- function(data) {
 
   inla_formula <- reformulate(effects_vec, response = "recruit")
 
+  # Prior mean for intercept is logit of recruitment rate
+  intercept_mean_prior <- mean(data$recruit) %>% qlogis()
+
   inla(inla_formula,
        family = "binomial",
        control.compute = list(config = TRUE),
        control.family = list(link = "logit"),
+       control.fixed = control.fixed(mean.intercept = intercept_mean_prior),
        data = data,
        verbose = TRUE) %>%
     INLA::inla.rerun()
@@ -2302,7 +2323,7 @@ dirfit_func_parsum_ars <- function(data) {
     prec = list(initial = log(1),
                 prior = "pc.prec",
                 # sd, prob larger than sd
-                param = c(sqrt(1), 0.05),
+                param = c(0.6, 0.05),
                 fixed = FALSE))
 
   effects_vec <- c("1",
@@ -2320,10 +2341,18 @@ dirfit_func_parsum_ars <- function(data) {
 
   inla_formula <- reformulate(effects_vec, response = "sum_recruit")
 
+  # Prior mean for intercept is log-mean of non-zero counts
+  intercept_mean_prior <- data %>%
+    dplyr::filter(sum_recruit != 0) %>%
+    dplyr::pull(sum_recruit) %>%
+    mean() %>%
+    log()
+
   inla(inla_formula,
        family = "zeroinflatedpoisson1",
        control.compute = list(config = TRUE),
-       control.family = list(hyper = list(theta = list(param = c(0, 1 / 1.25^2)))),
+       control.family = list(hyper = list(theta = list(param = c(0, 1.25^(-2))))),
+       control.fixed = control.fixed(mean.intercept = intercept_mean_prior),
        data = data, verbose = TRUE) %>%
     INLA::inla.rerun()
 }
@@ -2333,7 +2362,7 @@ dirfit_func_parsum_as <- function(data) {
     prec = list(initial = log(1),
                 prior = "pc.prec",
                 # sd, prob larger than sd
-                param = c(sqrt(1), 0.05),
+                param = c(1.5, 0.05),
                 fixed = FALSE))
 
   effects_vec <- c("1",
@@ -2351,10 +2380,14 @@ dirfit_func_parsum_as <- function(data) {
 
   inla_formula <- reformulate(effects_vec, response = "survival")
 
+  # Prior mean for intercept is logit of annual survival rate
+  intercept_mean_prior <- mean(data$survival) %>% qlogis()
+
   inla(inla_formula,
        family = "binomial",
        control.compute = list(config = TRUE),
        control.family = list(link = "logit"),
+       control.fixed = control.fixed(mean.intercept = intercept_mean_prior),
        data = data,
        verbose = TRUE) %>%
     INLA::inla.rerun()
@@ -2406,7 +2439,7 @@ dirfit_func_parsum_ns <- function(data) {
     prec = list(initial = log(1),
                 prior = "pc.prec",
                 # sd, prob larger than sd
-                param = c(sqrt(1), 0.05),
+                param = c(1.5, 0.05),
                 fixed = FALSE))
 
   effects_vec <- c("1",
@@ -2425,10 +2458,14 @@ dirfit_func_parsum_ns <- function(data) {
 
   inla_formula <- reformulate(effects_vec, response = "recruit")
 
+  # Prior mean for intercept is logit of recruitment rate
+  intercept_mean_prior <- mean(data$recruit) %>% qlogis()
+
   inla(inla_formula,
        family = "binomial",
        control.compute = list(config = TRUE),
        control.family = list(link = "logit"),
+       control.fixed = control.fixed(mean.intercept = intercept_mean_prior),
        data = data,
        verbose = TRUE) %>%
     INLA::inla.rerun()
