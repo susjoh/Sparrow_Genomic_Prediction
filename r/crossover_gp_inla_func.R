@@ -2144,7 +2144,12 @@ dirfit_func_ars <- function(data) {
        control.compute = list(config = TRUE),
        # Zero inf. intercept has N(0, 1.25^2) prior:
        control.family = list(hyper = list(theta = list(param = c(0, 1.25^(-2))))),
-       control.fixed = control.fixed(mean.intercept = intercept_mean_prior),
+       control.fixed = control.fixed(
+         mean.intercept = intercept_mean_prior,
+         prec = list(default = 0.2^(-2),
+                     `I(co_count_sire_scale^2)` = (0.2 / sqrt(2))^(-2),
+                     `I(co_count_dam_scale^2)` = (0.2 / sqrt(2))^(-2)),
+         prec.intercept = 0.2^(-2)),
        data = data, verbose = TRUE) %>%
     INLA::inla.rerun()
 }
@@ -2181,7 +2186,12 @@ dirfit_func_as <- function(data) {
        family = "binomial",
        control.compute = list(config = TRUE),
        control.family = list(link = "logit"),
-       control.fixed = control.fixed(mean.intercept = intercept_mean_prior),
+       control.fixed = control.fixed(
+         mean.intercept = intercept_mean_prior,
+         prec = list(default = 0.5^(-2),
+                     `I(co_count_sire_scale^2)` = (0.5 / sqrt(2))^(-2),
+                     `I(co_count_dam_scale^2)` = (0.5 / sqrt(2))^(-2)),
+         prec.intercept = 0.5^(-2)),
        data = data,
        verbose = TRUE) %>%
     INLA::inla.rerun()
@@ -2274,7 +2284,13 @@ dirfit_func_ns <- function(data) {
        family = "binomial",
        control.compute = list(config = TRUE),
        control.family = list(link = "logit"),
-       control.fixed = control.fixed(mean.intercept = intercept_mean_prior),
+       control.fixed = control.fixed(
+         mean.intercept = intercept_mean_prior,
+         prec = list(default = 0.5^(-2),
+                     `I(co_count_sire_scale^2)` = (0.5 / sqrt(2))^(-2),
+                     `I(co_count_dam_scale^2)` = (0.5 / sqrt(2))^(-2),
+                     `I(hatch_doy_scale^2)` = (0.5 / sqrt(2))^(-2)),
+         prec.intercept = 0.5^(-2)),
        data = data,
        verbose = TRUE) %>%
     INLA::inla.rerun()
@@ -2355,7 +2371,11 @@ dirfit_func_parsum_ars <- function(data) {
        family = "zeroinflatedpoisson1",
        control.compute = list(config = TRUE),
        control.family = list(hyper = list(theta = list(param = c(0, 1.25^(-2))))),
-       control.fixed = control.fixed(mean.intercept = intercept_mean_prior),
+       control.fixed = control.fixed(
+         mean.intercept = intercept_mean_prior,
+         prec = list(default = 0.2^(-2),
+                     `I(co_count_parsum_scale^2)` = (0.2 / sqrt(2))^(-2)),
+         prec.intercept = 0.2^(-2)),
        data = data, verbose = TRUE) %>%
     INLA::inla.rerun()
 }
@@ -2390,7 +2410,11 @@ dirfit_func_parsum_as <- function(data) {
        family = "binomial",
        control.compute = list(config = TRUE),
        control.family = list(link = "logit"),
-       control.fixed = control.fixed(mean.intercept = intercept_mean_prior),
+       control.fixed = control.fixed(
+         mean.intercept = intercept_mean_prior,
+         prec = list(default = 0.5^(-2),
+                     `I(co_count_parsum_scale^2)` = (0.5 / sqrt(2))^(-2)),
+         prec.intercept = 0.5^(-2)),
        data = data,
        verbose = TRUE) %>%
     INLA::inla.rerun()
@@ -2468,7 +2492,12 @@ dirfit_func_parsum_ns <- function(data) {
        family = "binomial",
        control.compute = list(config = TRUE),
        control.family = list(link = "logit"),
-       control.fixed = control.fixed(mean.intercept = intercept_mean_prior),
+       control.fixed = control.fixed(
+         mean.intercept = intercept_mean_prior,
+         prec = list(default = 0.5^(-2),
+                     `I(co_count_parsum_scale^2)` = (0.5 / sqrt(2))^(-2),
+                     `I(hatch_doy_scale^2)` = (0.5 / sqrt(2))^(-2)),
+         prec.intercept = 0.5^(-2)),
        data = data,
        verbose = TRUE) %>%
     INLA::inla.rerun()

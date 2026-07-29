@@ -1788,7 +1788,7 @@ list(
                    p4 = dirfit_co_count_dam_pred_plot_ars_m,
                    p5 = dirfit_co_count_parsum_pred_plot_ars_f,
                    p6 = dirfit_co_count_parsum_pred_plot_ars_m,
-                   tit_str = "S&D/PS models for AS")
+                   tit_str = "S&D/PS models for ARS")
   ),
   tar_target(
     dirfit_pred_plot_ars_3x2_png,
