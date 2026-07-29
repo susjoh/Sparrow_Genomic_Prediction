@@ -1836,6 +1836,9 @@ avg_fun_alpha <- function(dat, np) rep(1, np)
 avg_fun_co_count_parsum <- function(dat, np) {
   rep(mean(dat$co_count_parsum, na.rm = TRUE), np)
 }
+avg_fun_co_count_parsum2 <- function(dat, np) {
+  rep(mean(dat$co_count_parsum, na.rm = TRUE), np)^2
+}
 avg_fun_co_count_sire <- function(dat, np) {
   rep(mean(dat$co_count_sire, na.rm = TRUE), np)
 }
