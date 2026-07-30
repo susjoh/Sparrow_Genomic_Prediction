@@ -574,7 +574,6 @@ make_data_parent_dir <- function(lrs_data_path,
   # Keep lrs entries where ringnrs are in co_dat
   lrs %<>% dplyr::filter(ringnr %in% co_dat$offspring_red)
 
-
   # Add parental information
   lrs$dam <- co_dat$parent[match(lrs$ringnr, co_dat_f$offspring_red)]
   lrs$sire <- co_dat$parent[match(lrs$ringnr, co_dat_m$offspring_red)]
@@ -586,6 +585,9 @@ make_data_parent_dir <- function(lrs_data_path,
   lrs$co_count_sire_scale <- scale(lrs$co_count_sire)
   lrs$co_count_parsum <- lrs$co_count_sire + lrs$co_count_dam
   lrs$co_count_parsum_scale <- scale(lrs$co_count_parsum)
+
+  # Remove missing co_counts
+  lrs %<>% dplyr::filter(!is.na(co_count_dam) & !is.na(co_count_sire))
 
   # Add age
   lrs$age <- lrs$year - lrs$hatch_year
@@ -603,9 +605,12 @@ make_data_parent_dir <- function(lrs_data_path,
   # Add inbreeding info
   froh <- fread(file = froh_file)
   lrs$froh <- froh$FROH2.5[match(lrs$ringnr, froh$FID)]
+  lrs$froh_scale <- scale(lrs$froh)
 
   age_poly <- poly(lrs$age, degree = 2)
   lrs <- cbind(lrs, age_q1 = age_poly[, 1], age_q2 = age_poly[, 2])
+  lrs$age_q1_scale <- scale(lrs$age_q1)
+  lrs$age_q2_scale <- scale(lrs$age_q2)
 
   lrs$idx <- seq_len(nrow(lrs))
   lrs
@@ -764,7 +769,6 @@ make_data_n2 <- function(gp_data,
   nest
 }
 
-
 make_data_nest_dir <- function(nestling_data_path,
                                froh_file,
                                sex_num,
@@ -801,6 +805,9 @@ make_data_nest_dir <- function(nestling_data_path,
   nest$co_count_parsum <- nest$co_count_sire + nest$co_count_dam
   nest$co_count_parsum_scale <- scale(nest$co_count_parsum)
 
+  # Remove missing co_counts
+  nest %<>% dplyr::filter(!is.na(co_count_dam) & !is.na(co_count_sire))
+
   # Make numerical groups for random effect coding
   nest$ringnr_num <- match(nest$ringnr, unique(nest$ringnr))
   nest$dam_num <- match(nest$dam, unique(nest$dam))
@@ -814,6 +821,7 @@ make_data_nest_dir <- function(nestling_data_path,
   # Add inbreeding info
   froh <- fread(file = froh_file)
   nest$froh <- froh$FROH2.5[match(nest$ringnr, froh$FID)]
+  nest$froh_scale <- scale(nest$froh)
 
   # Add index
   nest$idx <- seq_len(nrow(nest))
@@ -2120,9 +2128,9 @@ dirfit_func_ars <- function(data) {
                    "I(co_count_sire_scale^2)",
                    "co_count_dam_scale",
                    "I(co_count_dam_scale^2)",
-                   "age_q1",
-                   "age_q2",
-                   "froh",
+                   "age_q1_scale",
+                   "age_q2_scale",
+                   "froh_scale",
                    "f(y_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
@@ -2167,9 +2175,9 @@ dirfit_func_as <- function(data) {
                    "I(co_count_sire_scale^2)",
                    "co_count_dam_scale",
                    "I(co_count_dam_scale^2)",
-                   "age_q1",
-                   "age_q2",
-                   "froh",
+                   "age_q1_scale",
+                   "age_q2_scale",
+                   "froh_scale",
                    "f(y_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
@@ -2197,39 +2205,47 @@ dirfit_func_as <- function(data) {
     INLA::inla.rerun()
 }
 
-eval_func_ars <- function(..., ccs_mean, ccs_sd, ccd_mean, ccd_sd) {
+eval_func_ars <- function(..., ccs_mean, ccs_sd, ccd_mean, ccd_sd, aq1_mean,
+                          aq1_sd, aq2_mean, aq2_sd, f_mean, f_sd) {
   c(alpha = Intercept -
       co_count_sire_scale * (ccs_mean / ccs_sd) +
       `I(co_count_sire_scale^2)` * (ccs_mean / ccs_sd)^2 -
       co_count_dam_scale * (ccd_mean / ccd_sd) +
-      `I(co_count_dam_scale^2)` * (ccd_mean / ccd_sd)^2,
+      `I(co_count_dam_scale^2)` * (ccd_mean / ccd_sd)^2 -
+      age_q1_scale * aq1_mean / aq1_sd -
+      age_q2_scale * aq2_mean / aq2_sd -
+      froh_scale * f_mean / f_sd,
     beta_co_count_sire = co_count_sire_scale / ccs_sd -
       `I(co_count_sire_scale^2)` * 2 * ccs_mean / ccs_sd^2,
     beta_co_count_sire2 = `I(co_count_sire_scale^2)` / ccs_sd^2,
     beta_co_count_dam = co_count_dam_scale / ccd_sd -
       `I(co_count_dam_scale^2)` * 2 * ccd_mean / ccd_sd^2,
     beta_co_count_dam2 = `I(co_count_dam_scale^2)` / ccd_sd^2,
-    beta_age_q1 = age_q1,
-    beta_age_q2 = age_q2,
-    beta_f = froh,
+    beta_age_q1 = age_q1_scale / aq1_sd,
+    beta_age_q2 = age_q2_scale / aq2_sd,
+    beta_f = froh_scale / f_sd,
     alpha_zi = log(theta[1] / (1 - theta[1])))
 }
 
-eval_func_as <- function(..., ccs_mean, ccs_sd, ccd_mean, ccd_sd) {
+eval_func_as <- function(..., ccs_mean, ccs_sd, ccd_mean, ccd_sd, aq1_mean,
+                         aq1_sd, aq2_mean, aq2_sd, f_mean, f_sd) {
   c(alpha = Intercept -
       co_count_sire_scale * (ccs_mean / ccs_sd) +
       `I(co_count_sire_scale^2)` * (ccs_mean / ccs_sd)^2 -
       co_count_dam_scale * (ccd_mean / ccd_sd) +
-      `I(co_count_dam_scale^2)` * (ccd_mean / ccd_sd)^2,
+      `I(co_count_dam_scale^2)` * (ccd_mean / ccd_sd)^2 -
+      age_q1_scale * aq1_mean / aq1_sd -
+      age_q2_scale * aq2_mean / aq2_sd -
+      froh_scale * f_mean / f_sd,
     beta_co_count_sire = co_count_sire_scale / ccs_sd -
       `I(co_count_sire_scale^2)` * 2 * ccs_mean / ccs_sd^2,
     beta_co_count_sire2 = `I(co_count_sire_scale^2)` / ccs_sd^2,
     beta_co_count_dam = co_count_dam_scale / ccd_sd -
       `I(co_count_dam_scale^2)` * 2 * ccd_mean / ccd_sd^2,
     beta_co_count_dam2 = `I(co_count_dam_scale^2)` / ccd_sd^2,
-    beta_age_q1 = age_q1,
-    beta_age_q2 = age_q2,
-    beta_f = froh)
+    beta_age_q1 = age_q1_scale / aq1_sd,
+    beta_age_q2 = age_q2_scale / aq2_sd,
+    beta_f = froh_scale / f_sd)
 }
 
 get_dirfit_samps_ars_as <- function(model, eval_func, data, n_samp = 4000) {
@@ -2245,7 +2261,13 @@ get_dirfit_samps_ars_as <- function(model, eval_func, data, n_samp = 4000) {
       ccs_mean = attr(data$co_count_sire_scale, "scaled:center"),
       ccs_sd = attr(data$co_count_sire_scale, "scaled:scale"),
       ccd_mean = attr(data$co_count_dam_scale, "scaled:center"),
-      ccd_sd = attr(data$co_count_dam_scale, "scaled:scale"))
+      ccd_sd = attr(data$co_count_dam_scale, "scaled:scale"),
+      aq1_mean = attr(data$age_q1_scale, "scaled:center"),
+      aq1_sd = attr(data$age_q1_scale, "scaled:scale"),
+      aq2_mean = attr(data$age_q2_scale, "scaled:center"),
+      aq2_sd = attr(data$age_q2_scale, "scaled:scale"),
+      f_mean = attr(data$froh_scale, "scaled:center"),
+      f_sd = attr(data$froh_scale, "scaled:scale"))
 
   # Convert to same format as stan samples
   apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
@@ -2264,10 +2286,10 @@ dirfit_func_ns <- function(data) {
                    "I(co_count_sire_scale^2)",
                    "co_count_dam_scale",
                    "I(co_count_dam_scale^2)",
-                   "froh",
+                   "froh_scale",
                    "hatch_doy_scale",
                    "I(hatch_doy_scale^2)",
-                   "first_dna_age",
+                   "first_dna_age_scale",
                    "f(hy_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(hi_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(clutch_ID_num, model = \"iid\", hyper = hyperpar_var)",
@@ -2296,25 +2318,28 @@ dirfit_func_ns <- function(data) {
     INLA::inla.rerun()
 }
 
-eval_func_ns <- function(..., ccs_mean, ccs_sd, ccd_mean, ccd_sd, hd_mean, hd_sd) {
+eval_func_ns <- function(..., ccs_mean, ccs_sd, ccd_mean, ccd_sd, f_mean, f_sd,
+                         hd_mean, hd_sd, fda_mean, fda_sd) {
   c(alpha = Intercept -
       co_count_sire_scale * (ccs_mean / ccs_sd) +
       `I(co_count_sire_scale^2)` * (ccs_mean / ccs_sd)^2 -
       co_count_dam_scale * (ccd_mean / ccd_sd) +
       `I(co_count_dam_scale^2)` * (ccd_mean / ccd_sd)^2 -
       hatch_doy_scale * (hd_mean / hd_sd) +
-      `I(hatch_doy_scale^2)` * (hd_mean / hd_sd)^2,
+      `I(hatch_doy_scale^2)` * (hd_mean / hd_sd)^2 -
+      froh_scale * f_mean / f_sd -
+      first_dna_age_scale * fda_mean / fda_sd,
     beta_co_count_sire = co_count_sire_scale / ccs_sd -
       `I(co_count_sire_scale^2)` * 2 * ccs_mean / ccs_sd^2,
     beta_co_count_sire2 = `I(co_count_sire_scale^2)` / ccs_sd^2,
     beta_co_count_dam = co_count_dam_scale / ccd_sd -
       `I(co_count_dam_scale^2)` * 2 * ccd_mean / ccd_sd^2,
     beta_co_count_dam2 = `I(co_count_dam_scale^2)` / ccd_sd^2,
-    beta_f = froh,
+    beta_f = froh_scale / f_sd,
     beta_hatch_doy = hatch_doy_scale / hd_sd -
       `I(hatch_doy_scale^2)` * 2 * hd_mean / hd_sd^2,
     beta_hatch_doy2 = `I(hatch_doy_scale^2)` / hd_sd^2,
-    beta_first_dna_age = first_dna_age)
+    beta_first_dna_age = first_dna_age_scale / fda_sd)
 }
 
 get_dirfit_samps_ns <- function(model, eval_func, data, n_samp = 4000) {
@@ -2330,8 +2355,12 @@ get_dirfit_samps_ns <- function(model, eval_func, data, n_samp = 4000) {
       ccs_sd = attr(data$co_count_sire_scale, "scaled:scale"),
       ccd_mean = attr(data$co_count_dam_scale, "scaled:center"),
       ccd_sd = attr(data$co_count_dam_scale, "scaled:scale"),
+      f_mean = attr(data$froh_scale, "scaled:center"),
+      f_sd = attr(data$froh_scale, "scaled:scale"),
       hd_mean = attr(data$hatch_doy_scale, "scaled:center"),
-      hd_sd = attr(data$hatch_doy_scale, "scaled:scale"))
+      hd_sd = attr(data$hatch_doy_scale, "scaled:scale"),
+      fda_mean = attr(data$first_dna_age_scale, "scaled:center"),
+      fda_sd = attr(data$first_dna_age_scale, "scaled:scale"))
 
   # Convert to same format as stan samples
   apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
@@ -2348,9 +2377,9 @@ dirfit_func_parsum_ars <- function(data) {
   effects_vec <- c("1",
                    "co_count_parsum_scale",
                    "I(co_count_parsum_scale^2)",
-                   "age_q1",
-                   "age_q2",
-                   "froh",
+                   "age_q1_scale",
+                   "age_q2_scale",
+                   "froh_scale",
                    "f(y_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
@@ -2391,9 +2420,9 @@ dirfit_func_parsum_as <- function(data) {
   effects_vec <- c("1",
                    "co_count_parsum_scale",
                    "I(co_count_parsum_scale^2)",
-                   "age_q1",
-                   "age_q2",
-                   "froh",
+                   "age_q1_scale",
+                   "age_q2_scale",
+                   "froh_scale",
                    "f(y_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
@@ -2420,29 +2449,37 @@ dirfit_func_parsum_as <- function(data) {
     INLA::inla.rerun()
 }
 
-eval_func_parsum_ars <- function(..., ccps_mean, ccps_sd) {
+eval_func_parsum_ars <- function(..., ccps_mean, ccps_sd, aq1_mean, aq1_sd,
+                                 aq2_mean, aq2_sd, f_mean, f_sd) {
   c(alpha = Intercept -
       co_count_parsum_scale * (ccps_mean / ccps_sd) +
-      `I(co_count_parsum_scale^2)` * (ccps_mean / ccps_sd)^2,
+      `I(co_count_parsum_scale^2)` * (ccps_mean / ccps_sd)^2 -
+      age_q1_scale * aq1_mean / aq1_sd -
+      age_q2_scale * aq2_mean / aq2_sd -
+      froh_scale * f_mean / f_sd,
     beta_co_count_parsum = co_count_parsum_scale / ccps_sd -
       `I(co_count_parsum_scale^2)` * 2 * ccps_mean / ccps_sd^2,
     beta_co_count_parsum2 = `I(co_count_parsum_scale^2)` / ccps_sd^2,
-    beta_age_q1 = age_q1,
-    beta_age_q2 = age_q2,
-    beta_f = froh,
+    beta_age_q1 = age_q1_scale / aq1_sd,
+    beta_age_q2 = age_q2_scale / aq2_sd,
+    beta_f = froh_scale / f_sd,
     alpha_zi = log(theta[1] / (1 - theta[1])))
 }
 
-eval_func_parsum_as <- function(..., ccps_mean, ccps_sd) {
+eval_func_parsum_as <- function(..., ccps_mean, ccps_sd, aq1_mean, aq1_sd,
+                                aq2_mean, aq2_sd, f_mean, f_sd) {
   c(alpha = Intercept -
       co_count_parsum_scale * (ccps_mean / ccps_sd) +
-      `I(co_count_parsum_scale^2)` * (ccps_mean / ccps_sd)^2,
+      `I(co_count_parsum_scale^2)` * (ccps_mean / ccps_sd)^2 -
+      age_q1_scale * aq1_mean / aq1_sd -
+      age_q2_scale * aq2_mean / aq2_sd -
+      froh_scale * f_mean / f_sd,
     beta_co_count_parsum = co_count_parsum_scale / ccps_sd -
       `I(co_count_parsum_scale^2)` * 2 * ccps_mean / ccps_sd^2,
     beta_co_count_parsum2 = `I(co_count_parsum_scale^2)` / ccps_sd^2,
-    beta_age_q1 = age_q1,
-    beta_age_q2 = age_q2,
-    beta_f = froh)
+    beta_age_q1 = age_q1_scale / aq1_sd,
+    beta_age_q2 = age_q2_scale / aq2_sd,
+    beta_f = froh_scale / f_sd)
 }
 
 get_dirfit_samps_parsum_ars_as <- function(model, eval_func, data, n_samp = 4000) {
@@ -2455,7 +2492,13 @@ get_dirfit_samps_parsum_ars_as <- function(model, eval_func, data, n_samp = 4000
       samples = inla_samps,
       fun = eval_func,
       ccps_mean = attr(data$co_count_parsum_scale, "scaled:center"),
-      ccps_sd = attr(data$co_count_parsum_scale, "scaled:scale"))
+      ccps_sd = attr(data$co_count_parsum_scale, "scaled:scale"),
+      aq1_mean = attr(data$age_q1_scale, "scaled:center"),
+      aq1_sd = attr(data$age_q1_scale, "scaled:scale"),
+      aq2_mean = attr(data$age_q2_scale, "scaled:center"),
+      aq2_sd = attr(data$age_q2_scale, "scaled:scale"),
+      f_mean = attr(data$froh_scale, "scaled:center"),
+      f_sd = attr(data$froh_scale, "scaled:scale"))
 
   # Convert to same format as stan samples
   apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
@@ -2472,10 +2515,10 @@ dirfit_func_parsum_ns <- function(data) {
   effects_vec <- c("1",
                    "co_count_parsum_scale",
                    "I(co_count_parsum_scale^2)",
-                   "froh",
+                   "froh_scale",
                    "hatch_doy_scale",
                    "I(hatch_doy_scale^2)",
-                   "first_dna_age",
+                   "first_dna_age_scale",
                    "f(hy_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(hi_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
@@ -2503,20 +2546,23 @@ dirfit_func_parsum_ns <- function(data) {
     INLA::inla.rerun()
 }
 
-eval_func_parsum_ns <- function(..., ccps_mean, ccps_sd, hd_mean, hd_sd) {
+eval_func_parsum_ns <- function(..., ccps_mean, ccps_sd, f_mean, f_sd, hd_mean,
+                                hd_sd, fda_mean, fda_sd) {
   c(alpha = Intercept -
       co_count_parsum_scale * (ccps_mean / ccps_sd) +
       `I(co_count_parsum_scale^2)` * (ccps_mean / ccps_sd)^2 -
       hatch_doy_scale * (hd_mean / hd_sd) +
-      `I(hatch_doy_scale^2)` * (hd_mean / hd_sd)^2,
+      `I(hatch_doy_scale^2)` * (hd_mean / hd_sd)^2 -
+      froh_scale * f_mean / f_sd -
+      first_dna_age_scale * fda_mean / fda_sd,
     beta_co_count_parsum = co_count_parsum_scale / ccps_sd -
       `I(co_count_parsum_scale^2)` * 2 * ccps_mean / ccps_sd^2,
     beta_co_count_parsum2 = `I(co_count_parsum_scale^2)` / ccps_sd^2,
-    beta_f = froh,
+    beta_f = froh_scale / f_sd,
     beta_hatch_doy = hatch_doy_scale / hd_sd -
       `I(hatch_doy_scale^2)` * 2 * hd_mean / hd_sd^2,
     beta_hatch_doy2 = `I(hatch_doy_scale^2)` / hd_sd^2,
-    beta_first_dna_age = first_dna_age)
+    beta_first_dna_age = first_dna_age_scale / fda_sd)
 }
 
 get_dirfit_samps_parsum_ns <- function(model, eval_func, data, n_samp = 4000) {
@@ -2530,8 +2576,12 @@ get_dirfit_samps_parsum_ns <- function(model, eval_func, data, n_samp = 4000) {
       fun = eval_func,
       ccps_mean = attr(data$co_count_parsum_scale, "scaled:center"),
       ccps_sd = attr(data$co_count_parsum_scale, "scaled:scale"),
+      f_mean = attr(data$froh_scale, "scaled:center"),
+      f_sd = attr(data$froh_scale, "scaled:scale"),
       hd_mean = attr(data$hatch_doy_scale, "scaled:center"),
-      hd_sd = attr(data$hatch_doy_scale, "scaled:scale"))
+      hd_sd = attr(data$hatch_doy_scale, "scaled:scale"),
+      fda_mean = attr(data$first_dna_age_scale, "scaled:center"),
+      fda_sd = attr(data$first_dna_age_scale, "scaled:scale"))
 
   # Convert to same format as stan samples
   apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
