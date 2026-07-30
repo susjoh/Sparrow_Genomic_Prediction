@@ -300,7 +300,7 @@ values_fitmod <- tibble(
                           "ppc_ars",
                           "ppc_surv",
                           "ppc_nest",
-                          "ppc_n2"))
+                          "ppc_nest"))
 )
 
 fitmod_map <- tar_map(

@@ -1593,6 +1593,23 @@ make_stan_data_n2 <- function(data, gp_data, covmat) {
        exp_rate_surv = 1 / 0.5)
 }
 
+stat_disp <- function(y) {
+  (var(y) * (length(y) - 1) / length(y)) / mean(y)
+}
+
+stat_disp_nz <- function(y) {
+  y_nz <- y[y != 0]
+  if (length(y_nz) < 2) return(NA_real_)
+  (var(y_nz) * (length(y_nz) - 1) / length(y_nz)) / mean(y_nz)
+}
+
+p_two_sided <- function(y, yrep, stat_func) {
+  s_obs <- stat_func(y)
+  s_rep <- apply(yrep, 1, stat_func)
+  s_center <- mean(s_rep, na.rm = TRUE)
+  mean(abs(s_rep - s_center) >= abs(s_obs - s_center))
+}
+
 ppc_ars <- function(dat, samp) {
 
   y <- dat$sum_recruit
@@ -1601,43 +1618,56 @@ ppc_ars <- function(dat, samp) {
   id_i <- dat$id_idx
   yrep <- samp$y_rep
 
-  lst(mean = ppc_stat(y, yrep),
-      sd = ppc_stat(y, yrep, stat = "sd"),
-      zeros = ppc_stat(y, yrep, stat = function(y) mean(y == 0)),
-      ones = ppc_stat(y, yrep, stat = function(y) mean(y == 1)),
-      twos = ppc_stat(y, yrep, stat = function(y) mean(y == 2)),
-      threes = ppc_stat(y, yrep, stat = function(y) mean(y == 3)),
-      fours = ppc_stat(y, yrep, stat = function(y) mean(y == 4)),
-      fives = ppc_stat(y, yrep, stat = function(y) mean(y == 5)),
-      sixes = ppc_stat(y, yrep, stat = function(y) mean(y == 6)),
-      sevens = ppc_stat(y, yrep, stat = function(y) mean(y == 7)),
-      eights = ppc_stat(y, yrep, stat = function(y) mean(y == 8)),
-      bar = ppc_bars(y, yrep),
-      zeros_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 0), group = ll_i),
-      ones_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 1), group = ll_i),
-      twos_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 2), group = ll_i),
-      threes_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 3), group = ll_i),
-      fours_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 4), group = ll_i),
-      fives_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 5), group = ll_i),
-      sixes_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 6), group = ll_i),
-      sevens_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 7), group = ll_i),
-      eights_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 8), group = ll_i),
-      sd_ll = ppc_stat_grouped(y, yrep, stat = "sd", group = ll_i),
-      zeros_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 0), group = ye_i),
-      ones_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 1), group = ye_i),
-      twos_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 2), group = ye_i),
-      threes_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 3), group = ye_i),
-      fours_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 4), group = ye_i),
-      fives_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 5), group = ye_i),
-      sixes_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 6), group = ye_i),
-      sevens_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 7), group = ye_i),
-      eights_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 8), group = ye_i),
-      sd_ye = ppc_stat_grouped(y, yrep, stat = "sd", group = ye_i),
-      p_mean = mean(colMeans(yrep) > mean(y)),
-      p_sd = mean(apply(yrep, 2, sd) > sd(y)),
-      p_zeros = mean((apply(yrep, 2, function(y) mean(y == 0))) > mean(y == 0)),
-      p_ones = mean((apply(yrep, 2, function(y) mean(y == 1))) > mean(y == 1)),
-      p_twos = mean((apply(yrep, 2, function(y) mean(y == 2))) > mean(y == 2)))
+  list(mean = ppc_stat(y, yrep),
+       sd = ppc_stat(y, yrep, stat = "sd"),
+       overdisp = ppc_stat(y, yrep, stat = stat_disp),
+       overdisp_nonzero = ppc_stat(y, yrep, stat = stat_disp_nz),
+       # zeros = ppc_stat(y, yrep, stat = function(y) mean(y == 0)),
+       # ones = ppc_stat(y, yrep, stat = function(y) mean(y == 1)),
+       # twos = ppc_stat(y, yrep, stat = function(y) mean(y == 2)),
+       # threes = ppc_stat(y, yrep, stat = function(y) mean(y == 3)),
+       # fours = ppc_stat(y, yrep, stat = function(y) mean(y == 4)),
+       # fives = ppc_stat(y, yrep, stat = function(y) mean(y == 5)),
+       # sixes = ppc_stat(y, yrep, stat = function(y) mean(y == 6)),
+       # sevens = ppc_stat(y, yrep, stat = function(y) mean(y == 7)),
+       # eights = ppc_stat(y, yrep, stat = function(y) mean(y == 8)),
+       bar = ppc_bars(y, yrep),
+       rootogram = ppc_rootogram(y, yrep, style = "discrete"),
+       # Tail checks
+       max_stat  = ppc_stat(y, yrep, stat = max),
+       q95_stat  = ppc_stat(y, yrep, stat = function(y) quantile(y, 0.95)),
+       prop_gt5 = ppc_stat(y, yrep, stat = function(y) mean(y > 5)),
+       # ll checks
+       zeros_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 0), group = ll_i),
+       ones_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 1), group = ll_i),
+       twos_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 2), group = ll_i),
+       threes_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 3), group = ll_i),
+       fours_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 4), group = ll_i),
+       fives_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 5), group = ll_i),
+       sixes_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 6), group = ll_i),
+       sevens_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 7), group = ll_i),
+       eights_ll = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 8), group = ll_i),
+       sd_ll = ppc_stat_grouped(y, yrep, stat = "sd", group = ll_i),
+       disp_ll = ppc_stat_grouped(y, yrep, stat = stat_disp, group = ll_i),
+       # ye checks
+       zeros_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 0), group = ye_i),
+       ones_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 1), group = ye_i),
+       twos_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 2), group = ye_i),
+       threes_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 3), group = ye_i),
+       fours_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 4), group = ye_i),
+       fives_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 5), group = ye_i),
+       sixes_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 6), group = ye_i),
+       sevens_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 7), group = ye_i),
+       eights_ye = ppc_stat_grouped(y, yrep, stat = function(y) mean(y == 8), group = ye_i),
+       sd_ye = ppc_stat_grouped(y, yrep, stat = "sd", group = ye_i),
+       disp_ye = ppc_stat_grouped(y, yrep, stat = stat_disp, group = ye_i),
+       # Manual computation of Bayesian p-values
+       p_mean = p_two_sided(y, yrep, stat_func = mean),
+       p_sd = p_two_sided(y, yrep, stat_func = sd),
+       p_zeros = p_two_sided(y, yrep, stat_func = function(y) mean(y == 0)),
+       p_disp = p_two_sided(y, yrep, stat_func = stat_disp),
+       p_disp_nz = p_two_sided(y, yrep, stat_func = stat_disp_nz),
+       p_max = p_two_sided(y, yrep, stat_func = max))
 }
 
 ppc_surv <- function(dat, samp) {
@@ -1648,16 +1678,17 @@ ppc_surv <- function(dat, samp) {
   ye_i <- dat$ye_idx
   id_i <- dat$id_idx
 
-  lst(bar = ppc_bars(y, yrep),
-      bar_ll = ppc_bars_grouped(y, yrep, group = ll_i),
-      bar_ye = ppc_bars_grouped(y, yrep, group = ye_i),
-      bar_longlife = ppc_bars_grouped(
-        y, yrep, group = factor(tapply(y, factor(id_i), length)[id_i] > 2)),
-      sd = ppc_stat(y, yrep, stat = "sd"),
-      sd_ll = ppc_stat_grouped(y, yrep, group = ll_i, stat = "sd"),
-      sd_ye = ppc_stat_grouped(y, yrep, group = ye_i, stat = "sd"),
-      p_mean = mean(colMeans(yrep) > mean(y)),
-      p_sd = mean(apply(yrep, 2, sd) > sd(y)))
+  list(bar = ppc_bars(y, yrep),
+       bar_ll = ppc_bars_grouped(y, yrep, group = ll_i),
+       bar_ye = ppc_bars_grouped(y, yrep, group = ye_i),
+       bar_longlife = ppc_bars_grouped(
+         # an ind with long lifespan
+         y, yrep, group = factor(tapply(y, factor(id_i), length)[id_i] > 2)),
+       # Don't need sd, as it is linked directly to mean
+       mean = ppc_stat(y, yrep, stat = mean),
+       mean_ll = ppc_stat_grouped(y, yrep, group = ll_i, stat = mean),
+       mean_ye = ppc_stat_grouped(y, yrep, group = ye_i, stat = mean),
+       p_mean = p_two_sided(y, yrep, stat_func = mean))
 }
 
 ppc_nest <- function(dat, samp) {
@@ -1667,31 +1698,14 @@ ppc_nest <- function(dat, samp) {
   hi_i <- dat$hi_idx
   hy_i <- dat$hy_idx
 
-  lst(bar = ppc_bars(y, yrep),
-      bar_hi = ppc_bars_grouped(y, yrep, group = hi_i),
-      bar_hy = ppc_bars_grouped(y, yrep, group = hy_i),
-      sd = ppc_stat(y, yrep, stat = "sd"),
-      sd_hi = ppc_stat_grouped(y, yrep, group = hi_i, stat = "sd"),
-      sd_hy = ppc_stat_grouped(y, yrep, group = hy_i, stat = "sd"),
-      p_mean = mean(colMeans(yrep) > mean(y)),
-      p_sd = mean(apply(yrep, 2, sd) > sd(y)))
-}
-
-ppc_n2 <- function(dat, samp) {
-
-  y <- dat$recruit
-  yrep <- samp$y_rep
-  hi_i <- dat$hi_idx
-  hy_i <- dat$hy_idx
-
-  lst(bar = ppc_bars(y, yrep),
-      bar_hi = ppc_bars_grouped(y, yrep, group = hi_i),
-      bar_hy = ppc_bars_grouped(y, yrep, group = hy_i),
-      sd = ppc_stat(y, yrep, stat = "sd"),
-      sd_hi = ppc_stat_grouped(y, yrep, group = hi_i, stat = "sd"),
-      sd_hy = ppc_stat_grouped(y, yrep, group = hy_i, stat = "sd"),
-      p_mean = mean(colMeans(yrep) > mean(y)),
-      p_sd = mean(apply(yrep, 2, sd) > sd(y)))
+  list(bar = ppc_bars(y, yrep),
+       bar_hi = ppc_bars_grouped(y, yrep, group = hi_i),
+       bar_hy = ppc_bars_grouped(y, yrep, group = hy_i),
+       # Don't need sd, as it is linked directly to mean
+       mean = ppc_stat(y, yrep, stat = mean),
+       mean_hi = ppc_stat_grouped(y, yrep, group = hi_i, stat = mean),
+       mean_hy = ppc_stat_grouped(y, yrep, group = hy_i, stat = mean),
+       p_mean = p_two_sided(y, yrep, stat_func = mean))
 }
 
 inla_bv_covmat <- function(model, n_samp = 1e4, ncores) {
