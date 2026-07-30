@@ -1613,9 +1613,9 @@ p_two_sided <- function(y, yrep, stat_func) {
 ppc_ars <- function(dat, samp) {
 
   y <- dat$sum_recruit
-  ll_i <- dat$ll_idx
-  ye_i <- dat$ye_idx
-  id_i <- dat$id_idx
+  ll_i <- dat$ll_num
+  ye_i <- dat$ye_num
+  id_i <- dat$ringnr_num
   yrep <- samp$y_rep
 
   list(mean = ppc_stat(y, yrep),
@@ -1674,9 +1674,9 @@ ppc_surv <- function(dat, samp) {
 
   y <- dat$survival
   yrep <- samp$y_rep
-  ll_i <- dat$ll_idx
-  ye_i <- dat$ye_idx
-  id_i <- dat$id_idx
+  ll_i <- dat$ll_num
+  ye_i <- dat$y_num
+  id_i <- dat$ringnr_num
 
   list(bar = ppc_bars(y, yrep),
        bar_ll = ppc_bars_grouped(y, yrep, group = ll_i),
@@ -1695,8 +1695,8 @@ ppc_nest <- function(dat, samp) {
 
   y <- dat$recruit
   yrep <- samp$y_rep
-  hi_i <- dat$hi_idx
-  hy_i <- dat$hy_idx
+  hi_i <- dat$hi_num
+  hy_i <- dat$hy_num
 
   list(bar = ppc_bars(y, yrep),
        bar_hi = ppc_bars_grouped(y, yrep, group = hi_i),
@@ -2149,8 +2149,7 @@ dirfit_func_ars <- function(data) {
                    "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)")
 
   inla_formula <- reformulate(effects_vec, response = "sum_recruit")
 
@@ -2196,8 +2195,7 @@ dirfit_func_as <- function(data) {
                    "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)")
 
   inla_formula <- reformulate(effects_vec, response = "survival")
 
@@ -2308,8 +2306,7 @@ dirfit_func_ns <- function(data) {
                    "f(hi_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(clutch_ID_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)")
 
   inla_formula <- reformulate(effects_vec, response = "recruit")
 
@@ -2398,8 +2395,7 @@ dirfit_func_parsum_ars <- function(data) {
                    "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)")
 
   inla_formula <- reformulate(effects_vec, response = "sum_recruit")
 
@@ -2441,8 +2437,7 @@ dirfit_func_parsum_as <- function(data) {
                    "f(ll_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(ringnr_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+                   "f(dam_num, model = \"iid\", hyper = hyperpar_var)")
 
   inla_formula <- reformulate(effects_vec, response = "survival")
 
@@ -2537,8 +2532,7 @@ dirfit_func_parsum_ns <- function(data) {
                    "f(hi_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(sire_num, model = \"iid\", hyper = hyperpar_var)",
                    "f(dam_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(clutch_ID_num, model = \"iid\", hyper = hyperpar_var)",
-                   "f(idx, model = \"iid\", hyper = hyperpar_var)")
+                   "f(clutch_ID_num, model = \"iid\", hyper = hyperpar_var)")
 
   inla_formula <- reformulate(effects_vec, response = "recruit")
 

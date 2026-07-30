@@ -676,7 +676,7 @@ fitmod_map <- tar_map(
   ),
   tar_target(
     stan_ppc,
-    ppc_fun(dat = stan_data,
+    ppc_fun(dat = fitness_data,
             samp = stan_samps)
   ),
   ##### simulation models
