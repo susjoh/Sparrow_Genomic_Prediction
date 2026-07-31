@@ -9,7 +9,7 @@
 \maketitle
 \newpage
 
-\subsection*{ESEB Abstract}
+\subsection*{ESEB Abstract --- to be rewritten}
 
 \subsubsection*{Background}
 Meiotic recombination during gamete formation is a fundamental evolutionary process. It is required to ensure proper chromosome segregation and promotes genetic diversity by shuffling alleles into novel haplotypes. This can create beneficial allele combinations and break up linkage between beneficial and harmful alleles, thereby facilitating adaptive evolution. However, high recombination rates also carry risks, such as introducing mutations at crossover sites, and potentially disrupting favorable allele combinations. Recombination rates could thus affect individual fitness in opposite directions, suggesting a complex relationship with individual fitness.
@@ -44,18 +44,16 @@ Rationale and background - Susan
 
 \subsection*{House sparrow dataset}
 
-We based our analyses on data from a meta-population of house sparrows in a coastal archipelago in Helgeland, Northern Norway \citep{jensen2013genetic}.
-Since 1993, select island-populations of house sparrows in the archipelago have been studied at the individual level.
-Adult and fledged juvenile birds are captured using mist nets, \note{while nestlings are observed in the nest (add more detail here if necessary, Henrik)}.
+We based our analyses on data from a metapopulation of house sparrows in a coastal archipelago in Helgeland, Northern Norway \citep{jensen2013genetic, ranke2021spatial}.
+Since 1993, selected island-populations of house sparrows in the archipelago have been studied at the individual level.
+Here, we used fitness data from $12$ islands, including adult annual reproductive success and survival data, collected during 1998--2019, and nestling recruitment data collected during 2007--2014 \citep{saatoglu2025metapopulation}. % unavailable... 
 Upon first capture, sparrows were marked with unique rings, allowing their identification in future observations or recaptures.
-If a sparrow was a nestling or fledgling when the first capture occurred, the hatch year was known to be the current year.
-For individuals first captured as adults, the hatch year was assumed to be the current year if the capture happened in fall, or the previous year if capture happened in August or earlier.
+If a sparrow was a nestling or fledgling at first capture, the hatch year was known to be the current year.
+For individuals first captured as adults, the hatch year was assumed to be the current year if capture occurred in September or later, or the previous year if it occurred in August or earlier \citep{niskanen2020consistent, araya2021variation}. %TODO: double check
 Hatch island was known for individuals observed as nestlings and juveniles, and was assumed to be the island of first observation for adults \citep[around $17\%$ of recruits dispersed during their first fall, see][]{ranke2021spatial}.
-Each sparrow had a 25 $\mu$L blood sample taken from the brachial vein when first captured.
+A 25 $\mu$L blood sample was taken from the brachial vein of each sparrow at first capture.
 The blood samples were used to generate single-nucleotide polymorphism (SNP) data with an Axiom 200K SNP array \citep{lundregan2018inferences, niskanen2020consistent}, or a cross-compatible Axiom 70K SNP array containing a subset of the 200K array markers \citep{burnett2026snps}.
-The SNP data set and ecological data was used to generate a genetic pedigree containing over $10\ 000$ individuals, and $F_\text{ROH}$ inbreeding coefficients for each individual \citep[see][for details]{burnett2026snps}.
- 
-% Describe fitness data: nestling have shorter time span
+The SNP data set and ecological data were used to generate a genetic pedigree containing over $10\ 000$ individuals, as well as $F_\text{ROH}$ inbreeding coefficients for each individual \citep[see][for details]{burnett2026snps}.
 
 \subsubsection*{ACC measurements}
 
@@ -104,49 +102,6 @@ We placed independent, wide Gaussian priors $\N{0}{10^4}$ on the fixed effect co
 This PC prior can be interpreted as assigning a probability of $0.05$ of the random effect standard deviations exceeding $1$.
 For $\gamma_0$ we used a Gaussian prior $\N{0}{1.25^2}$, which was parametrized so that the zero-inflation probability $\pi$ was centered on $0.5$ with a roughly uniform shape between $0$ and $1$.
 
-% For the adult model we used
-%\begin{equation*}
-%\eta_{ij}^\text{ad} = \alpha 
-%+ \beta_g\, g_{i} 
-%+ \beta_{g^2}\, g_{i}^2
-%+ \beta_a\, a_{ij}
-%+ \beta_{a^2}\, a_{ij}^2
-%+ \beta_f\, f_i
-%+ \text{ye}_{ij}
-%+ \text{isl}_i
-%+ \text{id}_i,
-%\end{equation*}
-%where ...
-%The parental model for ARS was similar to the adult model, except we instead used the linear predictor
-%\begin{align*}
-%\eta_{ij}^\text{par} = \alpha 
-%+ \beta_g\, g_{p(i)} 
-%+ \beta_{g^2}\, g_{p(i)}^2
-%+ \beta_a\, a_{ij}
-%+ \beta_{a^2}\, a_{ij}^2
-%+ \beta_f\, f_{i}
-%+ \text{ye}_{ij}
-%+ \text{isl}_i
-%+ \text{id}_i
-%+ \text{par}_i,
-%\end{align*}
-%so that ...
-
-% Direct fitness model:
-% \begin{align*}
-% \eta_{ij}^\text{par} =& \alpha
-% + \beta_{acc_d}\, acc_{d(i)} 
-% + \beta_{acc_d^2}\, acc_{d(i)}^2
-% + \beta_{acc_s}\, acc_{s(i)} 
-% + \beta_{acc_s^2}\, acc_{s(i)}^2
-% + \beta_{age}\, age_{ij}
-% + \beta_{age^2}\, age_{ij}^2
-% + \beta_f\, f_{i} \\
-% +& \text{ye}_{ij}
-% + \text{isl}_i
-% + \text{id}_i
-% + \text{par}_i,
-% \end{align*}
 
 \subsubsection*{Annual Survival}
 
@@ -178,18 +133,7 @@ Similar to AS, NS was modeled as a binomial trait, so that
 1, & \text{with probability } p_{i},
 \end{cases}
 \\[-5pt]
-\operatorname{logit}(p_{i}) &= \eta_{i},% ^\text{NS}
-% \\[-5pt]
-% &= \alpha 
-% + \beta_g\, g_{p(i)} 
-% + \beta_{g^2}\, g_{p(i)}^2
-% + \beta_f\, f_{i}
-% + \beta_{hd}\, hd_{i}
-% + \beta_{hd^2}\, hd_{i}^2
-% + \beta_{a}\, a_{i}
-% + \text{h-ye}_{i}
-% + \text{h-isl}_i
-% + \text{par}_i,
+\operatorname{logit}(p_{i}) &= \eta_{i},
 \end{split}
 \end{align}
 where the survival $\text{NS}_i$ of nestling $i$ is determined by its survival probability $p_i$, which is linked to the linear predictor $\eta_{i}$ by a logistic link.
@@ -297,12 +241,6 @@ Since we simultaneously updated $g_i$ and estimated its effect on fitness, the p
 Although such model feedback is sometimes undesirable, we deemed it appropriate here because $g_i$ is an unknown latent variable.
 Permutation analyses showed that this approach did not produce false-positive results (see \note{suppmat XXX}).
 As described in \note{suppmat YYY}, we also related an individual's fitness to their parent's genetic value for ACC (parental genetic value-fitness models, PGV-F).
-
-% We investigated the impact of the genetic values for sex-specific ACC genetic values $g_i$ on three different fitness components: annual reproductive success (ARS), annual survival (AS), and nestling survival (NS).
-%As detailed below, we first related the ARS and AS of an individual $i$ to its own ACC genetic value $g_i$, and next to the genetic value $g_{p(i)}$ of its same-sex parent $p(i)$ in a separate model.
-%We label the former as \textit{adult} models and the latter as \textit{parental} models.
-%For nestling $i$ we only related $g_{p(i)}$ to the NS of $i$, similar to the parental models for ARS and AS.
-%We modeled all three fitness traits with Bayesian GLMMs as detailed below.
 
 \section*{Results}
 
