@@ -3,12 +3,12 @@ data {
   vector[N] f;                           // Inbreeding
   vector[N] hatch_doy;                   // Hatch day of year
   vector[N] first_dna_age;               // Age at DNA sampling
+  int<lower=0> N_id;
+  int<lower=1,upper=N_id> id_idx[N];
   int<lower=0> N_hy;                     // Number of levels in year random effect
   int<lower=1,upper=N_hy> hy_idx[N];
   int<lower=0> N_hi;                     // Number of levels in last locality random effect
   int<lower=1,upper=N_hi> hi_idx[N];
-  int<lower=0> N_id;                     // Number of levels in identity random effect
-  int<lower=1,upper=N_id> id_idx[N];
   int<lower=0> N_clutch;                     // Number of levels in clutch random effect
   int<lower=1,upper=N_clutch> clutch_idx[N];
   vector[N_id] bv_mean;                  // Posterior means of breeding values
@@ -57,9 +57,7 @@ transformed data {
 parameters {
   vector[N_hy] z_hy;              // Std.normal noise for year random effect
   vector[N_hi] z_hi;              // Std.normal noise for last locality random effect
-  vector[N_id] z_id;              // Std.normal noise for identity random effect
   vector[N_clutch] z_clutch;              // Std.normal noise for clutch random effect
-  // vector[N] z_res;                // Std.normal noise for residual random effect
   vector[N_id] z_bv;              // Std.norm noise in bv
   real z_alpha;
   real z_beta_bv;
@@ -70,22 +68,16 @@ parameters {
   real z_beta_first_dna_age;
   real<lower=0,upper=1> sigma_hy_raw;
   real<lower=0,upper=1> sigma_hi_raw;
-  real<lower=0,upper=1> sigma_id_raw;
   real<lower=0,upper=1> sigma_clutch_raw;
-  // real<lower=0,upper=1> sigma_res_raw;
 }
 
 transformed parameters {
   real<lower=0> sigma_hy = -log(sigma_hy_raw) / exp_rate_surv;
   real<lower=0> sigma_hi = -log(sigma_hi_raw) / exp_rate_surv;
-  real<lower=0> sigma_id = -log(sigma_id_raw) / exp_rate_surv;
   real<lower=0> sigma_clutch = -log(sigma_clutch_raw) / exp_rate_surv;
-  // real<lower=0> sigma_res = -log(sigma_res_raw) / exp_rate_surv;
   vector[N_hy] hy = z_hy * sigma_hy;                // Levels in year random effect
   vector[N_hi] hi = z_hi * sigma_hi;                // Levels in last locality random effect
-  vector[N_id] id = z_id * sigma_id;            // Levels in identity random effect
   vector[N_clutch] clutch = z_clutch * sigma_clutch;   // Levels in clutch random effect
-  // vector[N] res = z_res * sigma_res;             // Levels in residual random effect
 
   // Full bv vector (non-centered parameterization berkson errored GP results)
   real alpha_std = alpha_prior_mean_nestling + beta_prior_sd_surv * z_alpha;
@@ -111,8 +103,7 @@ transformed parameters {
   }
   x_mat = append_col(append_col(fixed_pred_mat, bv_lat_full), square(bv_lat_full));
   for (i in 1:N) {
-    rand_inter[i] = hy[hy_idx[i]] + hi[hi_idx[i]] + id[id_idx[i]] + clutch[clutch_idx[i]];
-    // + res[i];
+    rand_inter[i] = hy[hy_idx[i]] + hi[hi_idx[i]] + clutch[clutch_idx[i]];
   }
 }
 
@@ -120,16 +111,12 @@ model {
   // Priors
   sigma_hy_raw ~ uniform(0, 1);
   sigma_hi_raw ~ uniform(0, 1);
-  sigma_id_raw ~ uniform(0, 1);
   sigma_clutch_raw ~ uniform(0, 1);
-  // sigma_res_raw ~ uniform(0, 1);
 
   // Non-centered parameterizations
   z_hy ~ std_normal();
   z_hi ~ std_normal();
-  z_id ~ std_normal();
   z_clutch ~ std_normal();
-  // z_res ~ std_normal();
   z_bv ~ std_normal();
 
   z_alpha ~ std_normal();
