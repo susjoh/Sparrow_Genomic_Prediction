@@ -947,7 +947,8 @@ values_dirfit <- tibble(
                                         "make_logit_preds_and_marg")),
   trait = c("annual reproductive success",
             "annual survival",
-            "nestling survival"))
+            "nestling survival"),
+  trait_short = c("ARS", "AS", "NS"))
 
 dirfit_map <- tar_map(
   values = values_dirfit,
@@ -1015,7 +1016,7 @@ dirfit_map <- tar_map(
     plot_lines_posterior(df = getElement(dirfit_co_count_sire_pred_marg,
                                          "df_pred"),
                          xlab = paste0("ACC in gamete from sire"),
-                         ylab = paste0("Predicted ", trait),
+                         ylab = paste0("Predicted ", trait_short),
                          title = toTitleCase(sex))
   ),
   tar_target(
@@ -1053,7 +1054,7 @@ dirfit_map <- tar_map(
     plot_lines_posterior(df = getElement(dirfit_co_count_dam_pred_marg,
                                          "df_pred"),
                          xlab = paste0("ACC in gamete from dam"),
-                         ylab = paste0("Predicted ", trait),
+                         ylab = paste0("Predicted ", trait_short),
                          title = toTitleCase(sex))
   ),
   tar_target(
@@ -1091,7 +1092,7 @@ dirfit_map <- tar_map(
     plot_lines_posterior(df = getElement(dirfit_age_pred_marg,
                                          "df_pred"),
                          xlab = paste0("Age"),
-                         ylab = paste0("Predicted ", trait),
+                         ylab = paste0("Predicted ", trait_short),
                          title = toTitleCase(sex))
   ),
   tar_target(
@@ -1129,7 +1130,7 @@ dirfit_map <- tar_map(
     plot_lines_posterior(df = getElement(dirfit_f_pred_marg,
                                          "df_pred"),
                          xlab = paste0("Inbreeding coefficient"),
-                         ylab = paste0("Predicted ", trait),
+                         ylab = paste0("Predicted ", trait_short),
                          title = toTitleCase(sex))
   ),
   tar_target(
@@ -1167,7 +1168,7 @@ dirfit_map <- tar_map(
     plot_lines_posterior(df = getElement(dirfit_hatch_doy_pred_marg,
                                          "df_pred"),
                          xlab = paste0("Hatch date (day of year)"),
-                         ylab = paste0("Predicted ", trait),
+                         ylab = paste0("Predicted ", trait_short),
                          title = toTitleCase(sex))
   ),
   tar_target(
@@ -1205,7 +1206,7 @@ dirfit_map <- tar_map(
     plot_lines_posterior(df = getElement(dirfit_first_dna_age_pred_marg,
                                          "df_pred"),
                          xlab = paste0("Age at first DNA sampling (days)"),
-                         ylab = paste0("Predicted ", trait),
+                         ylab = paste0("Predicted ", trait_short),
                          title = toTitleCase(sex))
   ),
   tar_target(
@@ -1239,7 +1240,7 @@ dirfit_map <- tar_map(
     plot_lines_posterior(df = getElement(dirfit_co_count_parsum_pred_marg,
                                          "df_pred"),
                          xlab = paste0("Sum of ACCs in gametes from each parent"),
-                         ylab = paste0("Predicted ", trait),
+                         ylab = paste0("Predicted ", trait_short),
                          title = toTitleCase(sex))
   ),
   tar_target(
@@ -1273,7 +1274,7 @@ dirfit_map <- tar_map(
     plot_lines_posterior(df = getElement(dirfit_ps_age_pred_marg,
                                          "df_pred"),
                          xlab = paste0("Age"),
-                         ylab = paste0("Predicted ", trait),
+                         ylab = paste0("Predicted ", trait_short),
                          title = toTitleCase(sex))
   ),
   tar_target(
@@ -1307,7 +1308,7 @@ dirfit_map <- tar_map(
     plot_lines_posterior(df = getElement(dirfit_ps_f_pred_marg,
                                          "df_pred"),
                          xlab = paste0("Inbreeding coefficient"),
-                         ylab = paste0("Predicted ", trait),
+                         ylab = paste0("Predicted ", trait_short),
                          title = toTitleCase(sex))
   ),
   tar_target(
@@ -1341,7 +1342,7 @@ dirfit_map <- tar_map(
     plot_lines_posterior(df = getElement(dirfit_ps_hatch_doy_pred_marg,
                                          "df_pred"),
                          xlab = paste0("Hatch date (day of year)"),
-                         ylab = paste0("Predicted ", trait),
+                         ylab = paste0("Predicted ", trait_short),
                          title = toTitleCase(sex))
   ),
   tar_target(
@@ -1375,7 +1376,7 @@ dirfit_map <- tar_map(
     plot_lines_posterior(df = getElement(dirfit_ps_first_dna_age_pred_marg,
                                          "df_pred"),
                          xlab = paste0("Age at first DNA sampling (days)"),
-                         ylab = paste0("Predicted ", trait),
+                         ylab = paste0("Predicted ", trait_short),
                          title = toTitleCase(sex))
   )
 )
