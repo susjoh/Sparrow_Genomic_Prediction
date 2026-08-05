@@ -1601,6 +1601,18 @@ make_stan_data_n2 <- function(data, gp_data, covmat) {
        exp_rate_surv = 1 / 0.5)
 }
 
+permute_data <- function(dat) {
+
+  n <- length(dat$bv_mean)
+  scram <- sample(n)
+
+  dat$bv_mean <- dat$bv_mean[scram]
+  dat$bv_covmat <- dat$bv_covmat[scram, scram]
+  dat$bv_covmat_chol = t(chol(dat$bv_covmat))
+
+  dat
+}
+
 stat_disp <- function(y) {
   (var(y) * (length(y) - 1) / length(y)) / mean(y)
 }
