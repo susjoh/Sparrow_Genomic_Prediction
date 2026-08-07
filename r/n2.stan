@@ -3,20 +3,32 @@ data {
   vector[N] f;                           // Inbreeding
   vector[N] hatch_doy;                   // Hatch day of year
   vector[N] first_dna_age;               // Age at DNA sampling
-  int<lower=0> N_id;
-  int<lower=1,upper=N_id> id_idx[N];
-  int<lower=0> N_hy;                     // Number of levels in year random effect
+  // Dam random effect
+  int<lower=0> N_dam;
+  int<lower=1,upper=N_dam> dam_idx[N];
+  // Sire random effect
+  int<lower=0> N_sire;
+  int<lower=1,upper=N_sire> sire_idx[N];
+  // Hatch year random effect
+  int<lower=0> N_hy;
   int<lower=1,upper=N_hy> hy_idx[N];
-  int<lower=0> N_hi;                     // Number of levels in last locality random effect
+  // Hatch island random effect
+  int<lower=0> N_hi;
   int<lower=1,upper=N_hi> hi_idx[N];
-  int<lower=0> N_clutch;                     // Number of levels in clutch random effect
+  // Clutch ID random effect
+  int<lower=0> N_clutch;
   int<lower=1,upper=N_clutch> clutch_idx[N];
-  vector[N_id] bv_mean;                  // Posterior means of breeding values
-  matrix[N_id, N_id] bv_covmat_chol;     // Chol decomp of covariance for bvs
-  real bv_mean_std;                  // Constant used to standardize the vector of breeding values
-  real bv_sd_std;                    // Constant used to standardize the vector of breeding values
-  int<lower=0,upper=1> Y[N];             // Response variable (yearly survival)
-  real<lower=0> exp_rate_surv;                // Rate in exponential priors
+  // Posterior means of breeding values
+  vector[N] bv_mean;
+  // Cholesky decomposition of covariance matrix for bvs
+  matrix[N, N] bv_covmat_chol;
+  // Constants used to standardize the vector of breeding values
+  real bv_mean_std;
+  real bv_sd_std;
+  // Response variable (nestling survival)
+  int<lower=0,upper=1> Y[N];
+  // Rate in exponential priors
+  real<lower=0> exp_rate_surv;
   // Parameters for the priors on coefficients:
   real alpha_prior_mean_nestling;
   real<lower=0> beta_prior_sd_surv;
@@ -41,8 +53,10 @@ transformed data {
   // Center/scale predictors
   real mean_first_dna_age = mean(first_dna_age);
   real sd_first_dna_age = sd(first_dna_age);
-  vector[N] first_dna_age_std = (first_dna_age - mean_first_dna_age) / sd_first_dna_age;
-  real first_dna_age_const = mean_first_dna_age / sd_first_dna_age; // Constant used in gen. quant. block
+  vector[N] first_dna_age_std = (first_dna_age - mean_first_dna_age) /
+                                  sd_first_dna_age;
+ // Constant used in gen. quant. block
+  real first_dna_age_const = mean_first_dna_age / sd_first_dna_age;
 
   // Constants need for gen. quant. block
   real bv_std_const1 = bv_mean_std / bv_sd_std;
@@ -51,14 +65,20 @@ transformed data {
   real bv_std_const4 = 2 * bv_mean_std / bv_std_const3;
 
   // Matrix containing fixed predictors
-  matrix[N, 5] fixed_pred_mat = append_col(rep_vector(1, N), append_col(f_std, append_col(hatch_doy_std, append_col(square(hatch_doy_std), first_dna_age_std))));
+  matrix[N, 5] fixed_pred_mat =
+    append_col(rep_vector(1, N), append_col(f_std, append_col(hatch_doy_std,
+      append_col(square(hatch_doy_std), first_dna_age_std))));
 }
 
 parameters {
-  vector[N_hy] z_hy;              // Std.normal noise for year random effect
-  vector[N_hi] z_hi;              // Std.normal noise for last locality random effect
-  vector[N_clutch] z_clutch;              // Std.normal noise for clutch random effect
-  vector[N_id] z_bv;              // Std.norm noise in bv
+  // Std.normal noise for random effects
+  vector[N_hy] z_hy;
+  vector[N_hi] z_hi;
+  vector[N_dam] z_dam;
+  vector[N_sire] z_sire;
+  vector[N_clutch] z_clutch;
+  vector[N] z_bv;
+
   real z_alpha;
   real z_beta_bv;
   real z_beta_bv2;
@@ -66,18 +86,26 @@ parameters {
   real z_beta_hatch_doy;
   real z_beta_hatch_doy2;
   real z_beta_first_dna_age;
+
   real<lower=0,upper=1> sigma_hy_raw;
   real<lower=0,upper=1> sigma_hi_raw;
+  real<lower=0,upper=1> sigma_dam_raw;
+  real<lower=0,upper=1> sigma_sire_raw;
   real<lower=0,upper=1> sigma_clutch_raw;
 }
 
 transformed parameters {
   real<lower=0> sigma_hy = -log(sigma_hy_raw) / exp_rate_surv;
   real<lower=0> sigma_hi = -log(sigma_hi_raw) / exp_rate_surv;
+  real<lower=0> sigma_dam = -log(sigma_dam_raw) / exp_rate_surv;
+  real<lower=0> sigma_sire = -log(sigma_sire_raw) / exp_rate_surv;
   real<lower=0> sigma_clutch = -log(sigma_clutch_raw) / exp_rate_surv;
-  vector[N_hy] hy = z_hy * sigma_hy;                // Levels in year random effect
-  vector[N_hi] hi = z_hi * sigma_hi;                // Levels in last locality random effect
-  vector[N_clutch] clutch = z_clutch * sigma_clutch;   // Levels in clutch random effect
+  // Levels in random effects
+  vector[N_hy] hy = z_hy * sigma_hy;
+  vector[N_hi] hi = z_hi * sigma_hi;
+  vector[N_dam] dam = z_dam * sigma_dam;
+  vector[N_sire] sire = z_sire * sigma_sire;
+  vector[N_clutch] clutch = z_clutch * sigma_clutch;
 
   // Full bv vector (non-centered parameterization berkson errored GP results)
   real alpha_std = alpha_prior_mean_nestling + beta_prior_sd_surv * z_alpha;
@@ -88,22 +116,26 @@ transformed parameters {
   real beta_hatch_doy_std2 = beta_prior_sd_surv * z_beta_hatch_doy2  / sqrt(2);
   real beta_first_dna_age_std = beta_prior_sd_surv * z_beta_first_dna_age;
 
-  vector[N_id] bv_lat = bv_mean + bv_covmat_chol * z_bv;
+  vector[N] bv_lat = bv_mean + bv_covmat_chol * z_bv;
 
   // Auxilliary variables
   // Vector of regression coefficients
-  vector[7] beta_vec = [alpha_std, beta_f_std, beta_hatch_doy_std, beta_hatch_doy_std2, beta_first_dna_age_std, beta_bv_std, beta_bv2_std]';
+  vector[7] beta_vec = [alpha_std, beta_f_std, beta_hatch_doy_std,
+                          beta_hatch_doy_std2, beta_first_dna_age_std,
+                          beta_bv_std, beta_bv2_std]';
   // Random intercepts
   vector[N] rand_inter;
   // Predictor matrix
   matrix[N, 7] x_mat;
   vector[N] bv_lat_full;
   for (i in 1:N) {
-    bv_lat_full[i] = (bv_lat[id_idx[i]] - bv_mean_std) / bv_sd_std;
+    bv_lat_full[i] = (bv_lat[i] - bv_mean_std) / bv_sd_std;
   }
-  x_mat = append_col(append_col(fixed_pred_mat, bv_lat_full), square(bv_lat_full));
+  x_mat = append_col(append_col(fixed_pred_mat, bv_lat_full),
+                      square(bv_lat_full));
   for (i in 1:N) {
-    rand_inter[i] = hy[hy_idx[i]] + hi[hi_idx[i]] + clutch[clutch_idx[i]];
+    rand_inter[i] = hy[hy_idx[i]] + hi[hi_idx[i]] + dam[dam_idx[i]] +
+                      sire[sire_idx[i]] + clutch[clutch_idx[i]];
   }
 }
 
@@ -111,11 +143,15 @@ model {
   // Priors
   sigma_hy_raw ~ uniform(0, 1);
   sigma_hi_raw ~ uniform(0, 1);
+  sigma_dam_raw ~ uniform(0, 1);
+  sigma_sire_raw ~ uniform(0, 1);
   sigma_clutch_raw ~ uniform(0, 1);
 
   // Non-centered parameterizations
   z_hy ~ std_normal();
   z_hi ~ std_normal();
+  z_dam ~ std_normal();
+  z_sire ~ std_normal();
   z_clutch ~ std_normal();
   z_bv ~ std_normal();
 

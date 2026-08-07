@@ -651,8 +651,10 @@ make_data_nest <- function(gp_data,
 
   # Add parental information
   nest$dam <- pedigree$dam[match(nest$ringnr, pedigree$id_red)]
+  nest %<>% dplyr::filter(!is.na(dam))
   nest$dam_red <- pedigree$dam_red[match(nest$ringnr, pedigree$id_red)]
   nest$sire <- pedigree$sire[match(nest$ringnr, pedigree$id_red)]
+  nest %<>% dplyr::filter(!is.na(sire))
   nest$sire_red <- pedigree$sire_red[match(nest$ringnr, pedigree$id_red)]
   # add same-sex parent's BV stats
   if (sex_num == 2) {
@@ -727,8 +729,10 @@ make_data_n2 <- function(gp_data,
 
   # Add parental information
   nest$dam <- pedigree$dam[match(nest$ringnr, pedigree$id_red)]
+  nest %<>% dplyr::filter(!is.na(dam))
   nest$dam_red <- pedigree$dam_red[match(nest$ringnr, pedigree$id_red)]
   nest$sire <- pedigree$sire[match(nest$ringnr, pedigree$id_red)]
+  nest %<>% dplyr::filter(!is.na(sire))
   nest$sire_red <- pedigree$sire_red[match(nest$ringnr, pedigree$id_red)]
 
   nest$bv_mean <- gp_data$bv_mean[match(nest$ringnr, gp_data$id_red)]
@@ -795,7 +799,9 @@ make_data_nest_dir <- function(nestling_data_path,
 
   # Add parental information
   nest$dam <- co_dat$parent[match(nest$ringnr, co_dat_f$offspring_red)]
+  nest %<>% dplyr::filter(!is.na(dam))
   nest$sire <- co_dat$parent[match(nest$ringnr, co_dat_m$offspring_red)]
+  nest %<>% dplyr::filter(!is.na(sire))
   nest$dam_red <- co_dat$parent_red[match(nest$ringnr, co_dat_f$offspring_red)]
   nest$sire_red <- co_dat$parent_red[match(nest$ringnr, co_dat_m$offspring_red)]
   nest$co_count_dam <- co_dat$co_count[match(nest$ringnr, co_dat_f$offspring_red)]
@@ -1574,12 +1580,14 @@ make_stan_data_n2 <- function(data, gp_data, covmat) {
        N_hi = max(data$hi_num),
        N_hy = max(data$hy_num),
        N_id = max(data$ringnr_num),
-       N_par = max(data$parent_num),
+       N_dam = max(data$dam_num),
+       N_sire = max(data$sire_num),
        N_clutch = max(data$clutch_ID_num),
        hi_idx = data$hi_num,
        hy_idx = data$hy_num,
        id_idx = data$ringnr_num,
-       par_idx = data$parent_num,
+       dam_idx = data$dam_num,
+       sire_idx = data$sire_num,
        clutch_idx = data$clutch_ID_num,
        bv_mean = bv_mean,
        bv_covmat = bv_covmat,
