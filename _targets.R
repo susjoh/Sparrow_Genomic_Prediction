@@ -1728,7 +1728,10 @@ list(
                    p2 = stan_bv_pred_plot_ars_adult_m,
                    p3 = stan_bv_pred_plot_ars_parent_f,
                    p4 = stan_bv_pred_plot_ars_parent_m,
-                   tit_str = "Effect of ACC breeding value on ARS")
+                   tit_str = "Effect of ACC breeding value on ARS",
+                   labs = paste(LETTERS[1:4],
+                                c("GV-F", "GV-F", "PGV-F", "PGV-F"),
+                                sep = " - "))
   ),
   tar_target(
     stan_bv_pred_plot_ars2x2_png,
@@ -1761,7 +1764,10 @@ list(
                    p2 = stan_bv_pred_plot_surv_adult_m,
                    p3 = stan_bv_pred_plot_surv_parent_f,
                    p4 = stan_bv_pred_plot_surv_parent_m,
-                   tit_str = "Effect of ACC breeding value on AS")
+                   tit_str = "Effect of ACC breeding value on AS",
+                   labs = paste(LETTERS[1:4],
+                                c("GV-F", "GV-F", "PGV-F", "PGV-F"),
+                                sep = " - "))
   ),
   tar_target(
     stan_bv_pred_plot_surv2x2_png,
@@ -1794,7 +1800,10 @@ list(
                    p2 = stan_bv_pred_plot_n2_m,
                    p3 = stan_bv_pred_plot_nest_f,
                    p4 = stan_bv_pred_plot_nest_m,
-                   tit_str = "Effect of ACC genetic value on NS")
+                   tit_str = "Effect of ACC genetic value on NS",
+                   labs = paste(LETTERS[1:4],
+                                c("GV-F", "GV-F", "PGV-F", "PGV-F"),
+                                sep = " - "))
   ),
   tar_target(
     stan_bv_pred_plot_nest2x2_png,
@@ -1821,7 +1830,10 @@ list(
                    p4 = dirfit_co_count_dam_pred_plot_ars_m,
                    p5 = dirfit_co_count_parsum_pred_plot_ars_f,
                    p6 = dirfit_co_count_parsum_pred_plot_ars_m,
-                   tit_str = "S&D/PS models for ARS")
+                   tit_str = "S&D/PS models for ARS",
+                   labs = paste(LETTERS[1:6],
+                                c(rep("S&D", 4), "PS", "PS"),
+                                sep = " - "))
   ),
   tar_target(
     dirfit_pred_plot_ars_3x2_png,
@@ -1840,7 +1852,10 @@ list(
                    p4 = dirfit_co_count_dam_pred_plot_as_m,
                    p5 = dirfit_co_count_parsum_pred_plot_as_f,
                    p6 = dirfit_co_count_parsum_pred_plot_as_m,
-                   tit_str = "S&D/PS models for AS")
+                   tit_str = "S&D/PS models for AS",
+                   labs = paste(LETTERS[1:6],
+                                c(rep("S&D", 4), "PS", "PS"),
+                                sep = " - "))
   ),
   tar_target(
     dirfit_pred_plot_as_3x2_png,
@@ -1859,7 +1874,10 @@ list(
                    p4 = dirfit_co_count_dam_pred_plot_ns_m,
                    p5 = dirfit_co_count_parsum_pred_plot_ns_f,
                    p6 = dirfit_co_count_parsum_pred_plot_ns_m,
-                   tit_str = "S&D/PS models for NS")
+                   tit_str = "S&D/PS models for NS",
+                   labs = paste(LETTERS[1:6],
+                                c(rep("S&D", 4), "PS", "PS"),
+                                sep = " - "))
   ),
   tar_target(
     dirfit_pred_plot_ns_3x2_png,

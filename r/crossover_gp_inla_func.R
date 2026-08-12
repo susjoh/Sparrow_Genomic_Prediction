@@ -1352,7 +1352,11 @@ plot_lines_posterior <- function(df,
           plot.title    = element_blank(),
           plot.subtitle = element_blank(),
           plot.caption  = element_blank()) +
-    scale_x_continuous(expand = c(0, 0))
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(limits = range(c(df$y_upper, df$y_mean, df$y_lower)),
+                       # 10% padding each side (default is 0.05):
+                       expand = expansion(mult = 0.10),
+                       oob = scales::oob_keep)
 
   if (!is.null(data)) {
     plot <- plot +
@@ -2623,7 +2627,8 @@ get_dirfit_samps_parsum_ns <- function(model, eval_func, data, n_samp = 4000) {
   apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
 }
 
-layout_2x2_fig <- function(p1, p2, p3, p4, tit_str) {
+layout_2x2_fig <- function(p1, p2, p3, p4, tit_str,
+                           labs = LETTERS[1:4]) {
   wrap_elements(full = textGrob("Female",
                                 x = 0.5, y = 0,
                                 hjust = 0.5, vjust = 0,
@@ -2645,7 +2650,7 @@ layout_2x2_fig <- function(p1, p2, p3, p4, tit_str) {
                 guides = "collect",
                 axis_titles = "collect") +
     plot_annotation(title = tit_str,
-                    tag_levels = list(c("", "", LETTERS[1:4]))) &
+                    tag_levels = list(c("", "", labs))) &
     theme(plot.tag.position = c(0.01, 0.94),
           legend.position   = "right",
           plot.tag.location = "panel",
@@ -2664,7 +2669,8 @@ layout_2x2_fig <- function(p1, p2, p3, p4, tit_str) {
                                            fill = "white"))
 }
 
-layout_3x2_fig <- function(p1, p2, p3, p4, p5, p6, tit_str) {
+layout_3x2_fig <- function(p1, p2, p3, p4, p5, p6, tit_str,
+                           labs = LETTERS[1:6]) {
   wrap_elements(full = textGrob("Female",
                                 x = 0.5, y = 0,
                                 hjust = 0.5, vjust = 0,
@@ -2687,7 +2693,7 @@ layout_3x2_fig <- function(p1, p2, p3, p4, p5, p6, tit_str) {
                 guides = "collect",
                 axis_titles = "collect") +
     plot_annotation(title = tit_str,
-                    tag_levels = list(c("", "", LETTERS[1:6]))) &
+                    tag_levels = list(c("", "", labs))) &
     theme(plot.tag.position = c(0.01, 0.94),
           legend.position   = "right",
           plot.tag.location = "panel",
