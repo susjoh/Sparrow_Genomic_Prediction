@@ -106,72 +106,6 @@ values_fitmod <- tibble(
             "nestling survival"),
   trait_short = c("ARS", "AS", "ARS", "AS", "NS", "NS"),
   xlab_start = c("G", "G", "Parental g", "Parental g", "Parental g", "G"),
-  make_sim = rlang::syms(c("make_sim_ars_adult",
-                           "make_sim_surv_adult",
-                           "make_sim_ars_parent",
-                           "make_sim_surv_parent",
-                           "make_sim_nest",
-                           "make_sim_n2")),
-  sim_par_vec = list(list("alpha" = 0.26,
-                          "beta_bv" = -0.16,
-                          "beta_bv2" = -1.2,
-                          "beta_age_q1" = 9.4,
-                          "beta_age_q2" = -14,
-                          "beta_f" = -2.3,
-                          "alpha_zi" = -0.80,
-                          "sigma_ye" = 0.28,
-                          "sigma_ll" = 0.18,
-                          "sigma_id" = 0.30,
-                          "sigma_res" = 0),
-                     list("alpha" = 0.63,
-                          "beta_bv" = -0.067,
-                          "beta_bv2" = -1.3,
-                          "beta_age_q1" = 24,
-                          "beta_age_q2" = -2.6,
-                          "beta_f" = -0.90,
-                          "sigma_ye" = 0.33,
-                          "sigma_ll" = 0.19,
-                          "sigma_id" = 0.16,
-                          "sigma_res" = 0),
-                     list("alpha" = 0.081,
-                          "beta_bv" = -0.037,
-                          "beta_bv2" = -0.51,
-                          "beta_age_q1" = 5.4,
-                          "beta_age_q2" = -11,
-                          "beta_f" = 0.66,
-                          "alpha_zi" = -0.70,
-                          "sigma_ye" = 0.25,
-                          "sigma_ll" = 0.086,
-                          "sigma_id" = 0.42,
-                          "sigma_par" = 0.13,
-                          "sigma_res" = 0),
-                     list("alpha" = 0.63,
-                          "beta_bv" = -0.067,
-                          "beta_bv2" = -1.3,
-                          "beta_age_q1" = -24,
-                          "beta_age_q2" = 2.6,
-                          "beta_f" = -0.90,
-                          "sigma_ye" = 0.33,
-                          "sigma_ll" = 0.19,
-                          "sigma_id" = 0.16,
-                          "sigma_par" = 0.084,
-                          "sigma_res" = 0),
-                     list("alpha" = -1.3,
-                          "beta_bv" = -0.39,
-                          "beta_bv2" = -0.29,
-                          "beta_f" = 1.1,
-                          "sigma_hy" = 0.44,
-                          "sigma_hi" = 0.36,
-                          "sigma_par" = 0.40,
-                          "sigma_res" = 0),
-                     list("alpha" = -1.3,
-                          "beta_bv" = -0.39,
-                          "beta_bv2" = -0.29,
-                          "beta_f" = 1.1,
-                          "sigma_hy" = 0.44,
-                          "sigma_hi" = 0.36,
-                          "sigma_par" = 0.40,
-                          "sigma_res" = 0)),
   stan_data_func = rlang::syms(c("make_stan_data_adult",
                                  "make_stan_data_adult",
                                  "make_stan_data_parent",
@@ -454,22 +388,6 @@ fitmod_map <- tar_map(
            x = "Number of crossover count measurements"),
     deployment = "main"
   ),
-  # tar_rep(
-  #   sim_data,
-  #   make_sim(data = fitness_data,
-  #            stan_data = stan_data,
-  #            pars = sim_par_vec),
-  #   batches = 20
-  # ),
-  # tar_rep(
-  #   sim_data_null,
-  #   sim_par_vec %>%
-  #     (function(x) {x$beta_bv <- x$beta_bv2 <- 0; x}) %>%
-  #     make_sim(data = fitness_data,
-  #              stan_data = stan_data,
-  #              pars = .),
-  #   batches = 20
-  # ),
   tar_target(
     mvn_test,
     test_mvnorm(model = co_gp)
@@ -1475,32 +1393,11 @@ sex_map <- tar_map(
                                   x = fitmod)),
     deployment = "main"
   )
-  # tar_target(
-  #   co_gam, # genomic animal model for sex-specific crossover rate
-  #   run_gp(pheno_data = co_data,
-  #          inverse_relatedness_matrix = co_grm_obj$inv_grm,
-  #          effects_vec = inla_effects_gp_vector_grm_all,
-  #          y = paste0("co_count_", sex_lc))
-  # ),
-  # tar_target(
-  #   surv_samp_pairs_plot,
-  #   as.data.frame(surv_samps_covmat)[, c("energy", "ll.1", "ye.1", "id.1",
-  #                                        surv_pars[c(1:6, 17:19)])] %>%
-  #     dplyr::mutate(sigma_ll = log(sigma_ll),
-  #                   sigma_ye = log(sigma_ye),
-  #                   sigma_id = log(sigma_id)) %>%
-  #     ggpairs() # aes(color = factor(surv_samps_f$divergent)))
-  # ),
 )
 
 list(
   sex_map,
-  # tar_target(
-  #   recomb_data_path,
-  #   "data/20240910_Sparrow_Recomb_Data.txt",
-  #   format = "file",
-  #   deployment = "main"
-  # ),
+  ########## Data files ##########
   tar_target(
     recomb_data_path2,
     co_data_rename_cols(
@@ -1576,152 +1473,12 @@ list(
     ),
     deployment = "main"
   ),
-  # tar_target(
-  #   stan_file_adult_surv_covmat_co_n,
-  #   "r/adult_surv_covmat_co_n.stan",
-  #   format = "file",
-  #   deployment = "main"
-  # ),
-  # tar_target(
-  #   stan_file_adult_ars_zinf_covmat_co_n,
-  #   "r/zinf_ars_covmat_co_n.stan",
-  #   format = "file",
-  #   deployment = "main"
-  # ),
   tar_target(
     froh_file,
     "data/20260121-FROH2.5_helgeland.txt",
     format = "file"
   ),
-  # tar_target(
-  #   stan_model_sim_arstest,
-  #   sim_data_ars_adult_m %>%
-  #     `[[`(., 1) %>%
-  #     (function(df) {df$bv_mean <- df$bv_true; df}) %>%
-  #     make_stan_data_adult(data = .,
-  #                          gp_data = co_data_gp_ars_adult_m,
-  #                          bv_covmat_ars_adult_m) %>%
-  #     stan(file = "r/zinf_ars_truetest.stan",
-  #          data = c(., list(Y = getElement(., "sum_recruit"))),
-  #          iter = 4.8e4,
-  #          warmup = 8e3,
-  #          chains = 16,
-  #          cores = 16,
-  #          thin = 1.6e2, # to keep final object reasonably small
-  #          pars = c("alpha",
-  #                   "beta_bv",
-  #                   "beta_bv2",
-  #                   "beta_age_q1",
-  #                   "beta_age_q2",
-  #                   "beta_f",
-  #                   "alpha_std",
-  #                   "beta_bv_std",
-  #                   "beta_bv2_std",
-  #                   "beta_age_q1_std",
-  #                   "beta_age_q2_std",
-  #                   "beta_f_std",
-  #                   "ye",
-  #                   "ll",
-  #                   "id",
-  #                   "sigma_ll",
-  #                   "sigma_ye",
-  #                   "sigma_id",
-  #                   "alpha_zi",
-  #                   "alpha_zi_std",
-  #                   "theta",
-  #                   "y_rep"),
-  #          model_name = paste0("stan_ars_adult_m_sim_arstest"),
-  #          control = list(adapt_delta = 0.96)), # up to 0.99 did not help parent
-  #   pattern = map(sim_data_ars_adult_m)
-  # ),
-  # tar_target(
-  #   stan_sim_summ_arstest,
-  #   summary(stan_model_sim_arstest)$summary,
-  #   pattern = map(stan_model_sim_arstest)
-  # ),
-  # tar_target(
-  #   stan_sim_samps_arstest,
-  #   get_samps(model = stan_model_sim_arstest,
-  #             pars = c("alpha",
-  #                      "beta_bv",
-  #                      "beta_bv2",
-  #                      "beta_age_q1",
-  #                      "beta_age_q2",
-  #                      "beta_f",
-  #                      "alpha_std",
-  #                      "beta_bv_std",
-  #                      "beta_bv2_std",
-  #                      "beta_age_q1_std",
-  #                      "beta_age_q2_std",
-  #                      "beta_f_std",
-  #                      "ye",
-  #                      "ll",
-  #                      "id",
-  #                      "sigma_ll",
-  #                      "sigma_ye",
-  #                      "sigma_id",
-  #                      "alpha_zi",
-  #                      "alpha_zi_std",
-  #                      "theta",
-  #                      "y_rep")),
-  #   pattern = map(stan_model_sim_arstest)
-  # ),
-  # tar_target(
-  #   stan_sim_error_arstest,
-  #   sapply(names(list("alpha" = 0.26,
-  #                     "beta_bv" = -0.16,
-  #                     "beta_bv2" = -1.2,
-  #                     "beta_age_q1" = 9.4,
-  #                     "beta_age_q2" = -14,
-  #                     "beta_f" = -2.3,
-  #                     "alpha_zi" = -0.80,
-  #                     "sigma_ye" = 0.28,
-  #                     "sigma_ll" = 0.18,
-  #                     "sigma_id" = 0.30,
-  #                     "sigma_res" = 0)),
-  #          function(par) {
-  #            x <- getElement(stan_sim_samps_arstest, par) -
-  #              getElement(list("alpha" = 0.26,
-  #                              "beta_bv" = -0.16,
-  #                              "beta_bv2" = -1.2,
-  #                              "beta_age_q1" = 9.4,
-  #                              "beta_age_q2" = -14,
-  #                              "beta_f" = -2.3,
-  #                              "alpha_zi" = -0.80,
-  #                              "sigma_ye" = 0.28,
-  #                              "sigma_ll" = 0.18,
-  #                              "sigma_id" = 0.30,
-  #                              "sigma_res" = 0), par)
-  #            if (length(x) == 0)
-  #              x <- rep(0, 10)
-  #            else
-  #              x <- x / abs(getElement(list("alpha" = 0.26,
-  #                                           "beta_bv" = -0.16,
-  #                                           "beta_bv2" = -1.2,
-  #                                           "beta_age_q1" = 9.4,
-  #                                           "beta_age_q2" = -14,
-  #                                           "beta_f" = -2.3,
-  #                                           "alpha_zi" = -0.80,
-  #                                           "sigma_ye" = 0.28,
-  #                                           "sigma_ll" = 0.18,
-  #                                           "sigma_id" = 0.30,
-  #                                           "sigma_res" = 0), par))
-  #            c("mean" = mean(x),
-  #              "mode" = suppressWarnings(posterior.mode(x)),
-  #              "median" = median(x),
-  #              "sd" = sd(x),
-  #              "var" = var(x),
-  #              hdi(x, credMass = 0.95)["lower"],
-  #              hdi(x, credMass = 0.95)["upper"])
-  #          }),
-  #   pattern = map(stan_sim_samps_arstest)
-  # ),
-  # tar_target(
-  #   stan_sim_miss_arstest,
-  #   stan_sim_error_arstest %>%
-  #     sapply(function(mat) mat["lower", ] * mat["upper", ] > 0) %>%
-  #     rowMeans()
-  # ),
+  ########## Figures ##########
   tar_target(
     stan_bv_pred_plot_ars2x2,
     layout_2x2_fig(p1 = stan_bv_pred_plot_ars_adult_f,
@@ -2221,6 +1978,48 @@ list(
       dplyr::mutate(sex = gsub(pattern = "co_gp_cv_mean_acc_fitmod_",
                                replacement = "",
                                x = sex)),
+    deployment = "main"
+  ),
+  ############################## Permutation models ############################
+  tar_target(
+    perm_idx, # Indices of permutation branching
+    seq_len(250),
+    deployment = "main"
+  ),
+  tar_target(
+    stan_data_perm,
+    permute_data(dat = stan_data_surv_adult_m),
+    pattern = map(perm_idx),
+    deployment = "main"
+  ),
+  tar_target(
+    stan_model_perm,
+    stan(file = stan_file_surv_adult_m,
+         data = c(stan_data_perm,
+                  list(Y = getElement(stan_data_perm, "survival"))),
+         iter = 4.8e4,
+         warmup = 8e3,
+         chains = 16,
+         cores = 16,
+         thin = 1.6e2, # to keep final object reasonably small
+         pars = c("beta_bv_std", "beta_bv2_std"),
+         model_name = "stan_surv_adult_m_perm",
+         control = list(adapt_delta = 0.96)),
+    pattern = map(stan_data_perm)
+  ),
+  tar_target(
+    # For both linear and quadratic coefficient, check if 0 is contained in the
+    # 95% middle percentile (if not, consider it a false positive)
+    # Acceptable range for 250 permutations: (0.024 to 0.08)
+    stan_perm_falsepos_rate,
+    stan_model_perm %>%
+      lapply(FUN = function(x) {
+        summary(x) %>%
+          getElement("summary") %>%
+          {((.)[1:2, "2.5%"] * (.)[1:2, "97.5%"]) > 0}
+      }) %>%
+      do.call(what = rbind) %>%
+      colMeans(),
     deployment = "main"
   )
 )
