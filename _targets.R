@@ -25,7 +25,7 @@ controller_slurm <- crew_controller_slurm(
     log_output = "Jobs/%A_%a.log",
     memory_gigabytes_per_cpu = 6,
     cpus_per_task = 16,
-    time_minutes = 60 * 24 * 3, # minutes * hours * days
+    time_minutes = 60 * 1 * 1, # minutes * hours * days
     partition = "CPUQ",
     verbose = TRUE)
 )
@@ -104,6 +104,7 @@ values_fitmod <- tibble(
             "annual survival",
             "nestling survival",
             "nestling survival"),
+  model_label = c("GV-F", "GV-F", "PGV-F", "PGV-F", "PGV-F", "GV-F"),
   trait_short = c("ARS", "AS", "ARS", "AS", "NS", "NS"),
   xlab_start = c("G", "G", "Parental g", "Parental g", "Parental g", "G"),
   stan_data_func = rlang::syms(c("make_stan_data_adult",
@@ -248,6 +249,7 @@ values_fitmod <- tibble(
 fitmod_map <- tar_map(
   values = values_fitmod,
   names = "mod",
+  ########## GP ##########
   tar_target(
     co_data_gp,
     gp_data_func(pheno_data = co_data,
@@ -315,6 +317,7 @@ fitmod_map <- tar_map(
     co_gp_cv_acc %>% as.data.frame() %>% t() %>% apply(2, mean),
     deployment = "main"
   ),
+  ########## (P)GV-F ##########
   tar_target(
     fitness_data,
     fitdat_func(gp_data = co_data_gp,
@@ -458,6 +461,7 @@ fitmod_map <- tar_map(
                                     x_axis_fun = x_axis_fun_bv,
                                     marg_eff_fun = marg_eff_fun_bv))
   ),
+  ########## (P)GV-F result plots ##########
   tar_target(
     stan_bv_pred_plot,
     plot_lines_posterior(df = getElement(stan_bv_pred_marg, "df_pred"),
@@ -602,177 +606,95 @@ fitmod_map <- tar_map(
   ),
   tar_target(
     stan_ppc,
-    ppc_fun(dat = fitness_data,
-            samp = stan_samps)
-  ),
-  ############################## Permutation models ############################
-  tar_target(
-    perm_idx, # Indices of permutation branching
-    seq_len(500)
-  ),
-  tar_rep(
-    stan_data_perm,
-    permute_data(dat = stan_data),
-    pattern = map(perm_idx)
+    ppc_fun(dat = fitness_data, samp = stan_samps)
   ),
   tar_target(
-    stan_model_perm,
-    stan(file = stan_file,
-         data = c(stan_data_perm, list(Y = getElement(stan_data_perm, y_col))),
-         iter = 4.8e4,
-         warmup = 8e3,
-         chains = 16,
-         cores = 16,
-         thin = 1.6e2, # to keep final object reasonably small
-         pars = c("beta_bv", "beta_bv2"),
-         model_name = paste0("stan_", mod, "_", sex_lc),
-         control = list(adapt_delta = 0.96)),
-    pattern = map(stan_data_perm)
+    stan_fixed_eff_coefs_plot,
+    plot_fixed_eff_coefs(
+      samp_df = (stan_samps %>%
+                   as.data.frame() %>%
+                   select(matches("^(alph|bet)"))),
+      subtit = paste0(model_label, ", ", sex, " ", trait_short))
   ),
-  ##### simulation models
-  # tar_target(
-  #   stan_model_sim,
-  #   sim_data %>%
-  #     `[[`(., 1) %>%
-  #     stan_data_func(data = ., gp_data = co_data_gp, bv_covmat) %>%
-  #     stan(file = stan_file,
-  #          data = c(., list(Y = getElement(., y_col))),
-  #          iter = 4.8e4,
-  #          warmup = 8e3,
-  #          chains = 16,
-  #          cores = 16,
-  #          thin = 1.6e2, # to keep final object reasonably small
-  #          pars = stan_pars,
-  #          model_name = paste0("stan_", mod, "_", sex_lc, "_sim"),
-  #          control = list(adapt_delta = 0.96)), # up to 0.99 did not help parent
-  #   pattern = map(sim_data)
-  # ),
-  # tar_target(
-  #   stan_model_sim_null,
-  #   sim_data_null %>%
-  #     `[[`(., 1) %>%
-  #     stan_data_func(data = ., gp_data = co_data_gp, bv_covmat) %>%
-  #     stan(file = stan_file,
-  #          data = c(., list(Y = getElement(., y_col))),
-  #          iter = 4.8e4,
-  #          warmup = 8e3,
-  #          chains = 16,
-  #          cores = 16,
-  #          thin = 1.6e2, # to keep final object reasonably small
-  #          pars = stan_pars,
-  #          model_name = paste0("stan_", mod, "_", sex_lc, "_sim_null"),
-  #          control = list(adapt_delta = 0.96)), # up to 0.99 did not help parent
-  #   pattern = map(sim_data_null)
-  # ),
-  # tar_target(
-  #   stan_sim_summ,
-  #   summary(stan_model_sim)$summary,
-  #   pattern = map(stan_model_sim)
-  # ),
-  # tar_target(
-  #   stan_sim_samps,
-  #   get_samps(model = stan_model_sim,
-  #             pars = stan_pars),
-  #   pattern = map(stan_model_sim)
-  # ),
-  # tar_target(
-  #   stan_sim_error,
-  #   sapply(names(sim_par_vec),
-  #          function(par) {
-  #            x <- getElement(stan_sim_samps, par) - getElement(sim_par_vec, par)
-  #            if (length(x) == 0) {
-  #              x <- rep(0, 10)
-  #            } else
-  #              x <- x / abs(getElement(sim_par_vec, par))
-  #            c("mean" = mean(x),
-  #              "mode" = suppressWarnings(posterior.mode(x)),
-  #              "median" = median(x),
-  #              "sd" = sd(x),
-  #              "var" = var(x),
-  #              hdi(x, credMass = 0.95)["lower"],
-  #              hdi(x, credMass = 0.95)["upper"])
-  #          }),
-  #   pattern = map(stan_sim_samps)
-  # ),
-  # tar_target(
-  #   stan_sim_miss,
-  #   stan_sim_error %>%
-  #     sapply(function(mat) mat["lower", ] * mat["upper", ] > 0) %>%
-  #     rowMeans()
-  # ),
-  # tar_target(
-  #   stan_sim_null_summ,
-  #   summary(stan_model_sim_null)$summary,
-  #   pattern = map(stan_model_sim_null)
-  # ),
-  # tar_target(
-  #   stan_sim_null_samps,
-  #   get_samps(model = stan_model_sim_null,
-  #             pars = stan_pars),
-  #   pattern = map(stan_model_sim_null)
-  # ),
-  # tar_target(
-  #   stan_sim_null_error,
-  #   sapply(names(sim_par_vec),
-  #          function(par) {
-  #            if (!par %in% c("beta_bv", "beta_bv2")) {
-  #              x <- getElement(stan_sim_null_samps, par) -
-  #                getElement(sim_par_vec, par)
-  #            } else {
-  #              x <- getElement(stan_sim_null_samps, par)
-  #            }
-  #            if (length(x) == 0)
-  #              x <- rep(0, 10)
-  #            else
-  #              x <- x / abs(getElement(sim_par_vec, par))
-  #            c("mean" = mean(x),
-  #              "mode" = suppressWarnings(posterior.mode(x)),
-  #              "median" = median(x),
-  #              "sd" = sd(x),
-  #              "var" = var(x),
-  #              hdi(x, credMass = 0.95)["lower"],
-  #              hdi(x, credMass = 0.95)["upper"])
-  #          }),
-  #   pattern = map(stan_sim_null_samps)
-  # ),
-  # tar_target(
-  #   stan_sim_null_falsepos_or_miss,
-  #   stan_sim_null_error %>%
-  #     sapply(function(mat) mat["lower", ] * mat["upper", ] > 0) %>%
-  #     rowMeans()
-  # ),
-  # tar_target(
-  #   stan_sim_bv_reliability,
-  #   (stan_sim_summ %>%
-  #      `[`(grepl(x = rownames(.), pattern = "bv_lat"), "mean") %>%
-  #      var()
-  #   ) / (sim_data %>%
-  #          (function(dat) {
-  #            dat <- dat[[1]]
-  #            dat %>%
-  #              `$`("bv_true") %>%
-  #              `[`(order(dat$ringnr_num)) %>%
-  #              `[`(match(unique(dat[order(dat$ringnr_num)]$ringnr),
-  #                        dat[order(dat$ringnr_num)]$ringnr)) %>%
-  #              var()
-  #          })),
-  #   pattern = map(sim_data, stan_sim_summ)
-  # ),
-  # tar_target(
-  #   stan_sim_bv_plot,
-  #   make_sim_bv_plot(summ = stan_sim_summ, sim_data = sim_data),
-  #   pattern = map(sim_data, stan_sim_summ)
-  # ),
-  # tar_target(
-  #   stan_sim_bv_plot_png,
-  #   ggsave_path(paste0("figs/", mod, "_sim_bv_plot_", sex_lc, ".png"),
-  #               plot = stan_sim_bv_plot[[1]],
-  #               width = 7,
-  #               height = 5,
-  #               device = "png"),
-  #   format = "file"
-  # ),
-  ################ co_n modeller
+  tar_target(
+    stan_fixed_eff_coefs_plot_png,
+    ggsave_path(paste0("figs/stan_coef_figs/",
+                       trait_short, "_", model_label, "_", sex, ".png"),
+                plot = stan_fixed_eff_coefs_plot,
+                width = 9,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    stan_rand_eff_sd_plot,
+    plot_rand_eff_sd(
+      samp_df = (stan_samps %>%
+                   as.data.frame() %>%
+                   select(matches("^sigma_"))),
+      subtit = paste0(model_label, ", ", sex, " ", trait_short))
+  ),
+  tar_target(
+    stan_rand_eff_sd_plot_png,
+    ggsave_path(paste0("figs/stan_sigma_figs/",
+                       trait_short, "_", model_label, "_", sex, ".png"),
+                plot = stan_rand_eff_sd_plot,
+                width = 9,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    stan_year_levels_plot,
+    plot_levels(
+      samp_df = (stan_samps %>%
+                   as.data.frame() %>%
+                   select(matches("^(ye|hy)"))),
+      tit = paste0(c("Y", "Hatch y"),
+                   "ear effect levels (linear predictor scale)"),
+      subtit = paste0(model_label, ", ", sex, " ", trait_short),
+      dat = fitness_data,
+      samp_colname = c("ye", "hy"),
+      num_col = c("y_num", "hy_num"),
+      dat_col = c("year", "hatch_year"),
+      isl = FALSE)
+  ),
+  tar_target(
+    stan_year_levels_plot_png,
+    ggsave_path(paste0("figs/stan_year_level_figs/",
+                       trait_short, "_", model_label, "_", sex, ".png"),
+                plot = stan_year_levels_plot,
+                width = 9,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    stan_island_levels_plot,
+    plot_levels(
+      samp_df = (stan_samps %>%
+                   as.data.frame() %>%
+                   select(matches("^(ll|hi)"))),
+      tit = paste0(c("I", "Hatch i"),
+                   "sland effect levels (linear predictor scale)"),
+      subtit = paste0(model_label, ", ", sex, " ", trait_short),
+      dat = fitness_data,
+      samp_colname = c("ll", "hi"),
+      num_col = c("ll_num", "hi_num"),
+      dat_col = c("last_locality", "hatch_island"),
+      isl = TRUE)
+  ),
+  tar_target(
+    stan_island_levels_plot_png,
+    ggsave_path(paste0("figs/stan_isl_level_figs/",
+                       trait_short, "_", model_label, "_", sex, ".png"),
+                plot = stan_island_levels_plot,
+                width = 9,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  ########## co_n models ##########
   tar_target(
     stan_file_co_n,
     stan_file_name_co_n,
@@ -1446,7 +1368,7 @@ list(
   ),
   tar_target(
     inla_effects_gp_vector_grm_all,
-    c(################## Fixed effects:
+    c(##### Fixed effects:
       # Intercept
       "1",
       # Total coverage effect

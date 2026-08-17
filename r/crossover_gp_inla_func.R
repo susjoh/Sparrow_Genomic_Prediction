@@ -1377,6 +1377,104 @@ plot_lines_posterior <- function(df,
   plot
 }
 
+plot_fixed_eff_coefs <- function(samp_df, subtit) {
+
+  labs <- c(alpha = "Intercept",
+            alpha_zi = "gamma[0]",
+            beta_bv = "beta[g[i]]",
+            beta_bv2 = "beta[g[i]^2]",
+            beta_age_q1 = "beta[age]",
+            beta_age_q2 = "beta[age^2]",
+            beta_f = "beta['F'['ROH']]",
+            beta_hatch_doy = "beta[hatch~date]",
+            beta_hatch_doy2 = "beta[hatch~date^2]",
+            beta_first_dna_age = "beta[first~dna~age]")
+
+  color_scheme_set("darkgray")
+
+  mcmc_dens(
+    samp_df,
+    regex_pars = "^(alph|bet)",
+    facet_args = list(ncol = 2,
+                      labeller = as_labeller(labs, default = label_parsed))) +
+    ggtitle(label = "Intercept and fixed effect coefficients",
+            subtitle = subtit) +
+    theme(plot.background = element_rect(color = "black",
+                                         linewidth = 0.3,
+                                         fill = "white"))
+}
+
+plot_rand_eff_sd <- function(samp_df, subtit) {
+
+  labels <- list(sigma_ll = bquote(sigma[Last~location]),
+                 sigma_ye = bquote(sigma[Year]),
+                 sigma_id = bquote(sigma[ID]),
+                 sigma_dam = bquote(sigma[Dam]),
+                 sigma_sire = bquote(sigma[Sire]),
+                 sigma_hi = bquote(sigma[Hatch~island]),
+                 sigma_hy = bquote(sigma[Hatch~year]),
+                 sigma_clutch = bquote(sigma[Clutch]))
+
+  color_scheme_set("darkgray")
+
+  mcmc_areas(samp_df,
+             regex_pars = "sigma_.+",
+             prob_outer = 0.99, # how far the density goes
+             prob = 0.95, # how far the shading goes
+             area_method = "equal height",
+             border_size = 0.6) +
+    scale_y_discrete(labels = labels,
+                     expand = expansion(add = c(0.1, 0))) +
+    ggtitle(label = "Random effect standard deviations",
+            subtitle = subtit)
+}
+
+plot_levels <- function(samp_df, tit, subtit, dat, samp_colname, num_col, dat_col, isl) {
+
+  if ("recruit" %in% colnames(dat)) {
+    samp_colname <- samp_colname[2]
+    num_col <- num_col[2]
+    dat_col <- dat_col[2]
+    tit <- tit[2]
+  } else {
+    samp_colname <- samp_colname[1]
+    num_col <- num_col[1]
+    dat_col <- dat_col[1]
+    tit <- tit[1]
+  }
+
+  # Lookup match between numerical year indices and actual years
+  cols <- grep(paste0("^", samp_colname), colnames(samp_df), value = TRUE)
+  idx <- as.integer(sub(paste0("^", samp_colname, ".([0-9]+)"), "\\1", cols))
+  rows <- match(idx, getElement(dat, num_col))
+  labs <- getElement(dat[rows, ], dat_col)
+
+  # Subset to ye columns only
+  samp_ss <- samp_df[, cols]
+  rm(samp_df)
+  gc()
+
+  if (isl) {
+    isl_map <- setNames(c("Nesøy", "Myken", "Træna", "Selvær", "Gjerøy",
+                          "Hestmannøy", "Indre Kvarøy", "Lovund", "Sleneset",
+                          "Aldra", "Lurøy", "Onøy"),
+                        c(20, 22, 23, 24, 26, 27, 28, 34, 35, 38, 331, 332))
+    labs <- isl_map[as.character(labs)]
+  }
+
+  # Rename columns
+  colnames(samp_ss) <- labs
+
+  # Chronological order
+  ord <- order(labs)
+  samp_ss <- samp_ss[, ord, drop = FALSE]
+
+  color_scheme_set("darkgray")
+
+  mcmc_areas_ridges(samp_ss, prob = 0.95, prob_outer = 0.99) +
+    ggtitle(label = tit, subtitle = subtit)
+}
+
 ggsave_path <- function(filename,
                         ...) {
   ggsave(filename, ...)
