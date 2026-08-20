@@ -17,7 +17,7 @@ controller_slurm <- crew_controller_slurm(
   name = "my_slurm_controller",
   workers = 40,
   seconds_idle = 120,
-  tasks_max = 8,
+  tasks_max = 30,
   options_cluster = crew_options_slurm(
     script_lines = paste("#SBATCH --account=share-nv-bio \n module load",
                          "R/4.4.2-gfbf-2024a R-bundle-CRAN/2024.11-foss-2024a",
@@ -618,7 +618,7 @@ fitmod_map <- tar_map(
   ),
   tar_target(
     stan_fixed_eff_coefs_plot_png,
-    ggsave_path(paste0("figs/stan_coef_figs/",
+    ggsave_path(paste0("figs/coef_figs/",
                        trait_short, "_", model_label, "_", sex, ".png"),
                 plot = stan_fixed_eff_coefs_plot,
                 width = 9,
@@ -636,7 +636,7 @@ fitmod_map <- tar_map(
   ),
   tar_target(
     stan_rand_eff_sd_plot_png,
-    ggsave_path(paste0("figs/stan_sigma_figs/",
+    ggsave_path(paste0("figs/sigma_figs/",
                        trait_short, "_", model_label, "_", sex, ".png"),
                 plot = stan_rand_eff_sd_plot,
                 width = 9,
@@ -661,7 +661,7 @@ fitmod_map <- tar_map(
   ),
   tar_target(
     stan_year_levels_plot_png,
-    ggsave_path(paste0("figs/stan_year_level_figs/",
+    ggsave_path(paste0("figs/year_level_figs/",
                        trait_short, "_", model_label, "_", sex, ".png"),
                 plot = stan_year_levels_plot,
                 width = 9,
@@ -686,7 +686,7 @@ fitmod_map <- tar_map(
   ),
   tar_target(
     stan_island_levels_plot_png,
-    ggsave_path(paste0("figs/stan_isl_level_figs/",
+    ggsave_path(paste0("figs/isl_level_figs/",
                        trait_short, "_", model_label, "_", sex, ".png"),
                 plot = stan_island_levels_plot,
                 width = 9,
@@ -1246,6 +1246,178 @@ dirfit_map <- tar_map(
                          xlab = paste0("Age at first DNA sampling (days)"),
                          ylab = paste0("Predicted ", trait_short),
                          title = toTitleCase(sex))
+  ),
+  tar_target(
+    dirfit_fixed_eff_coefs_plot,
+    plot_fixed_eff_coefs(
+      samp_df = (dirfit_samps %>%
+                   as.data.frame() %>%
+                   select(matches("^(alph|bet)"))),
+      subtit = paste0("S&D, ", sex, " ", trait_short))
+  ),
+  tar_target(
+    dirfit_fixed_eff_coefs_plot_png,
+    ggsave_path(paste0("figs/coef_figs/",
+                       trait_short, "_S&D_", sex, ".png"),
+                plot = dirfit_fixed_eff_coefs_plot,
+                width = 9,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    dirfit_rand_eff_sd_plot,
+    plot_rand_eff_sd(
+      samp_df = (dirfit_samps %>%
+                   as.data.frame() %>%
+                   select(matches("^sigma_"))),
+      subtit = paste0("S&D, ", sex, " ", trait_short))
+  ),
+  tar_target(
+    dirfit_rand_eff_sd_plot_png,
+    ggsave_path(paste0("figs/sigma_figs/",
+                       trait_short, "_S&D_", sex, ".png"),
+                plot = dirfit_rand_eff_sd_plot,
+                width = 9,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    dirfit_year_levels_plot,
+    plot_levels(
+      samp_df = (dirfit_samps %>%
+                   as.data.frame() %>%
+                   select(matches("^(ye|hy)"))),
+      tit = paste0(c("Y", "Hatch y"),
+                   "ear effect levels (linear predictor scale)"),
+      subtit = paste0("S&D, ", sex, " ", trait_short),
+      dat = fitness_data_dir,
+      samp_colname = c("ye", "hy"),
+      num_col = c("y_num", "hy_num"),
+      dat_col = c("year", "hatch_year"),
+      isl = FALSE)
+  ),
+  tar_target(
+    dirfit_year_levels_plot_png,
+    ggsave_path(paste0("figs/year_level_figs/",
+                       trait_short, "_S&D_", sex, ".png"),
+                plot = dirfit_year_levels_plot,
+                width = 9,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    dirfit_island_levels_plot,
+    plot_levels(
+      samp_df = (dirfit_samps %>%
+                   as.data.frame() %>%
+                   select(matches("^(ll|hi)"))),
+      tit = paste0(c("I", "Hatch i"),
+                   "sland effect levels (linear predictor scale)"),
+      subtit = paste0("S&D, ", sex, " ", trait_short),
+      dat = fitness_data_dir,
+      samp_colname = c("ll", "hi"),
+      num_col = c("ll_num", "hi_num"),
+      dat_col = c("last_locality", "hatch_island"),
+      isl = TRUE)
+  ),
+  tar_target(
+    dirfit_island_levels_plot_png,
+    ggsave_path(paste0("figs/isl_level_figs/",
+                       trait_short, "_S&D_", sex, ".png"),
+                plot = dirfit_island_levels_plot,
+                width = 9,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    dirfit_ps_fixed_eff_coefs_plot,
+    plot_fixed_eff_coefs(
+      samp_df = (dirfit_samps_parsum %>%
+                   as.data.frame() %>%
+                   select(matches("^(alph|bet)"))),
+      subtit = paste0("PS, ", sex, " ", trait_short))
+  ),
+  tar_target(
+    dirfit_ps_fixed_eff_coefs_plot_png,
+    ggsave_path(paste0("figs/coef_figs/",
+                       trait_short, "_PS_", sex, ".png"),
+                plot = dirfit_ps_fixed_eff_coefs_plot,
+                width = 9,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    dirfit_ps_rand_eff_sd_plot,
+    plot_rand_eff_sd(
+      samp_df = (dirfit_samps_parsum %>%
+                   as.data.frame() %>%
+                   select(matches("^sigma_"))),
+      subtit = paste0("PS, ", sex, " ", trait_short))
+  ),
+  tar_target(
+    dirfit_ps_rand_eff_sd_plot_png,
+    ggsave_path(paste0("figs/sigma_figs/",
+                       trait_short, "_PS_", sex, ".png"),
+                plot = dirfit_ps_rand_eff_sd_plot,
+                width = 9,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    dirfit_ps_year_levels_plot,
+    plot_levels(
+      samp_df = (dirfit_samps_parsum %>%
+                   as.data.frame() %>%
+                   select(matches("^(ye|hy)"))),
+      tit = paste0(c("Y", "Hatch y"),
+                   "ear effect levels (linear predictor scale)"),
+      subtit = paste0("PS, ", sex, " ", trait_short),
+      dat = fitness_data_dir,
+      samp_colname = c("ye", "hy"),
+      num_col = c("y_num", "hy_num"),
+      dat_col = c("year", "hatch_year"),
+      isl = FALSE)
+  ),
+  tar_target(
+    dirfit_ps_year_levels_plot_png,
+    ggsave_path(paste0("figs/year_level_figs/",
+                       trait_short, "_PS_", sex, ".png"),
+                plot = dirfit_ps_year_levels_plot,
+                width = 9,
+                height = 9,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    dirfit_ps_island_levels_plot,
+    plot_levels(
+      samp_df = (dirfit_samps_parsum %>%
+                   as.data.frame() %>%
+                   select(matches("^(ll|hi)"))),
+      tit = paste0(c("I", "Hatch i"),
+                   "sland effect levels (linear predictor scale)"),
+      subtit = paste0("PS, ", sex, " ", trait_short),
+      dat = fitness_data_dir,
+      samp_colname = c("ll", "hi"),
+      num_col = c("ll_num", "hi_num"),
+      dat_col = c("last_locality", "hatch_island"),
+      isl = TRUE)
+  ),
+  tar_target(
+    dirfit_ps_island_levels_plot_png,
+    ggsave_path(paste0("figs/isl_level_figs/",
+                       trait_short, "_PS_", sex, ".png"),
+                plot = dirfit_ps_island_levels_plot,
+                width = 9,
+                height = 9,
+                device = "png"),
+    format = "file"
   )
 )
 
