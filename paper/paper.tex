@@ -63,8 +63,9 @@ We fitted all models separately for the sexes since male and female ACC in house
 We related the ACC in an individual's maternal and paternal gametes to that individual's (sex-specific) fitness using generalized linear mixed models for ARS, AS and NS, fitted in a Bayesian framework using \texttt{R-INLA} \citep{rue2009approximate}.
 The ACC information was incorporated in two different ways. 
 In what we label the ``sire and dam'' (S\&D) models, the ACCs in the gametes from the sire and dam were treated as two separate fixed effects in the same model, while in the ``parental sum'' (PS) models we used the sum of the ACC in the sire's and dam's gametes as a single covariate.
-The S\&D models therefore allowed for the possibility that the egg-derived and sperm-derived ACCs have different fitness effects, with these effects estimated conditional on each other. % as a form of genomic imprinting \note{(add some citation)},
+The S\&D models therefore allowed for the possibility that the egg-derived and sperm-derived ACCs have different fitness effects, with these effects estimated conditional on each other.
 Conversely, the PS models considered the effect of overall inherited ACC, irrespective of source parent.
+We used the fitted S\&D and PS models to predict sex-specific fitness components for given values of parental ACC, given that remaining fixed effect covariates were set to their average values.
 Below we outline the S\&D and PS models for the three fitness traits.
 
 \subsubsection*{Annual reproductive success}
@@ -210,7 +211,9 @@ This approach essentially uses GP as a tool for imputation of the missing ACC ph
 Below we outline a Bayesian GP model that estimated and predicted sex-specific ACC genetic values. 
 We used these genetic values as covariates in fitness models for ARS, AS, and NS, which we label ``genetic value-fitness'' (GV-F) models to differentiate them from the S\&D and PS models.
 Ideally, the GP and GV-F models would have been fitted jointly, but because this was computationally infeasible, we took care to propagate the uncertainty from the GP results into the GV-F models.
-As with the previous models, the GP and GV-F models were fitted separately for males and females. % due to differing genetic architectures (cite McAuley)
+Similar to the GV-F models, we also related \textit{parental} genetic values, in what we label ``parental genetic value-fitness'' (PGV-F) models.
+As with the S\&D and PS models, we used the fitted (P)GV-F models to predict sex-specific fitness components for given (parental) genetic values, when the remaining fixed effect covariates were set to their average values.
+The GP, GV-F, and PGV-F models, which are outlined below, were fitted separately for males and females.
 
 \subsubsection*{Genomic Prediction of ACC}
 
@@ -245,8 +248,8 @@ In the MCMC we treated $g_i$ as an unknown latent variable whose prior correspon
 This approach encoded both the uncertainty and the covariance structure among the genetic values $g_i$ as prior information in the GV-F models, while still allowing the fitness data to further update the distribution of $\bm g$.
 In other words, instead of fixing $g_i$, we treated $\bm g$ as a latent variable which was updated in each MCMC iteration, and used the latent $\bm g$ as a covariate with linear and quadratic effects.
 Since we simultaneously updated $g_i$ and estimated its effect on fitness, the procedure can be regarded as an example of ``feedback'' \citep{plummer2015cuts}.
-Although such feedback can sometimes bias results, so we deemed it appropriate here since permutation analyses showed no indication that the method produced false-positive results (\note{suppmat XXX}).
-% Permutation analyses showed that this approach did not produce false-positive results (see .
+Although such feedback can sometimes bias results, so we deemed it appropriate here since a permutation analysis with $250$ replicates showed no indication that the method produced false-positive results (\note{details to come in suppmat}).
+% Permutation analyses showed that this approach did not produce false-positive results (see SXX).
 Each MCMC model consisted of $16$ chains which ran for $48\ 000$ iterations, including $8\ 000$ burn-in iterations.
 To conserve storage memory, we retained every $160^\text{th}$ iteration, resulting in a total of $4\ 000$ posterior samples per model.
 We used the default \texttt{RStan} settings, except we set \texttt{adapt\_delta = 0.96} to mitigate divergent transitions.
@@ -261,90 +264,70 @@ The covariate $g_{p(i)}$ was treated with the same measurement error model as us
  
 \section*{Results}
 
-\subsection*{Annual reproductive success}
-
-Summary of notable ARS results: 
-\begin{itemize}
-    \item Stabilizing selection on ACC inherited from sire in males (S\&D model, Figure \ref{fig-ars_dirfit}B)
-    \item Slight selection for higher ACC inherited from dam in males (S\&D model, Figure \ref{fig-ars_dirfit}D)
-    \item The impact of the sum of ACC from dam and sire on males seems like a combination of the two above bullet points (PS model, Figure \ref{fig-ars_dirfit}F)
-    \item For females, only the inherited ACC from the dam seems to matter, if that (S\&D model, Figure \ref{fig-ars_dirfit}C)
-    \item Clear stabilizing selection on ACC genetic value for both sexes (GV-F model, Figure \ref{fig-ars_bv}A and B)
-    \item Stabilizing selection on genetic value $g_{p(i)}$ of sire for males (PGV-F model, Figure \ref{fig-ars_bv}D, which matches up with the S\&D model in Figure \ref{fig-ars_dirfit}B)
-\end{itemize}
-
-% SEJ: What is the impact of a parent's recombination on its offspring?
+Male ARS was predicted to be highest when the sire's gamete had intermediate ACC (S\&D model, Figure \ref{fig-ars_dirfit}B), indicating stabilizing selection.
+For male ARS, we also found modest evidence of directional selection for higher ACC in the dam's gamete (S\&D model, Figure \ref{fig-ars_dirfit}D).
+The effect of the sum of ACC in the parental gametes on male ARS appears to be a combination of these two effects (PS model, Figure \ref{fig-ars_dirfit}F).
+Only the ACC in the dam's gamete showed an association with female ARS, with a slight directional selection for lower ACC (S\&D model, Figure \ref{fig-ars_dirfit}C).
+We found no evidence that ACC in gametes from either parent affected the survival traits (AS and NS) for either sex (Figure \ref{fig-as_dirfit}, Figure \ref{fig-ns_dirfit}A-B, D-F), except for female NS, which showed potential stabilizing selection on ACC in the gamete from the dam (Figure \ref{fig-ns_dirfit}C).
+\todo{KAA: Here we can probably prune away the null-result figures from the main text, but I left them in for now.}
 
 \begin{figure}
     \centering
-    % SEJ: this graph is showing the direct relationship between the inherited ACC and the female and male repro success. Rows 1 and 2 in same model within each sex. Four models in total
     \includegraphics[width=\linewidth]{figs/dirfit_pred_plot_ars_3x2.png}
-    \caption{...}
+    \caption{Predicted sex-specific ARS as a function of ACC measured in the inherited gametes, with other fixed effect covariates held at their mean values. The first two rows (panels \textbf{A}--\textbf{D}) show results from the S\&D model, while the third row (panels \textbf{E} and \textbf{F}) shows results from the PS model. Results for female and male ARS are shown in the left and right columns, respectively.}
     \label{fig-ars_dirfit}
 \end{figure}
 
 \begin{figure}
     \centering
-    % SEJ = bottom right hand is related to the top panel of Figure 1 (but now it is with GEBVs)
-    \includegraphics[width=\linewidth]{figs/stan_bv_pred_plot_ars2x2.png}
-    \caption{...}
-    \label{fig-ars_bv}
-\end{figure}
-
-\subsection*{Annual survival}
-
-Summary of notable AS results: 
-\begin{itemize}
-    \item No evidence of impact of inherited ACC from either parent on either sex's fitness (Figure \ref{fig-as_dirfit})
-    \item Clear stabilizing selection on ACC genetic value for both sexes (GV-F model, Figure \ref{fig-surv_bv}A and B)
-    \item No evidence of impact of same-sex parental genetic value for ACC on either sex's fitness (Figure \ref{fig-surv_bv}C and D)
-\end{itemize}
-
-\begin{figure}
-    \centering
-        % SEJ: this graph is showing the direct relationship between the inherited ACC and the female and male survival. Rows 1 and 2 in same model within each sex. Four models in total
         \includegraphics[width=\linewidth]{figs/dirfit_pred_plot_as_3x2.png}
-    \caption{...}
+    \caption{Predicted sex-specific AS as a function of ACC measured in the inherited gametes, with other fixed effect covariates held at their mean values. The first two rows (panels \textbf{A}--\textbf{D}) show results from the S\&D model, while the third row (panels \textbf{E} and \textbf{F}) shows results from the PS model. Results for female and male ARS are shown in the left and right columns, respectively.}
     \label{fig-as_dirfit}
 \end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[width=\linewidth]{figs/stan_bv_pred_plot_surv2x2.png}
-    \caption{...}
-    \label{fig-surv_bv}
+    \includegraphics[width=\linewidth]{figs/dirfit_pred_plot_ns_3x2.png}
+    \caption{Predicted sex-specific NS as a function of ACC measured in the inherited gametes, with other fixed effect covariates held at their mean values. The first two rows (panels \textbf{A}--\textbf{D}) show results from the S\&D model, while the third row (panels \textbf{E} and \textbf{F}) shows results from the PS model. Results for female and male ARS are shown in the left and right columns, respectively.}
+    \label{fig-ns_dirfit}
 \end{figure}
 
-\subsection*{Nestling survival}
-
-Summary of notable NS results: 
-\begin{itemize}
-    \item Potential stabilizing selection on ACC inherited from dam for females (Figure \ref{fig-ns_dirfit}C)
-    \item Otherwise, no clear result for inherited ACC (Figure \ref{fig-ns_dirfit}A-B, D-F)
-    \item Potential stabilizing selection on ACC genetic value for $g_i$ for males (Figure \ref{fig-nest_bv}B), otherwise too much uncertainty in Figure \ref{fig-nest_bv}
-\end{itemize}
+We found clear evidence of stabilizing selection on recombination rate for both sexes. The GV-F models showed that ARS and AS for both sexes were predicted to be highest for intermediate values of ACC genetic values (Figures \ref{fig-ars_bv}A and B, Figures \ref{fig-surv_bv}A and B), as was male NS (Figure \ref{fig-nest_bv}B).
+The predictions for female NS followed the same pattern, but with greater uncertainty (Figure \ref{fig-nest_bv}A).
+For males, we also found modest evidence of stabilizing selection on the sire's recombination rate (PGV-F model, Figure \ref{fig-ars_bv}D), which is consistent with the S\&D model (Figure \ref{fig-ars_dirfit}B).
+The lack of evidence that the same-sex parent's ACC genetic value affects AS (Figure \ref{fig-surv_bv}C and D) is also consistent with the S\&D model (Figure \ref{fig-as_dirfit}C--F).\todo{KAA: I guess PGV-F can probably be relegated to supplementary material.}
 
 \begin{figure}
     \centering
-        % SEJ: this graph is showing the direct relationship between the inherited ACC and the female and male nestling survival. Rows 1 and 2 in same model within each sex. Four models in total
-    \includegraphics[width=\linewidth]{figs/dirfit_pred_plot_ns_3x2.png}
-    \caption{...}
-    \label{fig-ns_dirfit}
+    \includegraphics[width=\linewidth]{figs/stan_bv_pred_plot_ars2x2.png}
+    \caption{Predicted sex-specific ARS as a function of ACC genetic values, with other fixed effect covariates held at their mean values. The first row (panels \textbf{A} and \textbf{B}) shows results from the GV-F model, while the second row (panels \textbf{C} and \textbf{D}) shows results from the PGV-F model. Results for female and male ARS are shown in the left and right columns, respectively.}
+    \label{fig-ars_bv}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{figs/stan_bv_pred_plot_surv2x2.png}
+    \caption{Predicted sex-specific AS as a function of ACC genetic values, with other fixed effect covariates held at their mean values. The first row (panels \textbf{A} and \textbf{B}) shows results from the GV-F model, while the second row (panels \textbf{C} and \textbf{D}) shows results from the PGV-F model. Results for female and male ARS are shown in the left and right columns, respectively.}
+    \label{fig-surv_bv}
 \end{figure}
 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{figs/stan_bv_pred_plot_nest2x2.png}
-    \caption{...}
+    \caption{Predicted sex-specific NS as a function of ACC genetic values, with other fixed effect covariates held at their mean values. The first row (panels \textbf{A} and \textbf{B}) shows results from the GV-F model, while the second row (panels \textbf{C} and \textbf{D}) shows results from the PGV-F model. Results for female and male ARS are shown in the left and right columns, respectively.}
     \label{fig-nest_bv}
 \end{figure}
 
 \subsection*{Other results}
 
+\note{KAA: I have made figures for all fixed effect coefficients, random effects standard deviations, and the levels of the year and island random effects, but it's too much to include it all. It can go into a huge supplement, I suppose. Below is my quick summary of the general trends, but feel free to dig through the ``figs'' folder if you are curious.}
+
 \begin{itemize}
-    \item Age had a quadratic impact on ARS for males, and a negative impact on survival for both ages
-    \item Inbreeding had a negative impact on all fitness measures
-    \item Nestlings were more like to survive with intermediate hatch dates if they were first observed later in the year
+    \item Age had a quadratic impact on ARS for males (\ie, intermediate age was best), and a negative impact on AS for both sexes
+    \item Inbreeding had a negative impact on all fitness measures in all models
+    \item Nestlings were more like to survive with intermediate hatch dates, and if they were first observed later in the year
+    \item Year effects usually explained more variance than island effects
+    \item For NS, the clutch ID random effect usually explained the most variance
 \end{itemize}
 
 \section*{Discussion}
