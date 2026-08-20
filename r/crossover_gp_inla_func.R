@@ -1383,12 +1383,23 @@ plot_fixed_eff_coefs <- function(samp_df, subtit) {
             alpha_zi = "gamma[0]",
             beta_bv = "beta[g[i]]",
             beta_bv2 = "beta[g[i]^2]",
+            beta_co_count_dam = "beta[dam~ACC[i]]",
+            beta_co_count_dam2 = "beta[dam~ACC[i]^2]",
+            beta_co_count_sire = "beta[sire~ACC[i]]",
+            beta_co_count_sire2 = "beta[sire~ACC[i]^2]",
+            beta_co_count_parsum = "beta[PS~ACC[i]]",
+            beta_co_count_parsum2 = "beta[PS~ACC[i]^2]",
             beta_age_q1 = "beta[age]",
             beta_age_q2 = "beta[age^2]",
             beta_f = "beta['F'['ROH']]",
             beta_hatch_doy = "beta[hatch~date]",
             beta_hatch_doy2 = "beta[hatch~date^2]",
             beta_first_dna_age = "beta[first~dna~age]")
+
+  if (!is.null(samp_df$alpha_zi_smooth)) {
+    samp_df$alpha_zi <- samp_df$alpha_zi_smooth
+    samp_df$alpha_zi_smooth <- NULL
+  }
 
   color_scheme_set("darkgray")
 
@@ -1408,12 +1419,15 @@ plot_rand_eff_sd <- function(samp_df, subtit) {
 
   labels <- list(sigma_ll = bquote(sigma[Last~location]),
                  sigma_ye = bquote(sigma[Year]),
+                 sigma_y = bquote(sigma[Year]),
                  sigma_id = bquote(sigma[ID]),
                  sigma_dam = bquote(sigma[Dam]),
                  sigma_sire = bquote(sigma[Sire]),
                  sigma_hi = bquote(sigma[Hatch~island]),
                  sigma_hy = bquote(sigma[Hatch~year]),
-                 sigma_clutch = bquote(sigma[Clutch]))
+                 sigma_clutch_ID = bquote(sigma[Clutch~ID]),
+                 sigma_clutch = bquote(sigma[Clutch~ID]),
+                 sigma_ringnr = bquote(sigma[ID]))
 
   color_scheme_set("darkgray")
 
@@ -2366,7 +2380,9 @@ eval_func_ars <- function(..., ccs_mean, ccs_sd, ccd_mean, ccd_sd, aq1_mean,
     beta_age_q1 = age_q1_scale / aq1_sd,
     beta_age_q2 = age_q2_scale / aq2_sd,
     beta_f = froh_scale / f_sd,
-    alpha_zi = log(theta[1] / (1 - theta[1])))
+    alpha_zi = theta[1],
+    ye. = y_num,
+    ll. = ll_num)
 }
 
 eval_func_as <- function(..., ccs_mean, ccs_sd, ccd_mean, ccd_sd, aq1_mean,
@@ -2387,7 +2403,9 @@ eval_func_as <- function(..., ccs_mean, ccs_sd, ccd_mean, ccd_sd, aq1_mean,
     beta_co_count_dam2 = `I(co_count_dam_scale^2)` / ccd_sd^2,
     beta_age_q1 = age_q1_scale / aq1_sd,
     beta_age_q2 = age_q2_scale / aq2_sd,
-    beta_f = froh_scale / f_sd)
+    beta_f = froh_scale / f_sd,
+    ye. = y_num,
+    ll. = ll_num)
 }
 
 get_dirfit_samps_ars_as <- function(model, eval_func, data, n_samp = 4000) {
@@ -2411,8 +2429,27 @@ get_dirfit_samps_ars_as <- function(model, eval_func, data, n_samp = 4000) {
       f_mean = attr(data$froh_scale, "scaled:center"),
       f_sd = attr(data$froh_scale, "scaled:scale"))
 
-  # Convert to same format as stan samples
-  apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
+  # Convert larent-field samples to same format as stan samples
+  lf_samps <- apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
+
+  # Hyperparameter samples
+  hyperpar_samps <- inla.hyperpar.sample(n = n_samp,
+                                         result = model,
+                                         improve.marginals = TRUE) %>%
+    apply(MARGIN = 2, FUN = identity, simplify = FALSE)
+
+  for (name in names(hyperpar_samps)) {
+    if (grepl("^Pre", name)) {
+      hyperpar_samps[[name]] <- hyperpar_samps[[name]]^(-1/2)
+      new_name <- gsub("Precision for ([A-Za-z]+)_num", "sigma_\\1", x = name)
+    } else {
+      # zero-inflation (already on linpred scale)
+      new_name <- "alpha_zi_smooth"
+    }
+    names(hyperpar_samps)[names(hyperpar_samps) == name] <- new_name
+  }
+
+  c(lf_samps, hyperpar_samps)
 }
 
 dirfit_func_ns <- function(data) {
@@ -2480,7 +2517,9 @@ eval_func_ns <- function(..., ccs_mean, ccs_sd, ccd_mean, ccd_sd, f_mean, f_sd,
     beta_hatch_doy = hatch_doy_scale / hd_sd -
       `I(hatch_doy_scale^2)` * 2 * hd_mean / hd_sd^2,
     beta_hatch_doy2 = `I(hatch_doy_scale^2)` / hd_sd^2,
-    beta_first_dna_age = first_dna_age_scale / fda_sd)
+    beta_first_dna_age = first_dna_age_scale / fda_sd,
+    hy. = hy_num,
+    hi. = hi_num)
 }
 
 get_dirfit_samps_ns <- function(model, eval_func, data, n_samp = 4000) {
@@ -2504,7 +2543,21 @@ get_dirfit_samps_ns <- function(model, eval_func, data, n_samp = 4000) {
       fda_sd = attr(data$first_dna_age_scale, "scaled:scale"))
 
   # Convert to same format as stan samples
-  apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
+  lf_samps <- apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
+
+  # Hyperparameter samples
+  hyperpar_samps <- inla.hyperpar.sample(n = n_samp,
+                                         result = model,
+                                         improve.marginals = TRUE) %>%
+    apply(MARGIN = 2, FUN = identity, simplify = FALSE)
+
+  for (name in names(hyperpar_samps)) {
+    hyperpar_samps[[name]] <- hyperpar_samps[[name]]^(-1/2)
+    names(hyperpar_samps)[names(hyperpar_samps) == name] <-
+      gsub("Precision for ([A-Za-z_]+)_num", "sigma_\\1", x = name)
+  }
+
+  c(lf_samps, hyperpar_samps)
 }
 
 dirfit_func_parsum_ars <- function(data) {
@@ -2602,7 +2655,9 @@ eval_func_parsum_ars <- function(..., ccps_mean, ccps_sd, aq1_mean, aq1_sd,
     beta_age_q1 = age_q1_scale / aq1_sd,
     beta_age_q2 = age_q2_scale / aq2_sd,
     beta_f = froh_scale / f_sd,
-    alpha_zi = log(theta[1] / (1 - theta[1])))
+    alpha_zi = theta[1],
+    ye. = y_num,
+    ll. = ll_num)
 }
 
 eval_func_parsum_as <- function(..., ccps_mean, ccps_sd, aq1_mean, aq1_sd,
@@ -2618,7 +2673,9 @@ eval_func_parsum_as <- function(..., ccps_mean, ccps_sd, aq1_mean, aq1_sd,
     beta_co_count_parsum2 = `I(co_count_parsum_scale^2)` / ccps_sd^2,
     beta_age_q1 = age_q1_scale / aq1_sd,
     beta_age_q2 = age_q2_scale / aq2_sd,
-    beta_f = froh_scale / f_sd)
+    beta_f = froh_scale / f_sd,
+    ye. = y_num,
+    ll. = ll_num)
 }
 
 get_dirfit_samps_parsum_ars_as <- function(model, eval_func, data, n_samp = 4000) {
@@ -2640,7 +2697,26 @@ get_dirfit_samps_parsum_ars_as <- function(model, eval_func, data, n_samp = 4000
       f_sd = attr(data$froh_scale, "scaled:scale"))
 
   # Convert to same format as stan samples
-  apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
+  lf_samps <- apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
+
+  # Hyperparameter samples
+  hyperpar_samps <- inla.hyperpar.sample(n = n_samp,
+                                         result = model,
+                                         improve.marginals = TRUE) %>%
+    apply(MARGIN = 2, FUN = identity, simplify = FALSE)
+
+  for (name in names(hyperpar_samps)) {
+    if (grepl("^Pre", name)) {
+      hyperpar_samps[[name]] <- hyperpar_samps[[name]]^(-1/2)
+      new_name <- gsub("Precision for ([A-Za-z]+)_num", "sigma_\\1", x = name)
+    } else {
+      # zero-inflation (already on linpred scale)
+      new_name <- "alpha_zi_smooth"
+    }
+    names(hyperpar_samps)[names(hyperpar_samps) == name] <- new_name
+  }
+
+  c(lf_samps, hyperpar_samps)
 }
 
 dirfit_func_parsum_ns <- function(data) {
@@ -2700,7 +2776,9 @@ eval_func_parsum_ns <- function(..., ccps_mean, ccps_sd, f_mean, f_sd, hd_mean,
     beta_hatch_doy = hatch_doy_scale / hd_sd -
       `I(hatch_doy_scale^2)` * 2 * hd_mean / hd_sd^2,
     beta_hatch_doy2 = `I(hatch_doy_scale^2)` / hd_sd^2,
-    beta_first_dna_age = first_dna_age_scale / fda_sd)
+    beta_first_dna_age = first_dna_age_scale / fda_sd,
+    hy. = hy_num,
+    hi. = hi_num)
 }
 
 get_dirfit_samps_parsum_ns <- function(model, eval_func, data, n_samp = 4000) {
@@ -2719,10 +2797,26 @@ get_dirfit_samps_parsum_ns <- function(model, eval_func, data, n_samp = 4000) {
       hd_mean = attr(data$hatch_doy_scale, "scaled:center"),
       hd_sd = attr(data$hatch_doy_scale, "scaled:scale"),
       fda_mean = attr(data$first_dna_age_scale, "scaled:center"),
-      fda_sd = attr(data$first_dna_age_scale, "scaled:scale"))
+      fda_sd = attr(data$first_dna_age_scale, "scaled:scale"),
+      hy. = hy_num,
+      hi. = hi_num)
 
   # Convert to same format as stan samples
-  apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
+  lf_samps <- apply(inla_samps_eval, 1, function(x) x, simplify = FALSE)
+
+  # Hyperparameter samples
+  hyperpar_samps <- inla.hyperpar.sample(n = n_samp,
+                                         result = model,
+                                         improve.marginals = TRUE) %>%
+    apply(MARGIN = 2, FUN = identity, simplify = FALSE)
+
+  for (name in names(hyperpar_samps)) {
+    hyperpar_samps[[name]] <- hyperpar_samps[[name]]^(-1/2)
+    names(hyperpar_samps)[names(hyperpar_samps) == name] <-
+      gsub("Precision for ([A-Za-z]+)_num", "sigma_\\1", x = name)
+  }
+
+  c(lf_samps, hyperpar_samps)
 }
 
 layout_2x2_fig <- function(p1, p2, p3, p4, tit_str,
