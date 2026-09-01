@@ -31,19 +31,61 @@ We demonstrate that individual variation in recombination rates influences fitne
 
 Rationale and background - Susan
 
+% comments from Susan - sorry that these are not formatted in the Latex way 
+
+\textbf{Is recombination under contemporary selection?}
+\begin{itemize}
+    \item - A birds own recombination rate will affect its reproductive success \begin{itemize}
+        \item Too few COs could lead to non-disjunction...
+        \item Too many COs could lead to increased mutation and genome instability
+    \end{itemize}
+    \item - A birds own recombination rate will affect the fitness (ARS \& AS) of its offspring \begin{itemize}
+        \item Do they inherit beneficial novel haplotypes?
+        \item Do they inherit more (deleterious) mutations?
+    \end{itemize}
+\end{itemize}
+
+\textbf{Why this is not straightforward to model} 
+\begin{itemize}
+    \item Issue: we cannot directly link recombination rate to individual fitness because it's difficult to measure. \begin{itemize}
+        \item Cytogenetics is too invasive - would have to kill males and also prophase I occurs in developing ovary
+        \item Gamete sequencing is difficult to capture - not possible in females and in males it is extremely difficult to catch adults
+        \item Pedigree methods are amazing but are biased in that you can only measure ACC in successful offspring
+    \end{itemize}
+    \item There is also the issue of how recombination is manifest as a phenotype... \begin{itemize}
+        \item Gametes represent a sample of meiosis
+        \item Individuals with many offspring will have mean values closer to the population mean
+        \item \textbf{So how do we overcome these biases???}
+    \end{itemize}
+\end{itemize}
+
+\textbf{Genomic prediction could provide a solution}
+\begin{itemize}
+    \item We know recombination is heritable
+    \item We can determine if individual GEBVs are associated with fitness
+    \item But we have to make sure we can still overcome the biases above
+\end{itemize}
+
+\textbf{House sparrow as a system}
+\begin{itemize}
+    \item Well characterized recombination in 1000s of IDs
+    \item Fitness data
+    \item Recombination is heritable and polygenic and different in sexes
+\end{itemize}
+
 \section*{Methods}
 
 \subsection*{House sparrow dataset}
 
 We based our analyses on data from a metapopulation of house sparrows in a coastal archipelago in Helgeland, Northern Norway \citep{jensen2013genetic, ranke2021spatial}.
-Since 1993, selected island-populations of house sparrows in the archipelago have been studied at the individual level.
-Here, we used fitness data from $12$ islands, including adult annual reproductive success and survival data, collected during 1998--2019, and nestling recruitment data collected during 2007--2014 \citep{saatoglu2025metapopulation}. % unavailable... 
-Upon first capture, sparrows were marked with unique rings, allowing their identification in future observations or recaptures.
-If a sparrow was a nestling or fledgling at first capture, the hatch year was known to be the current year.
+Since 1993, all island-populations of house sparrows in the archipelago have been studied at the individual level, and due to the sedentary nature of house sparrows nearly all individuals have been followed from hatching to death.
+Here, we used fitness data from $12$ of the islands, including annual reproductive success and survival data for over $5000$ adults, collected during 1998--2019, and recruitment data for over $4500$ nestlings collected during 2007--2014 \citep{saatoglu2025metapopulation}.
+Upon first capture, sparrows were marked with unique rings on their tarsi, allowing their identification in future observations or recaptures.
+If a sparrow was a nestling or fledged juvenile at first capture, the hatch year was known to be the current year.
 For individuals first captured as adults, the hatch year was assumed to be the current year if capture occurred in September or later, or the previous year if it occurred in August or earlier \citep{niskanen2020consistent, araya2021variation}. % TODO: double check
-Hatch island was known for individuals observed as nestlings and juveniles, and was assumed to be the island of first observation for adults \citep[around $17\%$ of recruits dispersed during their first fall, see][]{ranke2021spatial}.
+Hatch island was known for individuals observed as nestlings and fledged juveniles, and was assumed to be the island of first observation for adults \citep[around $17\%$ of recruits dispersed between islands in the metapopulation during their first fall, see][]{ranke2021spatial}.
 A 25 $\mu$L blood sample was taken from the brachial vein of each sparrow at first capture.
-The blood samples were used to generate single-nucleotide polymorphism (SNP) data with an Axiom 200K SNP array \citep{lundregan2018inferences, niskanen2020consistent}, or a cross-compatible Axiom 70K SNP array containing a subset of the 200K array markers \citep{burnett2026snps}.
+The blood samples were the source for DNA used to generate single-nucleotide polymorphism (SNP) genotype data with an Axiom 200K SNP array \citep{lundregan2018inferences, niskanen2020consistent}, or a cross-compatible Axiom 70K SNP array containing a subset of the 200K array markers \citep{burnett2026snps}.
 The SNP data set and ecological data were used to generate a genetic pedigree containing over $10\ 000$ individuals, as well as $F_\text{ROH}$ inbreeding coefficients for each individual \citep[see][for details]{burnett2026snps}.
 
 \subsubsection*{ACC measurements}
@@ -56,11 +98,11 @@ We investigated how the number of autosomal crossovers impacted fitness in our s
 We addressed this by asking two related questions: first, how the ACC in the gametes an individual received from its parents impacted its fitness, and second, how an individual's own recombination rate impacted its fitness. % through the gametes passed along to the next generation.
 In both analyses, we used mixed modeling to relate ACC to fitness components, including annual reproductive success (ARS), annual adult survival (AS), and nestling survival (NS).
 However, the second analysis was complicated by sampling biases, which we accounted for by applying genomic prediction (GP) and measurement error modeling.
-We fitted all models separately for the sexes since male and female ACC in house sparrows are essentially different traits with low genetic correlations \citep{mcauley2024genetic}, and since fitness mechanisms could differ between the sexes \note{(cite some house sparrow fitness papers)}.
+We fitted all models separately for the sexes since male and female ACC in house sparrows have different genetic architectures, with a cross-sex additive genetic correlation of $0.29$ \citep{mcauley2024genetic}, and since fitness mechanisms could fundamentally differ between the sexes \note{(cite some house sparrow fitness papers)}.
 
 \subsection*{Fitness impacts of ACC in inherited gametes}
 
-We related the ACC in an individual's maternal and paternal gametes to that individual's (sex-specific) fitness using generalized linear mixed models for ARS, AS and NS, fitted in a Bayesian framework using \texttt{R-INLA} \citep{rue2009approximate}.
+We related the ACC in an individual's maternal and paternal gametes to that individual's (sex-specific) fitness using generalized linear mixed models for ARS, AS and NS, fitted in a Bayesian framework using \texttt{R-INLA} version \texttt{24.12.11} \citep{rue2009approximate}.
 The ACC information was incorporated in two different ways. 
 In what we label the ``sire and dam'' (S\&D) models, the ACCs in the gametes from the sire and dam were treated as two separate fixed effects in the same model, while in the ``parental sum'' (PS) models we used the sum of the ACC in the sire's and dam's gametes as a single covariate.
 The S\&D models therefore allowed for the possibility that the egg-derived and sperm-derived ACCs have different fitness effects, with these effects estimated conditional on each other.
@@ -139,7 +181,7 @@ As with AS, NS was modeled as a binomial trait, so that
 \end{align}
 where $\mathrm{NS}_i$ is an indicator of whether nestling $i$ survived, and $\eta_i$ is a linear predictor linked to the survival probability $p_i$ by a logit link.
 Like for ARS and AS, we defined the S\&D and PS models for NS by including linear and quadratic fixed effects of either the ACC inherited from each parent (S\&D) or the sum of the ACC from the two parents (PS), respectively.
-The linear predictor for NS additionally included an intercept, fixed effects of $F_\text{ROH}$ inbreeding coefficient (linear), hatch date (day of year, linear and quadratic), and age at first capture (days, linear), as well as unstructured random effects of hatch year, hatch island, clutch ID, dam, and sire.
+The linear predictor for NS additionally included an intercept, fixed effects of $F_\text{ROH}$ inbreeding coefficient (linear), hatch date (day of year, linear and quadratic), and age at first capture in the nest (days, linear), as well as unstructured random effects of hatch year, hatch island, clutch ID, dam, and sire.
 We used the same prior specifications for NS as for AS, as both traits were modeled on the logit scale, with the tighter $\N{0}{0.5^2/2}$ prior on the quadratic effects of both ACC and hatch date.
 
 \begin{table*}[!hb]
@@ -208,6 +250,9 @@ As a workaround for this sampling bias, we used GP to predict additive genetic v
 By considering the fitness effects of the predicted additive genetic component of ACC, rather than the unevenly sampled ACC measurements, we eliminated the sampling bias.
 This approach essentially uses GP as a tool for imputation of the missing ACC phenotypes.
 
+[Comment]
+[Comment 2]
+
 Below we outline a Bayesian GP model that estimated and predicted sex-specific ACC genetic values. 
 We used these genetic values as covariates in fitness models for ARS, AS, and NS, which we label ``genetic value-fitness'' (GV-F) models to differentiate them from the S\&D and PS models.
 Ideally, the GP and GV-F models would have been fitted jointly, but because this was computationally infeasible, we took care to propagate the uncertainty from the GP results into the GV-F models.
@@ -241,14 +286,14 @@ We fitted models for ARS, AS and NS that used the posterior estimates of the gen
 These GV-F models were Bayesian GLMMs with the same form as the previously described S\&D and PS models in Equations \eqref{eq-ars}, \eqref{eq-as} and \eqref{eq-ns}, respectively.
 The GV-F models differed from the S\&D and PS models in that we removed the sire and dam random effects for the two adult fitness traits (ARS and AS), and for all three fitness traits we replaced the ACC covariates with linear and quadratic effects of $g_i$.
 This replacement was not straightforward, since $g_i$ was estimated with uncertainty in GP models, and this uncertainty should be propagated into the GV-F models.
-However, the measurement-error methods available in R-INLA clash with our need to include the square of $g_i$ as a covariate to allow detection of stabilizing selection.
+However, the measurement-error methods available in R-INLA are incompatible with our need to include the square of $g_i$ as a covariate to allow detection of stabilizing selection.
 Adding this quadratic term would result in a non-Gaussian linear predictor in the fitness models, which violates a core assumption of \texttt{R-INLA}.
 To retain the squared term while also accounting for the uncertainty in $g_i$, we therefore fitted the GV-F models using MCMC as implemented in \texttt{RStan} \citep{rstan}.
 In the MCMC we treated $g_i$ as an unknown latent variable whose prior corresponds to the Gaussian approximation of the posterior distribution of $\bm g$ inferred from the GP.
 This approach encoded both the uncertainty and the covariance structure among the genetic values $g_i$ as prior information in the GV-F models, while still allowing the fitness data to further update the distribution of $\bm g$.
 In other words, instead of fixing $g_i$, we treated $\bm g$ as a latent variable which was updated in each MCMC iteration, and used the latent $\bm g$ as a covariate with linear and quadratic effects.
 Since we simultaneously updated $g_i$ and estimated its effect on fitness, the procedure can be regarded as an example of ``feedback'' \citep{plummer2015cuts}.
-Although such feedback can sometimes bias results, so we deemed it appropriate here since a permutation analysis with $250$ replicates showed no indication that the method produced false-positive results (\note{details to come in suppmat}).
+Although such feedback can sometimes bias results, we deemed it appropriate here since a permutation analysis with $250$ replicates showed no indication that the method produced false-positive results (\note{details to come in suppmat}).
 % Permutation analyses showed that this approach did not produce false-positive results (see SXX).
 Each MCMC model consisted of $16$ chains which ran for $48\ 000$ iterations, including $8\ 000$ burn-in iterations.
 To conserve storage memory, we retained every $160^\text{th}$ iteration, resulting in a total of $4\ 000$ posterior samples per model.
@@ -336,6 +381,11 @@ The lack of evidence that the same-sex parent's ACC genetic value affects AS (Fi
     \item Kenneth: Summary of what we did
     \item Susan: discussion and speculation on biological interpretation of results
     \item Kenneth: novel use of genomic prediction as a tool for imputation,  challenges with measurement error
+    \item Challenges \begin{itemize}
+        \item Potential biases from GP (although the opposite of what we see)
+        \item Modelling the measurement error efficiently (multiple imp. is slow)
+        \item Low genomic prediction accuracy - potentially due to the low 
+    \end{itemize}
     \item Concluding remarks
 \end{itemize}
 
