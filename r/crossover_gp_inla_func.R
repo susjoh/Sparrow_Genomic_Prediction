@@ -459,6 +459,22 @@ make_data_adult <- function(gp_data,
   lrs
 }
 
+remake_comeas_adult <- function(dat) {
+  dat %<>% dplyr::filter(co_meas)
+
+  dat$ringnr_num <- match(dat$ringnr, unique(dat$ringnr))
+  dat$ll_num <- match(dat$last_locality, unique(dat$last_locality))
+  dat$y_num <- match(dat$year, unique(dat$year))
+  dat$hy_num <- match(dat$hatch_year, unique(dat$hatch_year))
+
+  age_poly <- poly(dat$age, degree = 2)
+  dat <- cbind(dat, age_q1 = age_poly[, 1], age_q2 = age_poly[, 2])
+
+  dat$idx <- seq_len(nrow(dat))
+
+  dat
+}
+
 make_data_parent <- function(gp_data,
                              gp_model,
                              lrs_data_path,
@@ -542,6 +558,25 @@ make_data_parent <- function(gp_data,
 
   lrs$idx <- seq_len(nrow(lrs))
   lrs
+}
+
+remake_comeas_parent <- function(dat) {
+  dat %<>% dplyr::filter(co_meas)
+
+  dat$ringnr_num <- match(dat$ringnr, unique(dat$ringnr))
+  dat$parent_num <- match(dat$parent, unique(dat$parent))
+  dat$dam_num <- match(dat$dam, unique(dat$dam))
+  dat$sire_num <- match(dat$sire, unique(dat$sire))
+  dat$ll_num <- match(dat$last_locality, unique(dat$last_locality))
+  dat$y_num <- match(dat$year, unique(dat$year))
+  dat$hy_num <- match(dat$hatch_year, unique(dat$hatch_year))
+
+  age_poly <- poly(dat$age, degree = 2)
+  dat <- cbind(dat, age_q1 = age_poly[, 1], age_q2 = age_poly[, 2])
+
+  dat$idx <- seq_len(nrow(dat))
+
+  dat
 }
 
 make_data_parent_dir <- function(lrs_data_path,
@@ -697,6 +732,22 @@ make_data_nest <- function(gp_data,
   nest
 }
 
+remake_comeas_nest <- function(dat) {
+  dat %<>% dplyr::filter(co_meas)
+
+  dat$ringnr_num <- match(dat$ringnr, unique(dat$ringnr))
+  dat$parent_num <- match(dat$parent, unique(dat$parent))
+  dat$dam_num <- match(dat$dam, unique(dat$dam))
+  dat$sire_num <- match(dat$sire, unique(dat$sire))
+  dat$hi_num <- match(dat$hatch_island, unique(dat$hatch_island))
+  dat$hy_num <- match(dat$hatch_year, unique(dat$hatch_year))
+  dat$clutch_ID_num <- match(dat$clutch_ID, unique(dat$clutch_ID))
+
+  dat$idx <- seq_len(nrow(dat))
+
+  dat
+}
+
 make_data_n2 <- function(gp_data,
                          gp_model,
                          nestling_data_path,
@@ -771,6 +822,22 @@ make_data_n2 <- function(gp_data,
   nest$first_dna_age_scale <- scale(nest$first_dna_age)
 
   nest
+}
+
+remake_comeas_n2 <- function(dat) {
+  dat %<>% dplyr::filter(co_meas)
+
+  dat$ringnr_num <- match(dat$ringnr, unique(dat$ringnr))
+  dat$parent_num <- match(dat$parent, unique(dat$parent))
+  dat$dam_num <- match(dat$dam, unique(dat$dam))
+  dat$sire_num <- match(dat$sire, unique(dat$sire))
+  dat$hi_num <- match(dat$hatch_island, unique(dat$hatch_island))
+  dat$hy_num <- match(dat$hatch_year, unique(dat$hatch_year))
+  dat$clutch_ID_num <- match(dat$clutch_ID, unique(dat$clutch_ID))
+
+  dat$idx <- seq_len(nrow(dat))
+
+  dat
 }
 
 make_data_nest_dir <- function(nestling_data_path,
@@ -2904,3 +2971,92 @@ layout_3x2_fig <- function(p1, p2, p3, p4, p5, p6, tit_str,
                                            fill = "white"))
 }
 
+make_num_co_plot <- function(dat_file) {
+
+  dat <- fread(file = dat_file)
+
+  xlims <- range(dat$total_CO_count)
+
+  p1 <- ggplot(dat, aes(x = total_CO_count, color = factor(sex))) +
+    geom_freqpoly(linewidth = 1) +
+    xlim(xlims) +
+    labs( x = "ACC per gamete", color = "Sex") +
+    theme_minimal(base_size = 13) +
+    scale_color_discrete(labels = c("F" = "Female", "M" = "Male")) +
+    theme(panel.border = element_rect(fill = NA),
+          panel.grid = element_blank())
+
+  dat_mean <- dat %>%
+    group_by(id, sex) %>%
+    summarise(co_count = mean(co_count), n = n())
+
+  p2 <- ggplot(dat_mean, aes(x = co_count, color = factor(sex))) +
+    geom_freqpoly(linewidth = 1) +
+    labs( x = "Mean ACC per individual", color = "Sex") +
+    xlim(xlims) +
+    theme_minimal(base_size = 13) +
+    scale_color_discrete(labels = c("F" = "Female", "M" = "Male")) +
+    theme(panel.border = element_rect(fill = NA),
+          panel.grid = element_blank())
+
+  p1 + p2 + plot_layout(byrow = TRUE, ncol = 1, nrow = 2, guides = "collect")
+}
+
+make_num_co_plot <- function(dat_file) {
+  dat <- fread(file = dat_file)
+  dat_mean <- dat %>%
+    group_by(id, sex) %>%
+    summarise(co_count = mean(co_count), n = n())
+  ggplot(dat_mean, aes(x = n, color = factor(sex))) +
+    geom_freqpoly(linewidth = 1) +
+    labs( x = "Number of ACC measurements per phenotyped individual",
+          color = "Sex") +
+    xlim(xlims) +
+    theme_minimal(base_size = 13) +
+    scale_color_discrete(labels = c("F" = "Female", "M" = "Male")) +
+    theme(panel.border = element_rect(fill = NA),
+          panel.grid = element_blank())
+}
+
+make_fitness_desc_plot <- function(dat_ad_file, dat_n_file) {
+
+  dat_ad <- fread(file = dat_ad_file)
+  dat_ad %<>% dplyr::filter(!is.na(sex))
+
+  dat_ad$sex_round <- round(dat_ad$sex)
+  dat_ad$sex_round_mf <- ifelse(dat_ad$sex_round == 2, "f", "m")
+
+  p1 <- ggplot(dat_ad, aes(x = sum_recruit, fill = factor(sex_round_mf))) +
+    geom_bar(position = "dodge", width = 0.7) +
+    scale_x_continuous(breaks = 0:(max(dat_ad$sum_recruit))) +
+    labs(x = "Annual reproductive success (ARS)", y = "Count", fill = "Sex") +
+    scale_fill_discrete(labels = c("f" = "Female", "m" = "Male")) +
+    theme_minimal() +
+    theme(panel.border = element_rect(fill = NA),
+          panel.grid = element_blank())
+
+  p2 <- ggplot(dat_ad, aes(x = survival, fill = factor(sex_round_mf))) +
+    geom_bar(position = "dodge", width = 0.4) +
+    scale_x_continuous(breaks = 0:1) +
+    labs(x = "Annual survival (AS)", y = "Count", fill = "Sex") +
+    scale_fill_discrete(labels = c("f" = "Female", "m" = "Male")) +
+    theme_minimal() +
+    theme(panel.border = element_rect(fill = NA),
+          panel.grid = element_blank())
+
+  dat_n <- fread(file = dat_n_file)
+  dat_n %<>% dplyr::filter(genetic_sex %in% c("f", "m"))
+  p3 <- ggplot(dat_n, aes(x = recruit, fill = factor(genetic_sex))) +
+    geom_bar(position = "dodge", width = 0.4) +
+    scale_x_continuous(breaks = 0:1) +
+    labs(x = "Nestling survival (NS)", y = "Count", fill = "Sex") +
+    scale_fill_discrete(labels = c("f" = "Female", "m" = "Male")) +
+    theme_minimal() +
+    theme(panel.border = element_rect(fill = NA),
+          panel.grid = element_blank())
+
+  p1 + p2 + p3 + plot_layout(ncol = 3,
+                             nrow = 1,
+                             guides = "collect",
+                             axis_titles = "collect")
+}

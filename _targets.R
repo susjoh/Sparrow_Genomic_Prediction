@@ -17,7 +17,7 @@ controller_slurm <- crew_controller_slurm(
   name = "my_slurm_controller",
   workers = 40,
   seconds_idle = 120,
-  tasks_max = 30,
+  tasks_max = 1,
   options_cluster = crew_options_slurm(
     script_lines = paste("#SBATCH --account=share-nv-bio \n module load",
                          "R/4.4.2-gfbf-2024a R-bundle-CRAN/2024.11-foss-2024a",
@@ -25,7 +25,7 @@ controller_slurm <- crew_controller_slurm(
     log_output = "Jobs/%A_%a.log",
     memory_gigabytes_per_cpu = 6,
     cpus_per_task = 16,
-    time_minutes = 60 * 1 * 1, # minutes * hours * days
+    time_minutes = 60 * 30 * 1, # minutes * hours * days
     partition = "CPUQ",
     verbose = TRUE)
 )
@@ -98,6 +98,12 @@ values_fitmod <- tibble(
                               "make_data_parent",
                               "make_data_nest",
                               "make_data_n2")),
+  remake_comeas_func = rlang::syms(c("remake_comeas_adult",
+                                     "remake_comeas_adult",
+                                     "remake_comeas_parent",
+                                     "remake_comeas_parent",
+                                     "remake_comeas_nest",
+                                     "remake_comeas_n2")),
   trait = c("annual reproductive success",
             "annual survival",
             "annual reproductive success",
@@ -425,8 +431,7 @@ fitmod_map <- tar_map(
   ),
   tar_target(
     stan_samps,
-    get_samps(model = stan_model,
-              pars = stan_pars)
+    get_samps(model = stan_model, pars = stan_pars)
   ),
   tar_target(
     stan_post_stats,
@@ -460,6 +465,32 @@ fitmod_map <- tar_map(
                                                   avg_fun_first_dna_age),
                                     x_axis_fun = x_axis_fun_bv,
                                     marg_eff_fun = marg_eff_fun_bv))
+  ),
+  ########## Complete-case analysis ########
+  tar_target(
+    fitness_data_cc,
+    remake_comeas_func(dat = fitness_data),
+    deployment = "main"
+  ),
+  tar_target(
+    stan_data_cc,
+    stan_data_func(data = fitness_data_cc,
+                   gp_data = co_data_gp,
+                   bv_covmat),
+    deployment = "main"
+  ),
+  tar_target(
+    stan_model_cc,
+    stan(file = stan_file,
+         data = c(stan_data_cc, list(Y = getElement(stan_data_cc, y_col))),
+         iter = 4.8e4,
+         warmup = 8e3,
+         chains = 16,
+         cores = 16,
+         thin = 1.6e2, # to keep final object reasonably small
+         pars = stan_pars,
+         model_name = paste0("stan_", mod, "_", sex_lc, "_cc"),
+         control = list(adapt_delta = 0.96))
   ),
   ########## (P)GV-F result plots ##########
   tar_target(
@@ -2115,5 +2146,46 @@ list(
       do.call(what = rbind) %>%
       colMeans(),
     deployment = "main"
+  ),
+  ############################## Descriptive figures ###########################
+  tar_target(
+    num_co_meas_plot,
+    make_num_co_meas_plot(dat_file = recomb_data_path2)
+  ),
+  tar_target(
+    num_co_meas_plot_png,
+    ggsave_path("figs/num_co_meas_plot.png",
+                plot = num_co_meas_plot,
+                width = 6,
+                height = 6,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    num_co_plot,
+    make_num_co_plot(dat_file = recomb_data_path2)
+  ),
+  tar_target(
+    num_co_plot_png,
+    ggsave_path("figs/num_co_plot.png",
+                plot = num_co_plot,
+                width = 7,
+                height = 7,
+                device = "png"),
+    format = "file"
+  ),
+  tar_target(
+    fitness_desc_plot,
+    make_fitness_desc_plot(dat_ad_file = lrs_data_path,
+                           dat_n_file = nestling_data_path)
+  ),
+  tar_target(
+    fitness_desc_plot_png,
+    ggsave_path("figs/fitness_desc_plot.png",
+                plot = fitness_desc_plot,
+                width = 10,
+                height = 5,
+                device = "png"),
+    format = "file"
   )
 )
