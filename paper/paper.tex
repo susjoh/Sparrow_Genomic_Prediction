@@ -253,6 +253,8 @@ This approach essentially uses GP as a tool for imputation of the missing ACC ph
 [Comment]
 [Comment 2]
 
+% new thought: relating NS to ACC for only phenotyped inds is impossible since we only phenotyped ones that survived to adulthood (otherwise they would not have offspring!)
+
 Below we outline a Bayesian GP model that estimated and predicted sex-specific ACC genetic values. 
 We used these genetic values as covariates in fitness models for ARS, AS, and NS, which we label ``genetic value-fitness'' (GV-F) models to differentiate them from the S\&D and PS models.
 Ideally, the GP and GV-F models would have been fitted jointly, but because this was computationally infeasible, we took care to propagate the uncertainty from the GP results into the GV-F models.
