@@ -2978,8 +2978,8 @@ make_num_co_plot <- function(dat_file) {
   xlims <- range(dat$total_CO_count)
 
   p1 <- ggplot(dat, aes(x = total_CO_count, color = factor(sex))) +
-    geom_freqpoly(linewidth = 1) +
-    xlim(xlims) +
+    geom_freqpoly(linewidth = 1, binwidth = 1) +
+    coord_cartesian(xlim = xlims) +
     labs( x = "ACC per gamete", color = "Sex") +
     theme_minimal(base_size = 13) +
     scale_color_discrete(labels = c("F" = "Female", "M" = "Male")) +
@@ -2991,9 +2991,9 @@ make_num_co_plot <- function(dat_file) {
     summarise(co_count = mean(co_count), n = n())
 
   p2 <- ggplot(dat_mean, aes(x = co_count, color = factor(sex))) +
-    geom_freqpoly(linewidth = 1) +
+    geom_freqpoly(linewidth = 1, binwidth = 1) +
     labs( x = "Mean ACC per individual", color = "Sex") +
-    xlim(xlims) +
+    coord_cartesian(xlim = xlims) +
     theme_minimal(base_size = 13) +
     scale_color_discrete(labels = c("F" = "Female", "M" = "Male")) +
     theme(panel.border = element_rect(fill = NA),
@@ -3002,20 +3002,24 @@ make_num_co_plot <- function(dat_file) {
   p1 + p2 + plot_layout(byrow = TRUE, ncol = 1, nrow = 2, guides = "collect")
 }
 
-make_num_co_plot <- function(dat_file) {
+make_num_co_meas_plot <- function(dat_file) {
   dat <- fread(file = dat_file)
-  dat_mean <- dat %>%
+  n_counts <- dat %>%
     group_by(id, sex) %>%
-    summarise(co_count = mean(co_count), n = n())
-  ggplot(dat_mean, aes(x = n, color = factor(sex))) +
-    geom_freqpoly(linewidth = 1) +
-    labs( x = "Number of ACC measurements per phenotyped individual",
-          color = "Sex") +
-    xlim(xlims) +
+    summarise(co_count = mean(co_count), n = n()) %>%
+    ungroup() %>%
+    count(sex, n, name = "count") %>%
+    tidyr::complete(sex, n = full_seq(n, 1), fill = list(count = 0))
+
+  ggplot(n_counts, aes(x = n, y = count, color = sex)) +
+    geom_line(linewidth = 1) +
+    labs(x = "Number of ACC measurements per phenotyped individual",
+         y = "Count",
+         color = "Sex") +
     theme_minimal(base_size = 13) +
     scale_color_discrete(labels = c("F" = "Female", "M" = "Male")) +
-    theme(panel.border = element_rect(fill = NA),
-          panel.grid = element_blank())
+    scale_x_continuous(breaks = function(x) seq(1, max(x), by = 5)) +
+    theme(panel.border = element_rect(fill = NA))
 }
 
 make_fitness_desc_plot <- function(dat_ad_file, dat_n_file) {

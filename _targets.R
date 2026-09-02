@@ -492,6 +492,43 @@ fitmod_map <- tar_map(
          model_name = paste0("stan_", mod, "_", sex_lc, "_cc"),
          control = list(adapt_delta = 0.96))
   ),
+  tar_target(
+    stan_samps_cc,
+    get_samps(model = stan_model_cc, pars = stan_pars)
+  ),
+  tar_target(
+    stan_post_stats_cc,
+    summary(stan_model_cc)$summary
+  ),
+  tar_target(
+    stan_bv_out_vs_in_plot_cc,
+    plot_bv_out_vs_in(stats = stan_post_stats_cc, dat = stan_data_cc)
+  ),
+  tar_target(
+    stan_bv_pred_marg_cc,
+    pred_marg_func(samp = stan_samps_cc,
+                   data = fitness_data_cc,
+                   pred_info = list(coef_name = c("alpha",
+                                                  "beta_bv",
+                                                  "beta_bv2",
+                                                  "beta_age_q1",
+                                                  "beta_age_q2",
+                                                  "beta_f",
+                                                  "beta_hatch_doy",
+                                                  "beta_hatch_doy2",
+                                                  "beta_first_dna_age"),
+                                    action = list(avg_fun_alpha,
+                                                  pred_fun_bv,
+                                                  pred_fun_bv2,
+                                                  avg_fun_age_q1,
+                                                  avg_fun_age_q2,
+                                                  avg_fun_f,
+                                                  avg_fun_hatch_doy,
+                                                  avg_fun_hatch_doy2,
+                                                  avg_fun_first_dna_age),
+                                    x_axis_fun = x_axis_fun_bv,
+                                    marg_eff_fun = marg_eff_fun_bv))
+  ),
   ########## (P)GV-F result plots ##########
   tar_target(
     stan_bv_pred_plot,
@@ -505,6 +542,13 @@ fitmod_map <- tar_map(
     plot_lines_posterior(df = getElement(stan_bv_pred_marg, "df_marg"),
                          xlab = paste0(xlab_start, "enetic value for ACC"),
                          ylab = paste0("Marginal effect on ", trait_short),
+                         title = "")
+  ),
+  tar_target(
+    stan_bv_pred_plot_cc,
+    plot_lines_posterior(df = getElement(stan_bv_pred_marg_cc, "df_pred"),
+                         xlab = paste0(xlab_start, "enetic value for ACC"),
+                         ylab = paste0("Predicted ", trait_short),
                          title = "")
   ),
   tar_target(
@@ -1485,30 +1529,6 @@ sex_map <- tar_map(
                     sex_lc = sex_lc),
     pattern = map(cv_test_sets)
   ),
-  tar_target(
-    co_data_mean, # Measurements of co count averaged over inds
-    co_data %>%
-      group_by(id, sex) %>%
-      summarise(co_count = mean(co_count),
-                total_coverage = mean(total_coverage),
-                hatch_year = mean(hatch_year),
-                first_locality = mean(first_locality),
-                n = n())
-  ),
-  tar_target(
-    co_data_rand, # 1 random measurement of co count
-    co_data %>%
-      group_by(id, sex) %>%
-      summarise(co_count = co_count[sample(n(), 1)],
-                total_coverage = total_coverage[sample(n(), 1)],
-                n = n())
-  ),
-  tar_target(
-    num_meas_vs_co_count,
-    ggplot(data = co_data_rand, aes(x = co_count, y = n)) +
-      geom_point() +
-      geom_smooth(method = "lm")
-  ),
   tar_combine(
     co_gp_cv_mean_acc_fitmod,
     fitmod_map[["co_gp_cv_mean_acc"]],
@@ -1553,12 +1573,6 @@ list(
   tar_target(
     lrs_data_path2, # only to be used for hatch/year info, not fitness data
     "data/Missing_LRS_Sparrows_revised_WithInfo_fix.csv",
-    format = "file",
-    deployment = "main"
-  ),
-  tar_target(
-    morph_data_path,
-    "data/AdultMorphology_20240201_fix.csv",
     format = "file",
     deployment = "main"
   ),
@@ -2150,7 +2164,8 @@ list(
   ############################## Descriptive figures ###########################
   tar_target(
     num_co_meas_plot,
-    make_num_co_meas_plot(dat_file = recomb_data_path2)
+    make_num_co_meas_plot(dat_file = recomb_data_path2),
+    deployment = "main"
   ),
   tar_target(
     num_co_meas_plot_png,
@@ -2159,11 +2174,13 @@ list(
                 width = 6,
                 height = 6,
                 device = "png"),
-    format = "file"
+    format = "file",
+    deployment = "main"
   ),
   tar_target(
     num_co_plot,
-    make_num_co_plot(dat_file = recomb_data_path2)
+    make_num_co_plot(dat_file = recomb_data_path2),
+    deployment = "main"
   ),
   tar_target(
     num_co_plot_png,
@@ -2172,12 +2189,14 @@ list(
                 width = 7,
                 height = 7,
                 device = "png"),
-    format = "file"
+    format = "file",
+    deployment = "main"
   ),
   tar_target(
     fitness_desc_plot,
     make_fitness_desc_plot(dat_ad_file = lrs_data_path,
-                           dat_n_file = nestling_data_path)
+                           dat_n_file = nestling_data_path),
+    deployment = "main"
   ),
   tar_target(
     fitness_desc_plot_png,
@@ -2186,6 +2205,7 @@ list(
                 width = 10,
                 height = 5,
                 device = "png"),
-    format = "file"
+    format = "file",
+    deployment = "main"
   )
 )
