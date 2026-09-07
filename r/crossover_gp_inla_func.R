@@ -3012,14 +3012,18 @@ make_num_co_meas_plot <- function(dat_file) {
     tidyr::complete(sex, n = full_seq(n, 1), fill = list(count = 0))
 
   ggplot(n_counts, aes(x = n, y = count, color = sex)) +
-    geom_line(linewidth = 1) +
-    labs(x = "Number of ACC measurements per phenotyped individual",
+    geom_hline(yintercept = 0) +
+    geom_line(linewidth = 0.75) +
+    labs(x = "#ACC measurements per phenotyped individual",
          y = "Count",
          color = "Sex") +
     theme_minimal(base_size = 13) +
     scale_color_discrete(labels = c("F" = "Female", "M" = "Male")) +
     scale_x_continuous(breaks = function(x) seq(1, max(x), by = 5)) +
-    theme(panel.border = element_rect(fill = NA))
+    theme(panel.border = element_rect(fill = NA),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.minor.x = element_blank())
 }
 
 make_fitness_desc_plot <- function(dat_ad_file, dat_n_file) {

@@ -1428,8 +1428,6 @@ mvn_test_n2_f|stem|4f78461fe19c16ff|fbe358aeefa64dce|a0809dd1b7b84a9c|-460285035
 mvn_test_n2_m|stem|ed7d4ee38a1d8991|183025240ca4b9d4|42eb1fda2da17f9b|1546212734||t20698.3075925926s|s1701b|1701|qs|local|list|||266.794||
 num_co_plot|stem|864195781859c4e1|b4b3916f97b48201|091e43b4db8b49a3|-1445474836||t20698.3158449074s|s2024328b|2024328|qs|local|list|||0.11||
 num_co_plot_png|stem|440b117c8c3e09e3|aef9269f8d987f2b|975085fa7edfbbc6|1386208796|figs/num_co_plot.png|t20698.3158680556s|s162936b|162936|file|local|list|||0.439||
-num_co_meas_plot|stem|dfbdaf624974eeed|e9056b8391aa3b83|11b081840953f1d2|1844499994||t20698.3419097222s|s902442b|902442|qs|local|list|||0.126||
-num_co_meas_plot_png|stem|bf4fa2dd2e9c5d60|4a5bfa48849b270b|18745d1372fb5aa0|397518387|figs/num_co_meas_plot.png|t20698.3419212963s|s93420b|93420|file|local|list|||0.261||
 avg_fun_hatch_doy2|function|8c3b6293df115314
 plot_lines_posterior|function|578d35f80655eb9b
 marg_eff_fun_co_count_sire|function|a9dc93748eee6cbe
@@ -1492,7 +1490,7 @@ marg_eff_fun_co_n|function|560d16ac41c01c92
 stat_disp_nz|function|fb9a04a9602601db
 pred_fun_bv|function|820fad7ba0197cc2
 eval_func_parsum_ns|function|17a3d8e2d4bf1768
-make_num_co_meas_plot|function|562225f067ed8008
+make_num_co_meas_plot|function|75df0df4a73dfb1b
 make_gp_data_nest|function|b079beac9a37d2ff
 plot_rand_eff_sd|function|17fd9de8f69a4582
 inla_bv_covmat|function|49d5daba18d04f0f
@@ -1502,7 +1500,7 @@ make_sim_surv_adult|function|6762689af9fd7125
 make_cv_test_sets|function|b3037abec3270df7
 make_sim_surv_parent|function|4832a331348dc755
 pred_fun_co_count_sire2|function|3c03237e526a6fdc
-controller_slurm|object|453b3a65dbe0f50a
+controller_slurm|object|42af9fc0aee97f4d
 make_data_nest|function|63256627034df036
 eval_func_ars|function|76a9d82a18497866
 avg_fun_hatch_doy|function|3f5b59aad31e7da5
@@ -1540,7 +1538,7 @@ avg_fun_co_count_sire2|function|fd09c1875b2e1926
 dirfit_func_parsum_ars|function|ad46336b11b7fbd5
 marg_eff_fun_hatch_doy|function|a566f2c699a0543e
 cv_acc_fun|function|5159f9a2ed2b3f64
-controller_local|object|1ecc6a23d735f7be
+controller_local|object|9c36c3e76e93415d
 eval_func_as|function|c42f83e5e7b986e9
 make_gp_data_parent|function|9e57434a8f6df9ee
 plot_fixed_eff_coefs|function|e781ee47225ee00d
@@ -1566,3 +1564,5 @@ ppc_ars|function|ee9545a2cce919b1
 run_gp|function|f9b6ea8a4092641f
 run_gp_pois|function|a078f91a44097daf
 run_gp_cv|function|ebdbd407a6c1c903
+num_co_meas_plot|stem|cadb89e34df7d19c|e9056b8391aa3b83|d0c80bdcd416f11c|1844499994||t20703.5447569444s|s904761b|904761|qs|local|list|||0.124||
+num_co_meas_plot_png|stem|21fb6991b01de342|4a5bfa48849b270b|51f5a73d3a63b515|397518387|figs/num_co_meas_plot.png|t20703.5447685185s|s89853b|89853|file|local|list|||0.596||
