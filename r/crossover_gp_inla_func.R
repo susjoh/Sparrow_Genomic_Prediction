@@ -3081,9 +3081,7 @@ make_fitness_desc_plot <- function(dat_ad_file, dat_n_file) {
   layout <- "AA
   BC"
 
-  p1 + p2 + p3 + plot_layout(design = layout,
-                             guides = "collect",
-                             axis_titles = "collect") &
+  p1 + p2 + p3 + plot_layout(design = layout, guides = "collect") &
     theme(legend.box.background = element_rect(colour = "black",
                                                fill = NA))
 }
