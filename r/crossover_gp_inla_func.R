@@ -3047,7 +3047,9 @@ make_fitness_desc_plot <- function(dat_ad_file, dat_n_file) {
              color = "black",
              linewidth = 0.1) +
     scale_x_continuous(breaks = 0:(max(dat_ad$sum_recruit))) +
-    labs(x = "Annual reproductive success (ARS)", y = "Count", fill = "Sex") +
+    labs(x = "Annual reproductive success (ARS)",
+         y = "#Individual-years",
+         fill = "Sex") +
     scale_fill_manual(labels = c("f" = "Female", "m" = "Male"),
                       values = c("f" = "#998ec3", "m" = "#f1a340")) +
     theme_minimal() +
@@ -3058,7 +3060,9 @@ make_fitness_desc_plot <- function(dat_ad_file, dat_n_file) {
     geom_bar(position = "dodge", width = 0.4, color = "black",
              linewidth = 0.1) +
     scale_x_continuous(breaks = 0:1) +
-    labs(x = "Annual survival (AS)", y = "Count", fill = "Sex") +
+    labs(x = "Annual survival (AS)",
+         y = "#Individual-years",
+         fill = "Sex") +
     scale_fill_manual(labels = c("f" = "Female", "m" = "Male"),
                       values = c("f" = "#998ec3", "m" = "#f1a340")) +
     theme_minimal() +
@@ -3071,7 +3075,7 @@ make_fitness_desc_plot <- function(dat_ad_file, dat_n_file) {
     geom_bar(position = "dodge", width = 0.4, color = "black",
              linewidth = 0.1) +
     scale_x_continuous(breaks = 0:1) +
-    labs(x = "Nestling survival (NS)", y = "Count", fill = "Sex") +
+    labs(x = "Nestling survival (NS)", y = "#Individuals", fill = "Sex") +
     scale_fill_manual(labels = c("f" = "Female", "m" = "Male"),
                       values = c("f" = "#998ec3", "m" = "#f1a340")) +
     theme_minimal() +

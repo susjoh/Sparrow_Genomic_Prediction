@@ -1500,7 +1500,7 @@ make_sim_surv_adult|function|6762689af9fd7125
 make_cv_test_sets|function|b3037abec3270df7
 make_sim_surv_parent|function|4832a331348dc755
 pred_fun_co_count_sire2|function|3c03237e526a6fdc
-controller_slurm|object|3bd6a662a83ef26f
+controller_slurm|object|b8609967753b06ff
 make_data_nest|function|63256627034df036
 eval_func_ars|function|76a9d82a18497866
 avg_fun_hatch_doy|function|3f5b59aad31e7da5
@@ -1508,7 +1508,7 @@ get_samps|function|f7114376c29f67e5
 marg_eff_fun_age|function|b0372dca2062a32a
 avg_fun_co_count_dam2|function|08457e337dcef2f1
 values_fitmod|object|f5b5f9bf858d1a11
-make_fitness_desc_plot|function|6fb0bbadf08d59e7
+make_fitness_desc_plot|function|aa5079580eeb79c0
 get_dirfit_samps_parsum_ars_as|function|d04c437d9507016a
 make_stan_data_adult|function|35466bbb053d963d
 pred_fun_bv2|function|4b4b81a21cdc48f0
@@ -1538,7 +1538,7 @@ avg_fun_co_count_sire2|function|fd09c1875b2e1926
 dirfit_func_parsum_ars|function|ad46336b11b7fbd5
 marg_eff_fun_hatch_doy|function|a566f2c699a0543e
 cv_acc_fun|function|5159f9a2ed2b3f64
-controller_local|object|17dbf595a524934d
+controller_local|object|ce14cbfcc4b778fb
 eval_func_as|function|c42f83e5e7b986e9
 make_gp_data_parent|function|9e57434a8f6df9ee
 plot_fixed_eff_coefs|function|e781ee47225ee00d
@@ -1564,5 +1564,5 @@ ppc_ars|function|ee9545a2cce919b1
 run_gp|function|f9b6ea8a4092641f
 run_gp_pois|function|a078f91a44097daf
 run_gp_cv|function|ebdbd407a6c1c903
-fitness_desc_plot|stem|0056b71a6b4bc012|f34d4b85497c78c6|480e93e17d8a7166|1428314133||t20704.4128703704s|s1146406b|1146406|qs|local|list|||0.153||
-fitness_desc_plot_png|stem|7b192bcd7e79c0db|0586a1123285fc9f|0c35feeaa29c2e73|-105597416|figs/fitness_desc_plot.png|t20704.4128819444s|s72377b|72377|file|local|list|||0.581||
+fitness_desc_plot|stem|ec146b7df270a039|f34d4b85497c78c6|157c1e96b4c70fad|1428314133||t20704.5074421296s|s1146133b|1146133|qs|local|list|||0.184||
+fitness_desc_plot_png|stem|49589244894b4dcd|0586a1123285fc9f|82af579a7abea4b2|-105597416|figs/fitness_desc_plot.png|t20704.5074768519s|s89517b|89517|file|local|list|||2.188||
