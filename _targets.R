@@ -2202,8 +2202,8 @@ list(
     fitness_desc_plot_png,
     ggsave_path("figs/fitness_desc_plot.png",
                 plot = fitness_desc_plot,
-                width = 10,
-                height = 5,
+                width = 5,
+                height = 8,
                 device = "png"),
     format = "file",
     deployment = "main"

@@ -1393,7 +1393,7 @@ plot_lines_posterior <- function(df,
     # Minimal theme for clean appearance
     theme_minimal(base_size = bs) +
     # Customize the color and linetype scales
-    scale_color_manual(values = c("Posterior mean" = "blue",
+    scale_color_manual(values = c("Posterior mean" = "dodgerblue2",
                                   "95% CI" = "darkred",
                                   "Posterior samples" = "black")) +
     scale_linetype_manual(values = c("Posterior mean" = "solid",
@@ -2978,11 +2978,13 @@ make_num_co_plot <- function(dat_file) {
   xlims <- range(dat$total_CO_count)
 
   p1 <- ggplot(dat, aes(x = total_CO_count, color = factor(sex))) +
+    geom_hline(yintercept = 0) +
     geom_freqpoly(linewidth = 1, binwidth = 1) +
     coord_cartesian(xlim = xlims) +
     labs( x = "ACC per gamete", color = "Sex") +
     theme_minimal(base_size = 13) +
-    scale_color_discrete(labels = c("F" = "Female", "M" = "Male")) +
+    scale_color_manual(labels = c("F" = "Female", "M" = "Male"),
+                       values = c("F" = "#998ec3", "M" = "#f1a340")) +
     theme(panel.border = element_rect(fill = NA),
           panel.grid = element_blank())
 
@@ -2991,15 +2993,18 @@ make_num_co_plot <- function(dat_file) {
     summarise(co_count = mean(co_count), n = n())
 
   p2 <- ggplot(dat_mean, aes(x = co_count, color = factor(sex))) +
+    geom_hline(yintercept = 0) +
     geom_freqpoly(linewidth = 1, binwidth = 1) +
     labs( x = "Mean ACC per individual", color = "Sex") +
     coord_cartesian(xlim = xlims) +
     theme_minimal(base_size = 13) +
-    scale_color_discrete(labels = c("F" = "Female", "M" = "Male")) +
+    scale_color_manual(labels = c("F" = "Female", "M" = "Male"),
+                        values = c("F" = "#998ec3", "M" = "#f1a340")) +
     theme(panel.border = element_rect(fill = NA),
           panel.grid = element_blank())
 
-  p1 + p2 + plot_layout(byrow = TRUE, ncol = 1, nrow = 2, guides = "collect")
+  p1 + p2 + plot_layout(byrow = TRUE, ncol = 1, nrow = 2, guides = "collect") &
+    theme(legend.box.background = element_rect(colour = "black", fill = NA))
 }
 
 make_num_co_meas_plot <- function(dat_file) {
@@ -3018,12 +3023,14 @@ make_num_co_meas_plot <- function(dat_file) {
          y = "Count",
          color = "Sex") +
     theme_minimal(base_size = 13) +
-    scale_color_discrete(labels = c("F" = "Female", "M" = "Male")) +
+    scale_color_manual(labels = c("F" = "Female", "M" = "Male"),
+                       values = c("F" = "#998ec3", "M" = "#f1a340")) +
     scale_x_continuous(breaks = function(x) seq(1, max(x), by = 5)) +
     theme(panel.border = element_rect(fill = NA),
           panel.grid.major.y = element_blank(),
           panel.grid.minor.y = element_blank(),
-          panel.grid.minor.x = element_blank())
+          panel.grid.minor.x = element_blank(),
+          legend.box.background = element_rect(colour = "black", fill = NA))
 }
 
 make_fitness_desc_plot <- function(dat_ad_file, dat_n_file) {
@@ -3035,19 +3042,25 @@ make_fitness_desc_plot <- function(dat_ad_file, dat_n_file) {
   dat_ad$sex_round_mf <- ifelse(dat_ad$sex_round == 2, "f", "m")
 
   p1 <- ggplot(dat_ad, aes(x = sum_recruit, fill = factor(sex_round_mf))) +
-    geom_bar(position = "dodge", width = 0.7) +
+    geom_bar(position = "dodge",
+             width = 0.7,
+             color = "black",
+             linewidth = 0.1) +
     scale_x_continuous(breaks = 0:(max(dat_ad$sum_recruit))) +
     labs(x = "Annual reproductive success (ARS)", y = "Count", fill = "Sex") +
-    scale_fill_discrete(labels = c("f" = "Female", "m" = "Male")) +
+    scale_fill_manual(labels = c("f" = "Female", "m" = "Male"),
+                      values = c("f" = "#998ec3", "m" = "#f1a340")) +
     theme_minimal() +
     theme(panel.border = element_rect(fill = NA),
           panel.grid = element_blank())
 
   p2 <- ggplot(dat_ad, aes(x = survival, fill = factor(sex_round_mf))) +
-    geom_bar(position = "dodge", width = 0.4) +
+    geom_bar(position = "dodge", width = 0.4, color = "black",
+             linewidth = 0.1) +
     scale_x_continuous(breaks = 0:1) +
     labs(x = "Annual survival (AS)", y = "Count", fill = "Sex") +
-    scale_fill_discrete(labels = c("f" = "Female", "m" = "Male")) +
+    scale_fill_manual(labels = c("f" = "Female", "m" = "Male"),
+                      values = c("f" = "#998ec3", "m" = "#f1a340")) +
     theme_minimal() +
     theme(panel.border = element_rect(fill = NA),
           panel.grid = element_blank())
@@ -3055,16 +3068,22 @@ make_fitness_desc_plot <- function(dat_ad_file, dat_n_file) {
   dat_n <- fread(file = dat_n_file)
   dat_n %<>% dplyr::filter(genetic_sex %in% c("f", "m"))
   p3 <- ggplot(dat_n, aes(x = recruit, fill = factor(genetic_sex))) +
-    geom_bar(position = "dodge", width = 0.4) +
+    geom_bar(position = "dodge", width = 0.4, color = "black",
+             linewidth = 0.1) +
     scale_x_continuous(breaks = 0:1) +
     labs(x = "Nestling survival (NS)", y = "Count", fill = "Sex") +
-    scale_fill_discrete(labels = c("f" = "Female", "m" = "Male")) +
+    scale_fill_manual(labels = c("f" = "Female", "m" = "Male"),
+                      values = c("f" = "#998ec3", "m" = "#f1a340")) +
     theme_minimal() +
     theme(panel.border = element_rect(fill = NA),
           panel.grid = element_blank())
 
-  p1 + p2 + p3 + plot_layout(ncol = 3,
-                             nrow = 1,
+  layout <- "AA
+  BC"
+
+  p1 + p2 + p3 + plot_layout(design = layout,
                              guides = "collect",
-                             axis_titles = "collect")
+                             axis_titles = "collect") &
+    theme(legend.box.background = element_rect(colour = "black",
+                                               fill = NA))
 }
