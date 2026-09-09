@@ -17,7 +17,7 @@ controller_slurm <- crew_controller_slurm(
   name = "my_slurm_controller",
   workers = 40,
   seconds_idle = 120,
-  tasks_max = 1,
+  tasks_max = 10,
   options_cluster = crew_options_slurm(
     script_lines = paste("#SBATCH --account=share-nv-bio \n module load",
                          "R/4.4.2-gfbf-2024a R-bundle-CRAN/2024.11-foss-2024a",
@@ -25,7 +25,7 @@ controller_slurm <- crew_controller_slurm(
     log_output = "Jobs/%A_%a.log",
     memory_gigabytes_per_cpu = 6,
     cpus_per_task = 16,
-    time_minutes = 60 * 30 * 1, # minutes * hours * days
+    time_minutes = 30 * 1 * 1, # minutes * hours * days
     partition = "CPUQ",
     verbose = TRUE)
 )
@@ -1328,12 +1328,12 @@ dirfit_map <- tar_map(
       samp_df = (dirfit_samps %>%
                    as.data.frame() %>%
                    select(matches("^(alph|bet)"))),
-      subtit = paste0("S&D, ", sex, " ", trait_short))
+      subtit = paste0("MP, ", sex, " ", trait_short))
   ),
   tar_target(
     dirfit_fixed_eff_coefs_plot_png,
     ggsave_path(paste0("figs/coef_figs/",
-                       trait_short, "_S&D_", sex, ".png"),
+                       trait_short, "_MP_", sex, ".png"),
                 plot = dirfit_fixed_eff_coefs_plot,
                 width = 9,
                 height = 9,
@@ -1346,12 +1346,12 @@ dirfit_map <- tar_map(
       samp_df = (dirfit_samps %>%
                    as.data.frame() %>%
                    select(matches("^sigma_"))),
-      subtit = paste0("S&D, ", sex, " ", trait_short))
+      subtit = paste0("MP, ", sex, " ", trait_short))
   ),
   tar_target(
     dirfit_rand_eff_sd_plot_png,
     ggsave_path(paste0("figs/sigma_figs/",
-                       trait_short, "_S&D_", sex, ".png"),
+                       trait_short, "_MP_", sex, ".png"),
                 plot = dirfit_rand_eff_sd_plot,
                 width = 9,
                 height = 9,
@@ -1366,7 +1366,7 @@ dirfit_map <- tar_map(
                    select(matches("^(ye|hy)"))),
       tit = paste0(c("Y", "Hatch y"),
                    "ear effect levels (linear predictor scale)"),
-      subtit = paste0("S&D, ", sex, " ", trait_short),
+      subtit = paste0("MP, ", sex, " ", trait_short),
       dat = fitness_data_dir,
       samp_colname = c("ye", "hy"),
       num_col = c("y_num", "hy_num"),
@@ -1376,7 +1376,7 @@ dirfit_map <- tar_map(
   tar_target(
     dirfit_year_levels_plot_png,
     ggsave_path(paste0("figs/year_level_figs/",
-                       trait_short, "_S&D_", sex, ".png"),
+                       trait_short, "_MP_", sex, ".png"),
                 plot = dirfit_year_levels_plot,
                 width = 9,
                 height = 9,
@@ -1391,7 +1391,7 @@ dirfit_map <- tar_map(
                    select(matches("^(ll|hi)"))),
       tit = paste0(c("I", "Hatch i"),
                    "sland effect levels (linear predictor scale)"),
-      subtit = paste0("S&D, ", sex, " ", trait_short),
+      subtit = paste0("MP, ", sex, " ", trait_short),
       dat = fitness_data_dir,
       samp_colname = c("ll", "hi"),
       num_col = c("ll_num", "hi_num"),
@@ -1401,7 +1401,7 @@ dirfit_map <- tar_map(
   tar_target(
     dirfit_island_levels_plot_png,
     ggsave_path(paste0("figs/isl_level_figs/",
-                       trait_short, "_S&D_", sex, ".png"),
+                       trait_short, "_MP_", sex, ".png"),
                 plot = dirfit_island_levels_plot,
                 width = 9,
                 height = 9,
@@ -1726,9 +1726,9 @@ list(
                    p4 = dirfit_co_count_dam_pred_plot_ars_m,
                    p5 = dirfit_co_count_parsum_pred_plot_ars_f,
                    p6 = dirfit_co_count_parsum_pred_plot_ars_m,
-                   tit_str = "S&D/PS models for ARS",
+                   tit_str = "MP/PS models for ARS",
                    labs = paste(LETTERS[1:6],
-                                c(rep("S&D", 4), "PS", "PS"),
+                                c(rep("MP", 4), "PS", "PS"),
                                 sep = " - "))
   ),
   tar_target(
@@ -1748,9 +1748,9 @@ list(
                    p4 = dirfit_co_count_dam_pred_plot_as_m,
                    p5 = dirfit_co_count_parsum_pred_plot_as_f,
                    p6 = dirfit_co_count_parsum_pred_plot_as_m,
-                   tit_str = "S&D/PS models for AS",
+                   tit_str = "MP/PS models for AS",
                    labs = paste(LETTERS[1:6],
-                                c(rep("S&D", 4), "PS", "PS"),
+                                c(rep("MP", 4), "PS", "PS"),
                                 sep = " - "))
   ),
   tar_target(
@@ -1770,9 +1770,9 @@ list(
                    p4 = dirfit_co_count_dam_pred_plot_ns_m,
                    p5 = dirfit_co_count_parsum_pred_plot_ns_f,
                    p6 = dirfit_co_count_parsum_pred_plot_ns_m,
-                   tit_str = "S&D/PS models for NS",
+                   tit_str = "MP/PS models for NS",
                    labs = paste(LETTERS[1:6],
-                                c(rep("S&D", 4), "PS", "PS"),
+                                c(rep("MP", 4), "PS", "PS"),
                                 sep = " - "))
   ),
   tar_target(
@@ -1790,7 +1790,7 @@ list(
                    p2 = dirfit_age_pred_plot_ars_m,
                    p3 = dirfit_age_pred_plot_as_f,
                    p4 = dirfit_age_pred_plot_as_m,
-                   tit_str = "Effect of age in S&D models")
+                   tit_str = "Effect of age in MP models")
   ),
   tar_target(
     dirfit_age_pred_plot_2x2_png,
@@ -1809,7 +1809,7 @@ list(
                    p4 = dirfit_f_pred_plot_as_m,
                    p5 = dirfit_f_pred_plot_ns_f,
                    p6 = dirfit_f_pred_plot_ns_m,
-                   tit_str = "Effect of inbreeding in S&D models")
+                   tit_str = "Effect of inbreeding in MP models")
   ),
   tar_target(
     dirfit_f_pred_plot_3x2_png,
@@ -1826,7 +1826,7 @@ list(
                    p2 = dirfit_hatch_doy_pred_plot_ns_m,
                    p3 = dirfit_first_dna_age_pred_plot_ns_f,
                    p4 = dirfit_first_dna_age_pred_plot_ns_m,
-                   tit_str = "Nestling fixed effects in S&D models")
+                   tit_str = "Nestling fixed effects in MP models")
   ),
   tar_target(
     dirfit_nfix_pred_plot_2x2_png,
