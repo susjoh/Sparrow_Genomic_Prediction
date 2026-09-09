@@ -95,7 +95,7 @@ Susan: Describe QC of the SNP data, and how ACC measurements were obtained
 \subsection*{Outline of fitness analyses}
 
 We investigated how the number of autosomal crossovers impacted fitness in our study populations.
-We addressed this by asking two related questions: first, how the ACC in the gametes an individual received from its parents impacted its fitness, and second, how an individual's own recombination rate impacted its fitness. % through the gametes passed along to the next generation.
+We addressed this by asking two related questions: first, how the ACC in the gametes an individual received from its parents impacted its fitness, and second, how an individual's own recombination rate impacted its fitness.
 In both analyses, we used mixed modeling to relate ACC to fitness components, including annual reproductive success (ARS), annual adult survival (AS), and nestling survival (NS).
 However, the second analysis was complicated by sampling biases, which we accounted for by applying genomic prediction (GP) and measurement error modeling.
 We fitted all models separately for the sexes since male and female ACC in house sparrows have different genetic architectures, with a cross-sex additive genetic correlation of $0.29$ \citep{mcauley2024genetic}, and since fitness mechanisms could fundamentally differ between the sexes \note{(cite some house sparrow fitness papers)}.
@@ -104,11 +104,11 @@ We fitted all models separately for the sexes since male and female ACC in house
 
 We related the ACC in an individual's maternal and paternal gametes to that individual's (sex-specific) fitness using generalized linear mixed models for ARS, AS and NS, fitted in a Bayesian framework using \texttt{R-INLA} version \texttt{24.12.11} \citep{rue2009approximate}.
 The ACC information was incorporated in two different ways. 
-In what we label the ``sire and dam'' (S\&D) models, the ACCs in the gametes from the sire and dam were treated as two separate fixed effects in the same model, while in the ``parental sum'' (PS) models we used the sum of the ACC in the sire's and dam's gametes as a single covariate.
-The S\&D models therefore allowed for the possibility that the egg-derived and sperm-derived ACCs have different fitness effects, with these effects estimated conditional on each other.
+In what we label the ``maternal and paternal'' (MP) models, the ACCs in the gametes from the mother and father were treated as separate fixed effects in the same model, while in the ``parental sum'' (PS) models we treated the sum of the ACC in the mother's and father's gametes as one variable.
+The MP models therefore allowed for the possibility that the egg-derived and sperm-derived ACCs have different fitness effects, with these effects estimated conditional on each other.
 Conversely, the PS models considered the effect of overall inherited ACC, irrespective of source parent.
-We used the fitted S\&D and PS models to predict sex-specific fitness components for given values of parental ACC, given that remaining fixed effect covariates were set to their average values.
-Below we outline the S\&D and PS models for the three fitness traits.
+We used the fitted MP and PS models to predict sex-specific fitness components for given values of parental ACC, given that remaining fixed effect covariates were set to their average values.
+Below we outline the MP and PS models for the three fitness traits.
 
 \subsubsection*{Annual reproductive success}
 
@@ -128,17 +128,18 @@ ARS was modeled with a zero-inflated Poisson likelihood, so that $\text{ARS}_{ij
 \end{split}
 \end{align}
 where $\lambda_{ij}$ is the Poisson rate linked to the linear predictor $\eta_{ij}$ by a log link, and $\pi$ is the zero-inflation probability determined by a single intercept term $\gamma_0$.
-For both the S\&D and PS models, $\eta_{ij}$ included an intercept, fixed effects for age (linear and quadratic) and $F_\text{ROH}$ inbreeding coefficient (linear), and unstructured random effects of measurement year, measurement island, individual ID, dam, and sire.
-In the S\&D models, $\eta_{ij}$ also contained fixed effects of ACC in the dam gamete (linear and quadratic), ACC in the sire gamete (linear and quadratic). 
+For both the MP and PS models, $\eta_{ij}$ included an intercept, fixed effects for age (linear and quadratic) and $F_\text{ROH}$ inbreeding coefficient (linear), and unstructured random effects of measurement year, measurement island, individual ID, mother, and father.
+In the MP models, $\eta_{ij}$ also contained fixed effects of ACC in the maternal gamete (linear and quadratic), ACC in the paternal gamete (linear and quadratic). 
 In the PS models, $\eta_{ij}$ instead included the sum of the ACCs in the two parental gametes (linear and quadratic).
 Allowing for quadratic effects of ACC made it possible to detect potential stabilizing selection on recombination rate.
 For the age covariate, we used an orthogonal polynomial basis for the linear and quadratic term, due to high correlation between age and squared age.
-All fixed effect covariates were standardized before fitting the model.
+Before fitting the model, all fixed effect covariates were standardized by mean-centering and scaling by their standard deviations.
 For the count component intercept we used a $\N{\log\left(\overline{\mathrm{ARS}^{+}}\right)}{0.2^2}$ prior, where $\log\left(\overline{\mathrm{ARS}^{+}}\right)$ is the log-mean of the non-zero counts.
 We placed independent $\N{0}{0.2^2}$ priors on the coefficients of the fixed effects, except a tighter $\N{0}{0.2^2/2}$ prior on the quadratic effect of ACC.
-Independent penalized complexity priors $\mathrm{PC}(0.6, 0.05)$ were placed on the random effect standard deviations \citep{simpson2017penalising}.
+Independent penalized complexity ($\mathrm{PC}$) priors $\mathrm{PC}(0.6, 0.05)$ were placed on the random effect standard deviations \citep{simpson2017penalising}.
 Each $\mathrm{PC}$ prior can be interpreted as assigning a prior probability of $0.05$ to the corresponding random effect standard deviation exceeding $0.6$, and gives it an expected value of $0.2$.
-Thus, our priors gave both fixed and random effects an expected range of $\pm 2\times0.2$ on the linear predictor scale, which translates to a multiplicative factor of $\exp(2\times0.2)\approx 1.5$ on the count scale, with the random effects unlikely to increase the count component by a multiplicative factor greater than $\exp(2\times0.6)\approx 3.3$.
+Thus, our priors gave both fixed and random effects an expected range of $\pm 2\times0.2$ on the linear predictor scale, which translates to a multiplicative factor of $\exp(2\times0.2)\approx 1.5$ on the count scale.
+Similarly, the random effects were a priori unlikely to increase the count component by a multiplicative factor greater than $\exp(2\times0.6)\approx 3.3$.
 For $\gamma_0$ we used a Gaussian prior $\N{0}{1.25^2}$, which we parametrized so that the zero-inflation probability $\pi$ was centered on $0.5$ with a roughly uniform shape between $0$ and $1$.
 
 \subsubsection*{Annual Survival}
@@ -157,7 +158,7 @@ We modeled AS as a binomial trait with a logistic model, so that
 \end{split}
 \end{align}
 where $\mathrm{AS}_{ij}$ is an indicator variable for whether individual $i$ survived its $j^\text{th}$ adult year, and $\eta_{ij}$ is a linear predictor linked to the survival probability $p_{ij}$ by a logit link.
-For both the S\&D and PS models, we included the same fixed and random effects in $\eta_{ij}$ as in the model for ARS described above.
+For both the MP and PS models, we included the same fixed and random effects in $\eta_{ij}$ as in the model for ARS described above.
 The prior specifications were also similar, but we adjusted the parameters for the logistic scale.
 The intercept was given a $\N{\operatorname{logit}(\overline{\mathrm{AS}})}{0.5^2}$ prior, the coefficients of the fixed effects were given $\N{0}{0.5^2}$ priors, the quadratic effect of ACC was given a $\N{0}{0.5^2/2}$ prior, and the random effect standard deviations were given $\mathrm{PC}(1.5, 0.05)$ priors, which have an expected value of $0.5$.
 In other words, effects were expected to vary over a $\pm 2 \times 0.5$ range on the linear predictor scale.
@@ -179,9 +180,9 @@ As with AS, NS was modeled as a binomial trait, so that
 \operatorname{logit}(p_{i}) &= \eta_{i},
 \end{split}
 \end{align}
-where $\mathrm{NS}_i$ is an indicator of whether nestling $i$ survived, and $\eta_i$ is a linear predictor linked to the survival probability $p_i$ by a logit link.
-Like for ARS and AS, we defined the S\&D and PS models for NS by including linear and quadratic fixed effects of either the ACC inherited from each parent (S\&D) or the sum of the ACC from the two parents (PS), respectively.
-The linear predictor for NS additionally included an intercept, fixed effects of $F_\text{ROH}$ inbreeding coefficient (linear), hatch date (day of year, linear and quadratic), and age at first capture in the nest (days, linear), as well as unstructured random effects of hatch year, hatch island, clutch ID, dam, and sire.
+where $\mathrm{NS}_i$ is an indicator of whether nestling $i$ survived to recruitment, and $\eta_i$ is a linear predictor linked to the survival probability $p_i$ by a logit link.
+Like for ARS and AS, we defined the MP and PS models for NS by including linear and quadratic fixed effects of either the ACC inherited from each parent (MP) or the sum of the ACC from the two parents (PS), respectively.
+The linear predictor for NS additionally included an intercept, fixed effects of $F_\text{ROH}$ inbreeding coefficient (linear), hatch date (day of year, linear and quadratic), and age at first capture in the nest (days, linear), as well as unstructured random effects of hatch year, hatch island, clutch ID, mother, and father.
 We used the same prior specifications for NS as for AS, as both traits were modeled on the logit scale, with the tighter $\N{0}{0.5^2/2}$ prior on the quadratic effects of both ACC and hatch date.
 
 \begin{table*}[!hb]
@@ -201,7 +202,7 @@ We used the same prior specifications for NS as for AS, as both traits were mode
         
         \cmidrule{2-3} \cmidrule{5-6}
         \rowcolor{LightGray}
-        S\&D, PS &
+        MP, PS &
         $1158$ $(2210)$ &
         $1183$ & &
         $1216$ $(2406)$ &
@@ -235,7 +236,76 @@ We used the same prior specifications for NS as for AS, as both traits were mode
 
         \bottomrule 
     \end{tabular}
-    \caption{Sample sizes for the S\&D, PS, GP, GV-F, and PGV-F models. In cases where the number of individuals and observations differ due to repeated measurements, the latter is given in parentheses. For GP, the size of the training set of individuals phenotyped for ACC is shown, which was shared for all three fitness traits. For GV-F and PGV-F, the total sample size and the subset that was imputed using GP are shown in separate rows.}
+    \caption{Sample sizes for the MP, PS, GP, GV-F, and PGV-F models. In cases where the number of individuals and observations differ due to repeated measurements, the latter is given in parentheses. For GP, the size of the training set of individuals phenotyped for ACC is shown, which was shared for all three fitness traits. For GV-F and PGV-F, the total sample size and the subset that was imputed using GP are shown in separate rows.}
+    \label{tab-gp-ss}
+\end{table*}
+
+\begin{table*}[!hb]
+    \centering
+    \ra{1.3}
+    \begin{tabular}{@{}llcccccc@{}}
+        \toprule
+        Model & Relation of interest & & \multicolumn{2}{c}{Female} & & \multicolumn{2}{c}{Male} \\
+        \midrule
+        \rowcolor{LightGray}
+        GP &
+        \scriptsize $\text{ACC} \sim \text{gACC}$ &
+        \scriptsize Training set: &
+        \multicolumn{2}{c}{$1285$ $(6377)$} & &
+        \multicolumn{2}{c@{}}{$1242$ $(6489)$} \\
+        
+        \midrule 
+        & & & ARS/AS & NS & & ARS/AS & NS \\
+        
+        \cmidrule{4-5} \cmidrule{7-8}
+        \rowcolor{LightGray}
+        MP &
+        \scriptsize $\text{Fitn.} \sim \text{ACC}_\text{mat} + \text{ACC}_\text{pat}$ &
+         & & & & & \\ 
+
+        \rowcolor{LightGray}
+        PS & \scriptsize $\text{Fitn.} \sim \text{ACC}_{\text{mat} + \text{pat}}$ &
+        \multirow{-2}{*}{\scriptsize Total:} &
+        \multirow{-2}{*}{$1158$ $(2210)$} &
+        \multirow{-2}{*}{$1183$} & &
+        \multirow{-2}{*}{$1216$ $(2406)$} &
+        \multirow{-2}{*}{$1294$} \\
+        
+        \multirow{2}{*}{GV-F} &
+        \multirow{2}{*}{\scriptsize $\text{Fitn.} \sim \text{gACC}$} &
+        \scriptsize Total: &
+        $2547$ $(4613)$ &
+        $2221$ & &
+        $2632$ $(5241)$ &
+        $2330$ \\
+
+        & &
+        \scriptsize GP-imputed: &
+        $1315$ $(1896)$ &
+        $1960$ & &
+        $1423$ $(2251)$ &
+        $2058$ \\
+
+        \rowcolor{LightGray}
+        & &
+        \scriptsize Total: &
+        $1100$ $(2187)$ &
+        $1375$ & &
+        $1186$ $(2526)$ &
+        $1603$ \\
+
+        \rowcolor{LightGray}
+        \multirow{-2}{*}{PGV-F} &
+        \multirow{-2}{*}{\scriptsize $\text{Fitn.} \sim \text{gACC}_\text{par}$} &
+        \scriptsize GP-imputed: &
+        $113$ $(204)$ &
+        $122$ & &
+        $138$ $(305)$ &
+        $128$\\
+
+        \bottomrule 
+    \end{tabular}
+    \caption{Overview over the GP, MP, PS, GV-F, and PGV-F models, and respective sample sizes. In cases where the number of individuals and observations differ due to repeated measurements, the latter is given in parentheses. For GP, the size of the training set of individuals phenotyped for ACC is shown, which was shared for all three fitness traits. For GV-F and PGV-F, the total sample size and the subset that was imputed using GP are shown in separate rows.}
     \label{tab-gp-ss}
 \end{table*}
 
@@ -256,10 +326,10 @@ This approach essentially uses GP as a tool for imputation of the missing ACC ph
 % new thought: relating NS to ACC for only phenotyped inds is impossible since we only phenotyped ones that survived to adulthood (otherwise they would not have offspring!)
 
 Below we outline a Bayesian GP model that estimated and predicted sex-specific ACC genetic values. 
-We used these genetic values as covariates in fitness models for ARS, AS, and NS, which we label ``genetic value-fitness'' (GV-F) models to differentiate them from the S\&D and PS models.
+We used these genetic values as covariates in fitness models for ARS, AS, and NS, which we label ``genetic value-fitness'' (GV-F) models to differentiate them from the MP and PS models.
 Ideally, the GP and GV-F models would have been fitted jointly, but because this was computationally infeasible, we took care to propagate the uncertainty from the GP results into the GV-F models.
 Similar to the GV-F models, we also related \textit{parental} genetic values, in what we label ``parental genetic value-fitness'' (PGV-F) models.
-As with the S\&D and PS models, we used the fitted (P)GV-F models to predict sex-specific fitness components for given (parental) genetic values, when the remaining fixed effect covariates were set to their average values.
+As with the MP and PS models, we used the fitted (P)GV-F models to predict sex-specific fitness components for given (parental) genetic values, when the remaining fixed effect covariates were set to their average values.
 The GP, GV-F, and PGV-F models, which are outlined below, were fitted separately for males and females.
 
 \subsubsection*{Genomic Prediction of ACC}
@@ -285,8 +355,8 @@ The resulting Gaussian approximation for the distribution of $\bm g$ was used in
 \subsubsection*{Fitness analyses using genetic values}
 
 We fitted models for ARS, AS and NS that used the posterior estimates of the genetic values $g_i$ obtained from the GP in Equation \eqref{eq-gp} as the covariate of interest.
-These GV-F models were Bayesian GLMMs with the same form as the previously described S\&D and PS models in Equations \eqref{eq-ars}, \eqref{eq-as} and \eqref{eq-ns}, respectively.
-The GV-F models differed from the S\&D and PS models in that we removed the sire and dam random effects for the two adult fitness traits (ARS and AS), and for all three fitness traits we replaced the ACC covariates with linear and quadratic effects of $g_i$.
+These GV-F models were Bayesian GLMMs with the same form as the previously described MP and PS models in Equations \eqref{eq-ars}, \eqref{eq-as} and \eqref{eq-ns}, respectively.
+The GV-F models differed from the MP and PS models in that we removed the maternal and paternal random effects for the two adult fitness traits (ARS and AS), and for all three fitness traits we replaced the ACC covariates with linear and quadratic effects of $g_i$.
 This replacement was not straightforward, since $g_i$ was estimated with uncertainty in GP models, and this uncertainty should be propagated into the GV-F models.
 However, the measurement-error methods available in R-INLA are incompatible with our need to include the square of $g_i$ as a covariate to allow detection of stabilizing selection.
 Adding this quadratic term would result in a non-Gaussian linear predictor in the fitness models, which violates a core assumption of \texttt{R-INLA}.
@@ -301,48 +371,48 @@ Each MCMC model consisted of $16$ chains which ran for $48\ 000$ iterations, inc
 To conserve storage memory, we retained every $160^\text{th}$ iteration, resulting in a total of $4\ 000$ posterior samples per model.
 We used the default \texttt{RStan} settings, except we set \texttt{adapt\_delta = 0.96} to mitigate divergent transitions.
 % And all models converged with good mixing according to rstan.
-All GV-F models used the same priors that were used in the S\&D and PS models for the same fitness trait.
+All GV-F models used the same priors that were used in the MP and PS models for the same fitness trait.
 
 We also related an individual's fitness to their same-sex parent's genetic value for ACC, in models that we label \textit{parental genetic value-fitness} models (PGV-F).
-The PGV-F were analogous to the S\&D and PS models in that they investigated the relationship between a parent's recombination rate and its offspring's fitness, while also using the techniques from the GV-F models to eliminate a potential sampling bias.
+The PGV-F were analogous to the MP and PS models in that they investigated the relationship between a parent's recombination rate and its offspring's fitness, while also using the techniques from the GV-F models to eliminate a potential sampling bias.
 % why is there a sampling bias?
-To this end, we formulated the PGV-F model for a given fitness trait like the identically the S\&D and PS model, but with the ACC covariate(s) replaced by the parental additive genetic value $g_{p(i)}$, where $p(i)$ denotes the same-sex parent of individual $i$.
+To this end, we formulated the PGV-F model for a given fitness trait like the identically the MP and PS model, but with the ACC covariate(s) replaced by the parental additive genetic value $g_{p(i)}$, where $p(i)$ denotes the same-sex parent of individual $i$.
 The covariate $g_{p(i)}$ was treated with the same measurement error model as used in GV-F, and so the PGV-F models were also fitted using \texttt{RStan}.
  
 \section*{Results}
 
-Male ARS was predicted to be highest when the sire's gamete had intermediate ACC (S\&D model, Figure \ref{fig-ars_dirfit}B), indicating stabilizing selection.
-For male ARS, we also found modest evidence of directional selection for higher ACC in the dam's gamete (S\&D model, Figure \ref{fig-ars_dirfit}D).
+Male ARS was predicted to be highest when the father's gamete had intermediate ACC (MP model, Figure \ref{fig-ars_dirfit}B), indicating stabilizing selection.
+For male ARS, we also found modest evidence of directional selection for higher ACC in the mother's gamete (MP model, Figure \ref{fig-ars_dirfit}D).
 The effect of the sum of ACC in the parental gametes on male ARS appears to be a combination of these two effects (PS model, Figure \ref{fig-ars_dirfit}F).
-Only the ACC in the dam's gamete showed an association with female ARS, with a slight directional selection for lower ACC (S\&D model, Figure \ref{fig-ars_dirfit}C).
-We found no evidence that ACC in gametes from either parent affected the survival traits (AS and NS) for either sex (Figure \ref{fig-as_dirfit}, Figure \ref{fig-ns_dirfit}A-B, D-F), except for female NS, which showed potential stabilizing selection on ACC in the gamete from the dam (Figure \ref{fig-ns_dirfit}C).
+Only the ACC in the mother's gamete showed an association with female ARS, with a slight directional selection for lower ACC (MP model, Figure \ref{fig-ars_dirfit}C).
+We found no evidence that ACC in gametes from either parent affected the survival traits (AS and NS) for either sex (Figure \ref{fig-as_dirfit}, Figure \ref{fig-ns_dirfit}A-B, D-F), except for female NS, which showed potential stabilizing selection on ACC in the gamete from the mother (Figure \ref{fig-ns_dirfit}C).
 \todo{KAA: Here we can probably prune away the null-result figures from the main text, but I left them in for now.}
 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{figs/dirfit_pred_plot_ars_3x2.png}
-    \caption{Predicted sex-specific ARS as a function of ACC measured in the inherited gametes, with other fixed effect covariates held at their mean values. The first two rows (panels \textbf{A}--\textbf{D}) show results from the S\&D model, while the third row (panels \textbf{E} and \textbf{F}) shows results from the PS model. Results for female and male ARS are shown in the left and right columns, respectively.}
+    \caption{Predicted sex-specific ARS as a function of ACC measured in the inherited gametes, with other fixed effect covariates held at their mean values. The first two rows (panels \textbf{A}--\textbf{D}) show results from the MP model, while the third row (panels \textbf{E} and \textbf{F}) shows results from the PS model. Results for female and male ARS are shown in the left and right columns, respectively.}
     \label{fig-ars_dirfit}
 \end{figure}
 
 \begin{figure}
     \centering
         \includegraphics[width=\linewidth]{figs/dirfit_pred_plot_as_3x2.png}
-    \caption{Predicted sex-specific AS as a function of ACC measured in the inherited gametes, with other fixed effect covariates held at their mean values. The first two rows (panels \textbf{A}--\textbf{D}) show results from the S\&D model, while the third row (panels \textbf{E} and \textbf{F}) shows results from the PS model. Results for female and male ARS are shown in the left and right columns, respectively.}
+    \caption{Predicted sex-specific AS as a function of ACC measured in the inherited gametes, with other fixed effect covariates held at their mean values. The first two rows (panels \textbf{A}--\textbf{D}) show results from the MP model, while the third row (panels \textbf{E} and \textbf{F}) shows results from the PS model. Results for female and male ARS are shown in the left and right columns, respectively.}
     \label{fig-as_dirfit}
 \end{figure}
 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{figs/dirfit_pred_plot_ns_3x2.png}
-    \caption{Predicted sex-specific NS as a function of ACC measured in the inherited gametes, with other fixed effect covariates held at their mean values. The first two rows (panels \textbf{A}--\textbf{D}) show results from the S\&D model, while the third row (panels \textbf{E} and \textbf{F}) shows results from the PS model. Results for female and male ARS are shown in the left and right columns, respectively.}
+    \caption{Predicted sex-specific NS as a function of ACC measured in the inherited gametes, with other fixed effect covariates held at their mean values. The first two rows (panels \textbf{A}--\textbf{D}) show results from the MP model, while the third row (panels \textbf{E} and \textbf{F}) shows results from the PS model. Results for female and male ARS are shown in the left and right columns, respectively.}
     \label{fig-ns_dirfit}
 \end{figure}
 
 We found clear evidence of stabilizing selection on recombination rate for both sexes. The GV-F models showed that ARS and AS for both sexes were predicted to be highest for intermediate values of ACC genetic values (Figures \ref{fig-ars_bv}A and B, Figures \ref{fig-surv_bv}A and B), as was male NS (Figure \ref{fig-nest_bv}B).
 The predictions for female NS followed the same pattern, but with greater uncertainty (Figure \ref{fig-nest_bv}A).
-For males, we also found modest evidence of stabilizing selection on the sire's recombination rate (PGV-F model, Figure \ref{fig-ars_bv}D), which is consistent with the S\&D model (Figure \ref{fig-ars_dirfit}B).
-The lack of evidence that the same-sex parent's ACC genetic value affects AS (Figure \ref{fig-surv_bv}C and D) is also consistent with the S\&D model (Figure \ref{fig-as_dirfit}C--F).\todo{KAA: I guess PGV-F can probably be relegated to supplementary material.}
+For males, we also found modest evidence of stabilizing selection on the father's recombination rate (PGV-F model, Figure \ref{fig-ars_bv}D), which is consistent with the MP model (Figure \ref{fig-ars_dirfit}B).
+The lack of evidence that the same-sex parent's ACC genetic value affects AS (Figure \ref{fig-surv_bv}C and D) is also consistent with the MP model (Figure \ref{fig-as_dirfit}C--F).\todo{KAA: I guess PGV-F can probably be relegated to supplementary material.}
 
 \begin{figure}
     \centering
@@ -377,24 +447,30 @@ The lack of evidence that the same-sex parent's ACC genetic value affects AS (Fi
     \item For NS, the clutch ID random effect usually explained the most variance
 \end{itemize}
 
+\section*{Supplementary}
+
+\subsection*{S1: Supplementary figures}
+
+Here we show the distribution of sex-specific fitness traits (Figure \ref{fig-fitness_desc}), the distribution of ACC measurements (Figure \ref{fig-num_co}), and the distribution of the average ACC measurement per individual (Figure \ref{fig-num_co_meas}).
+
 \begin{figure}
     \centering
-    \includegraphics[width=0.5\linewidth]{figs/fitness_desc_plot.png}
-    \caption{Distribution of fitness traits.}
+    \includegraphics[width=0.75\linewidth]{figs/fitness_desc_plot.png}
+    \caption{Distribution of fitness traits. Female fitness is shown in purple, male fitness is shown in orange.}
     \label{fig-fitness_desc}
 \end{figure}
 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{figs/num_co_plot.png}
-    \caption{}
+    \caption{Distribution of ACCs per measured gamete. The distribution for gametes produced by females is shown in purple, and the distribution for gametes produced by males is shown in orange.}
     \label{fig-num_co}
 \end{figure}
 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{figs/num_co_meas_plot.png}
-    \caption{}
+    \caption{Distribution of individual-specific mean ACC. The distribution for gametes produced by females is shown in purple, and the distribution for gametes produced by males is shown in orange.}
     \label{fig-num_co_meas}
 \end{figure}
 
